@@ -1,0 +1,15 @@
+[package]
+name = "dht-crawler"
+version = "0.1.0"
+authors = ["Martin Charles <martincharles07@gmail.com>"]
+
+[dependencies]
+serde = "1.0.79"
+serde_derive = "1.0.79"
+serde_bencode = { git = "https://github.com/0xcaff/serde-bencode.git" }
+serde_bytes = "0.10.4"
+byteorder = "1.2.6"
+
+[dev-dependencies]
+serde_test = "1.0.79"
+
