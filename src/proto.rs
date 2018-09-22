@@ -1,5 +1,7 @@
 use node_info::NodeInfo;
+use serde_bencode;
 use serde_bytes;
+use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct NodeID(#[serde(with = "serde_bytes")] Vec<u8>);
@@ -20,6 +22,16 @@ pub struct Envelope {
 
     #[serde(flatten)]
     pub message_type: MessageType,
+}
+
+impl Envelope {
+    pub fn decode(bytes: &[u8]) -> serde_bencode::Result<Envelope> {
+        serde_bencode::de::from_bytes(bytes)
+    }
+
+    pub fn encode(&self) -> serde_bencode::Result<Vec<u8>> {
+        serde_bencode::ser::to_bytes(self)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
@@ -44,12 +56,18 @@ pub enum MessageType {
     },
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Error(u8, String);
 
 impl Error {
     fn new(error_code: u8, message: String) -> Error {
         Error(error_code, message)
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 

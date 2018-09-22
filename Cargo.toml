@@ -9,6 +9,10 @@ serde_derive = "1.0.79"
 serde_bencode = { git = "https://github.com/0xcaff/serde-bencode.git" }
 serde_bytes = "0.10.4"
 byteorder = "1.2.6"
+failure_derive = "0.1.2"
+failure = "0.1.2"
+tokio = "0.1.8"
+bytes = "0.4.10"
 
 [dev-dependencies]
 serde_test = "1.0.79"
