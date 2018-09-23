@@ -25,9 +25,6 @@ pub enum ErrorKind {
     #[fail(display = "Failed to parse response")]
     InvalidResponse,
 
-    #[fail(display = "Failed to encode client message")]
-    EncodingRequestFailed,
-
     #[fail(display = "Io Error")]
     IoError,
 }
@@ -45,12 +42,6 @@ impl Fail for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self.inner, f)
-    }
-}
-
-impl Error {
-    pub fn kind(&self) -> ErrorKind {
-        self.inner.get_context().clone()
     }
 }
 

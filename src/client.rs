@@ -1,4 +1,3 @@
-use errors::Error;
 use errors::ErrorKind;
 use errors::Result;
 use failure::ResultExt;
@@ -8,18 +7,13 @@ use proto::Envelope;
 use proto::MessageType;
 use proto::Query;
 
-use tokio::codec::Decoder;
-use tokio::codec::Encoder;
-
 use byteorder::NetworkEndian;
 use byteorder::ReadBytesExt;
 use byteorder::WriteBytesExt;
 
-use bytes::BytesMut;
-
 #[derive(Debug)]
 pub struct Request {
-    transaction_id: u16,
+    transaction_id: u32,
     version: Option<String>,
     query: Query,
 }
@@ -28,7 +22,7 @@ impl Request {
     fn into(self) -> Result<Envelope> {
         let mut transaction_id = Vec::new();
         transaction_id
-            .write_u16::<NetworkEndian>(self.transaction_id)
+            .write_u32::<NetworkEndian>(self.transaction_id)
             .expect("converting request txid for envelope");
 
         Ok(Envelope {
@@ -41,7 +35,7 @@ impl Request {
 
 #[derive(Debug)]
 pub struct Response {
-    transaction_id: u16,
+    transaction_id: u32,
     version: Option<String>,
     response: proto::Response,
 }
@@ -60,7 +54,7 @@ impl Response {
 
         Ok(Response {
             transaction_id: (&envelope.transaction_id[..])
-                .read_u16::<NetworkEndian>()
+                .read_u32::<NetworkEndian>()
                 .context(ErrorKind::InvalidResponse)?,
             version: envelope.version,
             response,
@@ -78,17 +72,15 @@ mod tests {
     use client::Request;
     use client::Response;
     use proto::Query;
-    use std::net::Ipv4Addr;
-    use std::net::SocketAddrV4;
     use std::net::UdpSocket;
 
     #[test]
     fn test_ping() {
-        let mut socket = UdpSocket::bind("0.0.0.0:34254").unwrap();
+        let socket = UdpSocket::bind("0.0.0.0:34254").unwrap();
         let bootstrap_node = "router.bittorrent.com:6881";
-        socket.connect(bootstrap_node);
+        socket.connect(bootstrap_node).unwrap();
 
-        let transaction_id = 0x8a;
+        let transaction_id = 0x8aba;
         let req = Request {
             transaction_id,
             version: None,
