@@ -12,6 +12,12 @@ impl From<Vec<u8>> for NodeID {
     }
 }
 
+impl<'a> From<&'a [u8; 20]> for NodeID {
+    fn from(bytes: &[u8; 20]) -> Self {
+        NodeID(bytes.to_vec())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Envelope {
     #[serde(rename = "t", with = "serde_bytes")]
@@ -144,7 +150,7 @@ mod tests {
             version: None,
             message_type: MessageType::Query {
                 query: Query::Ping {
-                    id: b"abcdefghij0123456789".to_vec().into(),
+                    id: b"abcdefghij0123456789".into(),
                 },
             },
         };
@@ -160,7 +166,7 @@ mod tests {
             version: None,
             message_type: MessageType::Response {
                 response: Response::OnlyId {
-                    id: b"mnopqrstuvwxyz123456".to_vec().into(),
+                    id: b"mnopqrstuvwxyz123456".into(),
                 },
             },
         };
@@ -190,10 +196,10 @@ mod tests {
             version: None,
             message_type: MessageType::Query {
                 query: Query::AnnouncePeer {
-                    id: b"abcdefghij0123456789".to_vec().into(),
+                    id: b"abcdefghij0123456789".into(),
                     implied_port: 1,
                     port: Some(6881),
-                    info_hash: b"mnopqrstuvwxyz123456".to_vec().into(),
+                    info_hash: b"mnopqrstuvwxyz123456".into(),
                     token: "aoeusnth".to_string(),
                 },
             },

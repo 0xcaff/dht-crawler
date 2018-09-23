@@ -10,7 +10,6 @@ use proto::Query;
 
 use tokio::codec::Decoder;
 use tokio::codec::Encoder;
-use tokio::prelude::*;
 
 use byteorder::NetworkEndian;
 use byteorder::ReadBytesExt;
@@ -18,7 +17,8 @@ use byteorder::WriteBytesExt;
 
 use bytes::BytesMut;
 
-struct Request {
+#[derive(Debug)]
+pub struct Request {
     transaction_id: u16,
     version: Option<String>,
     query: Query,
@@ -39,7 +39,8 @@ impl Request {
     }
 }
 
-struct Response {
+#[derive(Debug)]
+pub struct Response {
     transaction_id: u16,
     version: Option<String>,
     response: proto::Response,
@@ -51,7 +52,7 @@ impl Response {
             MessageType::Error { error } => {
                 return Err(ErrorKind::PeerError {
                     protocol_error: error,
-                })?
+                })?;
             }
             MessageType::Query { .. } => return Err(ErrorKind::InvalidResponse)?,
             MessageType::Response { response } => response,
@@ -65,34 +66,45 @@ impl Response {
             response,
         })
     }
-}
 
-struct ClientCodec;
-
-impl Decoder for ClientCodec {
-    type Item = Response;
-    type Error = Error;
-
-    fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>> {
+    fn parse(src: &[u8]) -> Result<Response> {
         let envelope: Envelope = Envelope::decode(&src).context(ErrorKind::InvalidResponse)?;
-        Ok(Some(Response::from(envelope)?))
+        Ok(Response::from(envelope)?)
     }
 }
 
-impl Encoder for ClientCodec {
-    type Item = Request;
-    type Error = Error;
+#[cfg(test)]
+mod tests {
+    use client::Request;
+    use client::Response;
+    use proto::Query;
+    use std::net::Ipv4Addr;
+    use std::net::SocketAddrV4;
+    use std::net::UdpSocket;
 
-    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<()> {
-        let encoded = item
-            .into()?
-            .encode()
-            .context(ErrorKind::EncodingRequestFailed)?;
+    #[test]
+    fn test_ping() {
+        let mut socket = UdpSocket::bind("0.0.0.0:34254").unwrap();
+        let bootstrap_node = "router.bittorrent.com:6881";
+        socket.connect(bootstrap_node);
 
-        (&mut dst[..])
-            .write_all(&encoded)
-            .context(ErrorKind::EncodingRequestFailed)?;
+        let transaction_id = 0x8a;
+        let req = Request {
+            transaction_id,
+            version: None,
+            query: Query::Ping {
+                id: b"abcdefghij0123456789".into(),
+            },
+        };
 
-        Ok(())
+        let req_encoded = req.into().unwrap().encode().unwrap();
+        socket.send(&req_encoded).unwrap();
+
+        let mut recv_buffer = [0 as u8; 1024];
+        socket.recv(&mut recv_buffer).unwrap();
+
+        let resp = Response::parse(&recv_buffer).unwrap();
+
+        assert_eq!(resp.transaction_id, transaction_id);
     }
 }
