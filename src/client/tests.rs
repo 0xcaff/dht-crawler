@@ -69,10 +69,7 @@ fn test_ping_async() {
     let resp = runtime.block_on(request_future).unwrap();
     println!("{:?}", resp);
 
-    // runtime.shutdown_on_idle();
+    runtime.shutdown_on_idle();
 
-    // println!("{:?}", resp);
-    // runtime.shutdown_now().wait().unwrap();
-
-    // assert_eq!(resp.transaction_id, transaction_id)
+    assert_eq!(resp.transaction_id, transaction_id)
 }
