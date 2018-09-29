@@ -5,6 +5,9 @@ extern crate serde;
 extern crate serde_bencode;
 extern crate serde_bytes;
 
+#[macro_use]
+extern crate futures;
+
 extern crate tokio;
 
 extern crate bytes;

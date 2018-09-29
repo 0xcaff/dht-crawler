@@ -5,7 +5,7 @@ use failure::Fail;
 use proto;
 use std;
 use std::fmt;
-use std::io;
+use std::net::SocketAddr;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -25,8 +25,20 @@ pub enum ErrorKind {
     #[fail(display = "Failed to parse response")]
     InvalidResponse,
 
-    #[fail(display = "Io Error")]
-    IoError,
+    #[fail(display = "The lock was poisoned")]
+    LockPoisoned,
+
+    #[fail(display = "Transaction not found. {}", transaction_id)]
+    TransactionNotFound { transaction_id: u32 },
+
+    #[fail(display = "Failed to encode request")]
+    EncodeError,
+
+    #[fail(display = "Failed to send to {}", to)]
+    SendError { to: SocketAddr },
+
+    #[fail(display = "Failed to bind")]
+    BindError,
 }
 
 impl Fail for Error {
@@ -56,13 +68,5 @@ impl From<ErrorKind> for Error {
 impl From<Context<ErrorKind>> for Error {
     fn from(inner: Context<ErrorKind>) -> Error {
         Error { inner }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Self {
-        Error {
-            inner: err.context(ErrorKind::IoError),
-        }
     }
 }
