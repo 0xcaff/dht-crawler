@@ -11,6 +11,7 @@ extern crate futures;
 extern crate tokio;
 
 extern crate bytes;
+extern crate hex;
 
 #[macro_use]
 extern crate failure_derive;

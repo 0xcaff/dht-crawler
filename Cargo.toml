@@ -13,6 +13,7 @@ failure_derive = "0.1.2"
 failure = "0.1.2"
 tokio = "0.1.8"
 futures = "0.1.24"
+hex = "0.3.2"
 bytes = "0.4.10"
 
 [dev-dependencies]

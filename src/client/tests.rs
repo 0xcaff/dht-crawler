@@ -58,10 +58,7 @@ fn test_ping_async() {
     };
 
     let mut runtime = Runtime::new().unwrap();
-    let responses_future = peer
-        .handle_responses()
-        .unwrap()
-        .map_err(|e| println!("{}", e));
+    let responses_future = peer.handle_responses().unwrap().map_err(|_e| ());
 
     let request_future = peer.request(bootstrap_node_addr, req);
 

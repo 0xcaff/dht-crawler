@@ -1,5 +1,7 @@
-use proto::{Envelope, Error, MessageType, Query, Response};
+use proto::{Addr, Envelope, Error, MessageType, NodeInfo, Query, Response};
+
 use serde_bencode;
+
 use std::str;
 
 fn test_serialize_deserialize(parsed: Envelope, raw: &[u8]) {
@@ -131,12 +133,85 @@ fn get_nodes_response_decode() {
         52, 58, 0, 0, 175, 218, 49, 58, 121, 49, 58, 114, 101,
     ];
 
+    let expected = Envelope {
+        ip: Some(Addr("129.21.63.170:34238".parse().unwrap())),
+        transaction_id: vec![0x00, 0x00, 0xAF, 0xDA],
+        version: None,
+        message_type: MessageType::Response {
+            response: Response::NextHop {
+                id: b"32f54e697351ff4aec29cdbaabf2fbe3467cc267".into(),
+                token: None,
+                nodes: vec![
+                    NodeInfo::new(
+                        b"30210b1743281b53c298bd53b8742ce06477e3ac".into(),
+                        "180.211.234.53:1416".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"f73704455d85399c681b00e71d9131acacaa3233".into(),
+                        "36.37.147.240:12664".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"cd09f99367ca2f9376f7380e6e17ba35aea5aaba".into(),
+                        "95.24.216.93:31751".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"c07077106a5c3a7089808a8d4f174518b70455a6".into(),
+                        "93.172.43.127:23157".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"0c812fdfc50a0fb7d56123f0ebed32fcf9c2e1db".into(),
+                        "70.124.69.205:50321".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"6664faa68068445b8cb636365a1502f1c88d1725".into(),
+                        "46.153.74.174:64403".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"a54f14554b7d4dce60192063e1e06755f392fab5".into(),
+                        "81.97.116.190:6881".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"de9deabf3871737ebc1b9553f09735e24af153e2".into(),
+                        "84.251.160.222:48299".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"5628a8ee8d12b8825326762d1c3628299ccad82e".into(),
+                        "98.13.2.205:6881".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"3f9c0cd713b443f3ba136ddd055098f723f3f838".into(),
+                        "42.98.51.123:9304".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"7465722ad0f14da49e1d48cef1347469bc6e6d75".into(),
+                        "79.114.47.76:64186".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"8b9292b2f75d127720ebcd8afe66bfa50c2adc7f".into(),
+                        "2.87.195.123:62705".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"d0fb8538dab41982305879bea3c6176b4a0cbbde".into(),
+                        "49.70.2.154:16001".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"7f4241a48797f052d0e6e7f9d180627be71cdaf5".into(),
+                        "70.55.32.213:17940".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"3426e6d3b38b4b2190decc6c83ccf36685344091".into(),
+                        "124.77.137.19:16001".parse().unwrap(),
+                    ),
+                    NodeInfo::new(
+                        b"0900ed1818270340e3f629cb13aaae62664221f5".into(),
+                        "119.237.152.161:6890".parse().unwrap(),
+                    ),
+                ],
+            },
+        },
+    };
+
     let envelope = Envelope::decode(encoded).unwrap();
 
-    match envelope.message_type {
-        MessageType::Response {
-            response: Response::NextHop { .. },
-        } => (),
-        _ => panic!("Invalid Message Type Found"),
-    };
+    assert_eq!(envelope, expected);
 }

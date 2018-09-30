@@ -3,7 +3,8 @@ use serde_bytes;
 
 use std::fmt;
 
-use super::{Addr, NodeID};
+use super::node_info;
+use super::{Addr, NodeID, NodeInfo};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Envelope {
@@ -98,9 +99,8 @@ pub enum Response {
         /// Empty when the responder decides we are unfit to send AnnouncePeer messages by BEP42.
         token: Option<Vec<u8>>,
 
-        // TODO: Decode Into Nice Data Type
-        #[serde(with = "serde_bytes")]
-        nodes: Vec<u8>,
+        #[serde(with = "node_info")]
+        nodes: Vec<NodeInfo>,
     },
     GetPeers {
         id: NodeID,

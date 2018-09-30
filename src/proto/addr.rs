@@ -17,21 +17,36 @@ use std::net::Ipv4Addr;
 #[derive(Eq, PartialEq, Debug)]
 pub struct Addr(pub SocketAddrV4);
 
+pub fn write_to(addr: &SocketAddrV4, raw: &mut [u8]) {
+    let ip = addr.ip();
+    let port = addr.port();
+
+    raw[..4].clone_from_slice(&ip.octets());
+    (&mut raw[4..])
+        .write_u16::<NetworkEndian>(port)
+        .expect("Failed to encode port.");
+}
+
+fn to_bytes(addr: &SocketAddrV4) -> [u8; 6] {
+    let mut raw = [0u8; 6];
+    write_to(addr, &mut raw);
+
+    raw
+}
+
+pub fn from_bytes(v: &[u8]) -> SocketAddrV4 {
+    let ip = Ipv4Addr::new(v[0], v[1], v[2], v[3]);
+    let port = (&v[4..]).read_u16::<NetworkEndian>().unwrap();
+
+    SocketAddrV4::new(ip, port)
+}
+
 impl Serialize for Addr {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let ip = self.0.ip();
-        let port = self.0.port();
-        let mut raw = [0u8; 6];
-
-        raw[..4].clone_from_slice(&ip.octets());
-        (&mut raw[4..])
-            .write_u16::<NetworkEndian>(port)
-            .expect("Failed to encode port.");
-
-        serializer.serialize_bytes(&raw)
+        serializer.serialize_bytes(&to_bytes(&self.0))
     }
 }
 
@@ -57,10 +72,12 @@ impl<'de> Visitor<'de> for NodeInfoVisitor {
     where
         E: de::Error,
     {
-        let ip = Ipv4Addr::new(v[0], v[1], v[2], v[3]);
-        let port = (&v[4..]).read_u16::<NetworkEndian>().unwrap();
+        let len = v.len();
+        if len != 6 {
+            return Err(de::Error::invalid_length(len, &self));
+        }
 
-        Ok(Addr(SocketAddrV4::new(ip, port)))
+        Ok(Addr(from_bytes(v)))
     }
 }
 
