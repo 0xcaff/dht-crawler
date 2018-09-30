@@ -11,6 +11,7 @@ use std::fmt;
 
 use hex;
 
+/// A 20 byte value representing keys in the DHT.
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub struct NodeID([u8; 20]);
 

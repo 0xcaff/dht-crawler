@@ -1,4 +1,4 @@
-use proto::{Addr, Envelope, Error, MessageType, NodeInfo, Query, Response};
+use proto::{Envelope, Error, MessageType, NodeInfo, Query, Response};
 
 use serde_bencode;
 
@@ -73,7 +73,7 @@ fn announce_peer_request() {
                 implied_port: 1,
                 port: Some(6881),
                 info_hash: b"mnopqrstuvwxyz123456".into(),
-                token: "aoeusnth".to_string(),
+                token: b"aoeusnth".to_vec(),
             },
         },
     };
@@ -134,7 +134,7 @@ fn get_nodes_response_decode() {
     ];
 
     let expected = Envelope {
-        ip: Some(Addr("129.21.63.170:34238".parse().unwrap())),
+        ip: Some("129.21.63.170:34238".parse().unwrap()),
         transaction_id: vec![0x00, 0x00, 0xAF, 0xDA],
         version: None,
         message_type: MessageType::Response {

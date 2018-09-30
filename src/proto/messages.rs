@@ -86,7 +86,9 @@ pub enum Query {
         implied_port: u8,
         port: Option<u16>,
         info_hash: NodeID,
-        token: String,
+
+        #[serde(with = "serde_bytes")]
+        token: Vec<u8>,
     },
 }
 

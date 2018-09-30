@@ -2,9 +2,10 @@ use errors::{ErrorKind, Result};
 use failure::ResultExt;
 
 use proto;
-use proto::{Envelope, MessageType, Query};
+use proto::{Addr, Envelope, MessageType, NodeID, NodeInfo, Query};
 
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
+use std::net::SocketAddrV4;
 
 pub type TransactionId = u32;
 
@@ -66,5 +67,61 @@ impl Response {
     pub fn parse(src: &[u8]) -> Result<Response> {
         let envelope: Envelope = Envelope::decode(&src).context(ErrorKind::InvalidResponse)?;
         Ok(Response::from(envelope)?)
+    }
+}
+
+pub struct FindNodeResponse {
+    pub id: NodeID,
+    pub nodes: Vec<NodeInfo>,
+}
+
+impl FindNodeResponse {
+    pub(crate) fn from_response(resp: Response) -> Result<FindNodeResponse> {
+        Ok(match resp.response {
+            proto::Response::NextHop { id, nodes, .. } => FindNodeResponse { id, nodes },
+            _ => Err(ErrorKind::InvalidResponseType)?,
+        })
+    }
+}
+
+pub struct GetPeersResponse {
+    pub id: NodeID,
+    pub token: Option<Vec<u8>>,
+    pub message_type: GetPeersResponseType,
+}
+
+impl GetPeersResponse {
+    pub(crate) fn from_response(response: Response) -> Result<GetPeersResponse> {
+        Ok(match response.response {
+            proto::Response::GetPeers { id, token, peers } => GetPeersResponse {
+                id,
+                token,
+                message_type: GetPeersResponseType::Peers(
+                    peers.into_iter().map(Addr::into).collect(),
+                ),
+            },
+            proto::Response::NextHop { id, token, nodes } => GetPeersResponse {
+                id,
+                token,
+                message_type: GetPeersResponseType::NextHop(nodes),
+            },
+            _ => Err(ErrorKind::InvalidResponseType)?,
+        })
+    }
+}
+
+pub enum GetPeersResponseType {
+    Peers(Vec<SocketAddrV4>),
+    NextHop(Vec<NodeInfo>),
+}
+
+pub(crate) struct NodeIDResponse;
+
+impl NodeIDResponse {
+    pub(crate) fn from_response(resp: Response) -> Result<NodeID> {
+        Ok(match resp.response {
+            proto::Response::OnlyId { id } => id,
+            _ => Err(ErrorKind::InvalidResponseType)?,
+        })
     }
 }

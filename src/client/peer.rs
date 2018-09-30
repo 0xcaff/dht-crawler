@@ -24,7 +24,9 @@ use tokio;
 use tokio::prelude::*;
 use tokio::reactor::Handle;
 
-use client::messages::{Request, Response, TransactionId};
+use client::messages::{
+    FindNodeResponse, GetPeersResponse, NodeIDResponse, Request, Response, TransactionId,
+};
 
 type TransactionMap = HashMap<TransactionId, TxState>;
 
@@ -131,11 +133,65 @@ impl Peer {
             Self::build_request(Query::Ping {
                 id: self.id.clone(),
             }),
-        ).and_then(|resp| match resp.response {
-            proto::Response::OnlyId { id } => Ok(id),
-            _ => Err(ErrorKind::InvalidResponseType)?,
-        })
+        ).and_then(NodeIDResponse::from_response)
     }
+
+    pub fn find_node(
+        &self,
+        address: SocketAddr,
+        target: NodeID,
+    ) -> impl Future<Item = FindNodeResponse, Error = Error> {
+        self.request(
+            address,
+            Self::build_request(Query::FindNode {
+                id: self.id.clone(),
+                target,
+            }),
+        ).and_then(FindNodeResponse::from_response)
+    }
+
+    pub fn get_peers(
+        &self,
+        address: SocketAddr,
+        info_hash: NodeID,
+    ) -> impl Future<Item = GetPeersResponse, Error = Error> {
+        self.request(
+            address,
+            Self::build_request(Query::GetPeers {
+                id: self.id.clone(),
+                info_hash,
+            }),
+        ).and_then(GetPeersResponse::from_response)
+    }
+
+    pub fn announce_peer(
+        &self,
+        token: Vec<u8>,
+        address: SocketAddr,
+        info_hash: NodeID,
+        port_type: PortType,
+    ) -> impl Future<Item = NodeID, Error = Error> {
+        let (port, implied_port) = match port_type {
+            PortType::Implied => (None, 1),
+            PortType::Port(port) => (Some(port), 0),
+        };
+
+        self.request(
+            address,
+            Self::build_request(Query::AnnouncePeer {
+                id: self.id.clone(),
+                token,
+                info_hash,
+                port,
+                implied_port,
+            }),
+        ).and_then(NodeIDResponse::from_response)
+    }
+}
+
+pub enum PortType {
+    Implied,
+    Port(u16),
 }
 
 /// A future which handles sending and receiving messages for the local peer.

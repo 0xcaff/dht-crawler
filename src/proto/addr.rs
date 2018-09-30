@@ -5,17 +5,49 @@ use serde::de;
 use serde::Deserialize;
 use serde::Deserializer;
 
-use std::net::SocketAddrV4;
-
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use core::fmt;
 use serde::de::Visitor;
+
 use std::net::Ipv4Addr;
+use std::net::SocketAddrV4;
+use std::ops::Deref;
+use std::str::FromStr;
 
 /// Wrapper type handling compact serialization and de-serialization of ip address and port
 /// information. Defined in BEP5.
 #[derive(Eq, PartialEq, Debug)]
-pub struct Addr(pub SocketAddrV4);
+pub struct Addr(SocketAddrV4);
+
+impl Deref for Addr {
+    type Target = SocketAddrV4;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Into<SocketAddrV4> for Addr {
+    fn into(self) -> SocketAddrV4 {
+        self.0
+    }
+}
+
+impl From<SocketAddrV4> for Addr {
+    fn from(addr: SocketAddrV4) -> Self {
+        Addr(addr)
+    }
+}
+
+impl FromStr for Addr {
+    type Err = <SocketAddrV4 as FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let addr: SocketAddrV4 = s.parse()?;
+
+        Ok(Addr::from(addr))
+    }
+}
 
 pub fn write_to(addr: &SocketAddrV4, raw: &mut [u8]) {
     let ip = addr.ip();
@@ -86,7 +118,7 @@ mod tests {
     extern crate serde_test;
 
     use self::serde_test::{assert_tokens, Token};
-    use proto::Addr;
+    use super::Addr;
     use std::net::Ipv4Addr;
     use std::net::SocketAddrV4;
 
@@ -96,8 +128,9 @@ mod tests {
         let port = 12019;
         let socket_addr = SocketAddrV4::new(addr, port);
 
-        let node_info = Addr(socket_addr);
-
-        assert_tokens(&node_info, &[Token::Bytes(&[129, 21, 60, 66, 0x2e, 0xf3])]);
+        assert_tokens(
+            &Addr::from(socket_addr),
+            &[Token::Bytes(&[129, 21, 60, 66, 0x2e, 0xf3])],
+        );
     }
 }
