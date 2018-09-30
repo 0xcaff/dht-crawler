@@ -12,6 +12,7 @@ extern crate tokio;
 
 extern crate bytes;
 extern crate hex;
+extern crate rand;
 
 #[macro_use]
 extern crate failure_derive;

@@ -4,10 +4,12 @@ use errors::Result;
 use failure::ResultExt;
 
 use proto;
-use proto::Envelope;
+use proto::{Envelope, NodeID, Query};
 
 use byteorder::NetworkEndian;
 use byteorder::ReadBytesExt;
+
+use rand;
 
 use std;
 use std::collections::HashMap;
@@ -39,6 +41,8 @@ enum TxState {
 }
 
 pub struct Peer {
+    id: NodeID,
+
     /// Socket used for sending messages
     send_socket: std::net::UdpSocket,
 
@@ -51,6 +55,7 @@ impl Peer {
         let send_socket = std::net::UdpSocket::bind(&bind_address).context(ErrorKind::BindError)?;
 
         Ok(Peer {
+            id: NodeID::random(),
             send_socket,
             transactions: Arc::new(Mutex::new(HashMap::new())),
         })
@@ -67,7 +72,7 @@ impl Peer {
         })
     }
 
-    pub fn request(
+    pub(super) fn request(
         &self,
         address: SocketAddr,
         request: Request,
@@ -106,6 +111,30 @@ impl Peer {
             transaction_id,
             transactions: self.transactions.clone(),
         }
+    }
+
+    fn get_transaction_id() -> TransactionId {
+        rand::random::<TransactionId>()
+    }
+
+    fn build_request(query: Query) -> Request {
+        Request {
+            transaction_id: Self::get_transaction_id(),
+            version: None,
+            query,
+        }
+    }
+
+    pub fn ping(&self, address: SocketAddr) -> impl Future<Item = NodeID, Error = Error> {
+        self.request(
+            address,
+            Self::build_request(Query::Ping {
+                id: self.id.clone(),
+            }),
+        ).and_then(|resp| match resp.response {
+            proto::Response::OnlyId { id } => Ok(id),
+            _ => Err(ErrorKind::InvalidResponseType)?,
+        })
     }
 }
 

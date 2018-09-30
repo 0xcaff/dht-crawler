@@ -25,6 +25,9 @@ pub enum ErrorKind {
     #[fail(display = "Failed to parse response")]
     InvalidResponse,
 
+    #[fail(display = "The response received wasn't the type expected for the request")]
+    InvalidResponseType,
+
     #[fail(display = "The lock was poisoned")]
     LockPoisoned,
 

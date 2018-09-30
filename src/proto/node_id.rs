@@ -1,3 +1,5 @@
+use rand;
+
 use serde::de;
 use serde::de::Visitor;
 use serde::Deserialize;
@@ -13,8 +15,8 @@ use hex;
 pub struct NodeID([u8; 20]);
 
 impl NodeID {
-    pub fn get_bytes(&self) -> &[u8; 20] {
-        &self.0
+    pub fn random() -> NodeID {
+        rand::random::<[u8; 20]>().into()
     }
 
     pub fn from_bytes(bytes: &[u8]) -> NodeID {
@@ -29,6 +31,10 @@ impl NodeID {
         let bytes = hex::decode(raw).unwrap();
 
         NodeID::from_bytes(&bytes)
+    }
+
+    pub fn get_bytes(&self) -> &[u8; 20] {
+        &self.0
     }
 }
 

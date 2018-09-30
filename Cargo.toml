@@ -16,6 +16,7 @@ futures = "0.1.24"
 hex = "0.3.2"
 bytes = "0.4.10"
 chrono = "0.4.6"
+rand = "0.5.5"
 
 [dev-dependencies]
 serde_test = "1.0.79"

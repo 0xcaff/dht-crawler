@@ -96,3 +96,20 @@ fn test_find_node() {
         _ => assert!(false),
     };
 }
+
+#[test]
+fn simple_ping() {
+    let bind = SocketAddr::from_str("0.0.0.0:31423").unwrap();
+    let remote = "router.bittorrent.com:6881"
+        .to_socket_addrs()
+        .unwrap()
+        .next()
+        .unwrap();
+    let mut rt = Runtime::new().unwrap();
+
+    let peer = Peer::new(bind).unwrap();
+    rt.spawn(peer.handle_responses().unwrap().map_err(|_| ()));
+    let response = rt.block_on(peer.ping(remote)).unwrap();
+
+    assert_ne!(response, b"0000000000000000000000000000000000000000".into())
+}
