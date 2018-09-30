@@ -19,10 +19,6 @@ jobs:
     steps:
     - checkout
 
-    - run:
-        name: Check Formatting
-        command: cargo fmt -- --check
-
     - restore_cache: *restore_cargo_cache
 
     - run:
