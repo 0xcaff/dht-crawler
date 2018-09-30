@@ -17,10 +17,10 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use futures::task::Task;
 use tokio;
 use tokio::prelude::*;
 use tokio::reactor::Handle;
-use futures::task::Task;
 
 use client::messages::{Request, Response, TransactionId};
 
