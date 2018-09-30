@@ -12,10 +12,12 @@ use core::fmt;
 use serde::de::Visitor;
 use std::net::Ipv4Addr;
 
+/// Wrapper type handling compact serialization and de-serialization of ip address and port
+/// information. Defined in BEP5.
 #[derive(Eq, PartialEq, Debug)]
-pub struct NodeInfo(pub SocketAddrV4);
+pub struct Addr(pub SocketAddrV4);
 
-impl Serialize for NodeInfo {
+impl Serialize for Addr {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -33,7 +35,7 @@ impl Serialize for NodeInfo {
     }
 }
 
-impl<'de> Deserialize<'de> for NodeInfo {
+impl<'de> Deserialize<'de> for Addr {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -45,7 +47,7 @@ impl<'de> Deserialize<'de> for NodeInfo {
 struct NodeInfoVisitor;
 
 impl<'de> Visitor<'de> for NodeInfoVisitor {
-    type Value = NodeInfo;
+    type Value = Addr;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a byte array of size 6")
@@ -58,7 +60,7 @@ impl<'de> Visitor<'de> for NodeInfoVisitor {
         let ip = Ipv4Addr::new(v[0], v[1], v[2], v[3]);
         let port = (&v[4..]).read_u16::<NetworkEndian>().unwrap();
 
-        Ok(NodeInfo(SocketAddrV4::new(ip, port)))
+        Ok(Addr(SocketAddrV4::new(ip, port)))
     }
 }
 
@@ -67,7 +69,7 @@ mod tests {
     extern crate serde_test;
 
     use self::serde_test::{assert_tokens, Token};
-    use proto::NodeInfo;
+    use proto::Addr;
     use std::net::Ipv4Addr;
     use std::net::SocketAddrV4;
 
@@ -77,7 +79,7 @@ mod tests {
         let port = 12019;
         let socket_addr = SocketAddrV4::new(addr, port);
 
-        let node_info = NodeInfo(socket_addr);
+        let node_info = Addr(socket_addr);
 
         assert_tokens(&node_info, &[Token::Bytes(&[129, 21, 60, 66, 0x2e, 0xf3])]);
     }

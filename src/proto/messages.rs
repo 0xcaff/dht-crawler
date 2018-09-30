@@ -3,12 +3,12 @@ use serde_bytes;
 
 use std::fmt;
 
-use super::{NodeID, NodeInfo};
+use super::{Addr, NodeID};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Envelope {
     /// Public IP address of the requester. Only sent by peers supporting BEP42.
-    pub ip: Option<NodeInfo>,
+    pub ip: Option<Addr>,
 
     #[serde(rename = "t", with = "serde_bytes")]
     pub transaction_id: Vec<u8>,
@@ -108,7 +108,8 @@ pub enum Response {
         /// Empty when the responder decides we are unfit to send AnnouncePeer messages by BEP42.
         token: Option<Vec<u8>>,
 
-        peers: Vec<NodeInfo>,
+        #[serde(rename = "values")]
+        peers: Vec<Addr>,
     },
     /// Sent in response to Ping and AnnouncePeer
     OnlyId { id: NodeID },
