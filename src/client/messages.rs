@@ -23,6 +23,7 @@ impl Request {
             .expect("converting request txid for envelope");
 
         Ok(Envelope {
+            ip: None,
             transaction_id,
             version: self.version,
             message_type: MessageType::Query { query: self.query },

@@ -13,6 +13,7 @@ fn test_serialize_deserialize(parsed: Envelope, raw: &[u8]) {
 #[test]
 fn ping_request() {
     let parsed = Envelope {
+        ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
         message_type: MessageType::Query {
@@ -29,6 +30,7 @@ fn ping_request() {
 #[test]
 fn ping_response() {
     let parsed = Envelope {
+        ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
         message_type: MessageType::Response {
@@ -45,6 +47,7 @@ fn ping_response() {
 #[test]
 fn error() {
     let parsed = Envelope {
+        ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
         message_type: MessageType::Error {
@@ -59,6 +62,7 @@ fn error() {
 #[test]
 fn announce_peer_request() {
     let parsed = Envelope {
+        ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
         message_type: MessageType::Query {
@@ -79,11 +83,13 @@ fn announce_peer_request() {
 #[test]
 fn get_nodes_response() {
     let parsed = Envelope {
+        ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
         message_type: MessageType::Response {
-            response: Response::FindNode {
+            response: Response::NextHop {
                 id: b"abcdefghij0123456789".into(),
+                token: None,
                 nodes: Vec::new(),
             },
         },
@@ -127,11 +133,9 @@ fn get_nodes_response_decode() {
 
     let envelope = Envelope::decode(encoded).unwrap();
 
-    println!("{:#?}", envelope);
-
     match envelope.message_type {
         MessageType::Response {
-            response: Response::GetPeers { .. },
+            response: Response::NextHop { .. },
         } => (),
         _ => panic!("Invalid Message Type Found"),
     };
