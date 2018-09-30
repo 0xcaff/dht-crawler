@@ -9,7 +9,7 @@ use std::fmt;
 
 use hex;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub struct NodeID([u8; 20]);
 
 impl NodeID {
