@@ -21,5 +21,4 @@ extern crate core;
 
 mod client;
 mod errors;
-mod node_info;
 mod proto;

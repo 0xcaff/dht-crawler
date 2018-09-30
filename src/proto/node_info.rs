@@ -67,7 +67,7 @@ mod tests {
     extern crate serde_test;
 
     use self::serde_test::{assert_tokens, Token};
-    use node_info::NodeInfo;
+    use proto::NodeInfo;
     use std::net::Ipv4Addr;
     use std::net::SocketAddrV4;
 
