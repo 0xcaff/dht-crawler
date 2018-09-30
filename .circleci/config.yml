@@ -1,0 +1,38 @@
+version: 2
+
+aliases:
+- &save_cargo_cache
+  key: cargo-{{ checksum "Cargo.lock" }}
+  paths:
+  - target
+  - ~/.cargo
+
+- &restore_cargo_cache
+  keys:
+  - cargo-{{ checksum "Cargo.lock" }}
+
+jobs:
+  test:
+    docker:
+    - image: rust:1.29
+
+    steps:
+    - checkout
+
+    - run:
+        name: Check Formatting
+        command: cargo fmt -- --check
+
+    - restore_cache: *restore_cargo_cache
+
+    - run:
+        name: Tests
+        command: cargo test
+
+    - save_cache: *save_cargo_cache
+
+workflows:
+  version: 2
+  test:
+    jobs:
+    - test
