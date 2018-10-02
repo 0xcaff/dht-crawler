@@ -1,6 +1,5 @@
-use peer::inbound::TxState;
+use peer::inbound::{TransactionMap, TxState};
 use peer::messages::TransactionId;
-use peer::peer::TransactionMap;
 use proto::Envelope;
 
 use errors::{Error, ErrorKind, Result};
@@ -37,17 +36,19 @@ impl Future for ResponseFuture {
             .lock()
             .map_err(|_| ErrorKind::LockPoisoned)?;
 
-        let tx_state = map.remove(&self.transaction_id);
+        let tx_state =
+            map.remove(&self.transaction_id)
+                .ok_or_else(|| ErrorKind::TransactionNotFound {
+                    transaction_id: self.transaction_id,
+                })?;
 
-        match tx_state {
-            None => Err(ErrorKind::TransactionNotFound {
-                transaction_id: self.transaction_id,
-            })?,
-            Some(tx_state @ TxState::AwaitingResponse { task: Some(..) }) => {
+        Ok(match tx_state {
+            TxState::AwaitingResponse { task: Some(..) } => {
                 map.insert(self.transaction_id, tx_state);
-                Ok(Async::NotReady)
+
+                Async::NotReady
             }
-            Some(TxState::AwaitingResponse { task: None }) => {
+            TxState::AwaitingResponse { task: None } => {
                 let task = task::current();
 
                 map.insert(
@@ -55,9 +56,9 @@ impl Future for ResponseFuture {
                     TxState::AwaitingResponse { task: Some(task) },
                 );
 
-                Ok(Async::NotReady)
+                Async::NotReady
             }
-            Some(TxState::GotResponse { response }) => Ok(Async::Ready(response)),
-        }
+            TxState::GotResponse { response } => Async::Ready(response),
+        })
     }
 }

@@ -14,13 +14,11 @@ use tokio;
 use tokio::prelude::*;
 use tokio::reactor::Handle;
 
-use peer::inbound::{InboundMessagesFuture, TxState};
+use peer::inbound::{InboundMessagesFuture, TransactionMap, TxState};
 use peer::messages::{
     FindNodeResponse, GetPeersResponse, NodeIDResponse, PortType, Request, Response, TransactionId,
 };
 use peer::response::ResponseFuture;
-
-pub type TransactionMap = HashMap<TransactionId, TxState>;
 
 pub struct Peer {
     id: NodeID,

@@ -1,12 +1,13 @@
 use std;
+use std::collections::HashMap;
 use std::io;
 use std::sync::{Arc, Mutex};
 
 use byteorder::NetworkEndian;
 use byteorder::ReadBytesExt;
 
-use peer::peer::TransactionMap;
-use proto::Envelope;
+use peer::messages::TransactionId;
+use proto::{Envelope, MessageType};
 
 use errors::{ErrorKind, Result};
 use failure::ResultExt;
@@ -14,6 +15,8 @@ use failure::ResultExt;
 use futures::task::Task;
 use tokio;
 use tokio::prelude::*;
+
+pub type TransactionMap = HashMap<TransactionId, TxState>;
 
 pub enum TxState {
     AwaitingResponse {
@@ -52,6 +55,15 @@ impl InboundMessagesFuture {
     fn handle_inbound_message(&self, buf: &[u8]) -> Result<()> {
         let envelope = Envelope::decode(&buf).context(ErrorKind::InvalidResponse)?;
 
+        match envelope.message_type {
+            MessageType::Error { .. } | MessageType::Response { .. } => {
+                self.handle_response(envelope)
+            }
+            MessageType::Query { .. } => self.handle_request(envelope),
+        }
+    }
+
+    fn handle_response(&self, envelope: Envelope) -> Result<()> {
         let transaction_id = (&envelope.transaction_id[..])
             .read_u32::<NetworkEndian>()
             .context(ErrorKind::InvalidResponse)?;
@@ -61,25 +73,29 @@ impl InboundMessagesFuture {
             .lock()
             .map_err(|_| ErrorKind::LockPoisoned)?;
 
-        let tx_state = map.remove(&transaction_id);
+        let tx_state = map
+            .remove(&transaction_id)
+            .ok_or_else(|| ErrorKind::TransactionNotFound { transaction_id })?;
 
-        let task = match tx_state {
-            None => return Ok(()),
-            Some(tx_state @ TxState::GotResponse { .. }) => {
+        match tx_state {
+            TxState::GotResponse { .. } => {
                 map.insert(transaction_id, tx_state);
-
-                return Ok(());
             }
-            Some(TxState::AwaitingResponse { task }) => task,
-        };
+            TxState::AwaitingResponse { task } => {
+                map.insert(transaction_id, TxState::GotResponse { response: envelope });
 
-        map.insert(transaction_id, TxState::GotResponse { response: envelope });
-
-        if let Some(task) = task {
-            task.notify();
+                if let Some(task) = task {
+                    task.notify();
+                };
+            }
         };
 
         Ok(())
+    }
+
+    fn handle_request(&self, envelope: Envelope) -> Result<()> {
+        // TODO: Implement
+        unimplemented!()
     }
 }
 
