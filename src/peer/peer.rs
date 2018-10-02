@@ -1,46 +1,26 @@
-use errors::Error;
-use errors::ErrorKind;
-use errors::Result;
+use errors::{Error, ErrorKind, Result};
 use failure::ResultExt;
 
-use proto;
-use proto::{Envelope, NodeID, Query};
-
-use byteorder::NetworkEndian;
-use byteorder::ReadBytesExt;
+use proto::{NodeID, Query};
 
 use rand;
 
 use std;
 use std::collections::HashMap;
-use std::io;
 use std::net::SocketAddr;
+use std::sync::{Arc, Mutex};
 
-use std::sync::Arc;
-use std::sync::Mutex;
-
-use futures::task::Task;
 use tokio;
 use tokio::prelude::*;
 use tokio::reactor::Handle;
 
-use client::messages::{
-    FindNodeResponse, GetPeersResponse, NodeIDResponse, Request, Response, TransactionId,
+use peer::inbound::{InboundMessagesFuture, TxState};
+use peer::messages::{
+    FindNodeResponse, GetPeersResponse, NodeIDResponse, PortType, Request, Response, TransactionId,
 };
+use peer::response::ResponseFuture;
 
-type TransactionMap = HashMap<TransactionId, TxState>;
-
-enum TxState {
-    AwaitingResponse {
-        /// Task to awake when response is received. None if poll hasn't been called for this tx
-        /// yet.
-        task: Option<Task>,
-    },
-
-    GotResponse {
-        response: proto::Envelope,
-    },
-}
+pub type TransactionMap = HashMap<TransactionId, TxState>;
 
 pub struct Peer {
     id: NodeID,
@@ -63,18 +43,18 @@ impl Peer {
         })
     }
 
-    pub fn handle_responses(&self) -> Result<PeerFuture> {
+    pub fn handle_responses(&self) -> Result<InboundMessagesFuture> {
         let raw_recv_socket = self.send_socket.try_clone().context(ErrorKind::BindError)?;
         let recv_socket = tokio::net::UdpSocket::from_std(raw_recv_socket, &Handle::default())
             .context(ErrorKind::BindError)?;
 
-        Ok(PeerFuture {
+        Ok(InboundMessagesFuture::new(
             recv_socket,
-            transactions: self.transactions.clone(),
-        })
+            self.transactions.clone(),
+        ))
     }
 
-    pub(super) fn request(
+    pub fn request(
         &self,
         address: SocketAddr,
         request: Request,
@@ -108,11 +88,8 @@ impl Peer {
         Ok(())
     }
 
-    fn wait_for_response(&self, transaction_id: TransactionId) -> TransactionFuture {
-        TransactionFuture {
-            transaction_id,
-            transactions: self.transactions.clone(),
-        }
+    fn wait_for_response(&self, transaction_id: TransactionId) -> ResponseFuture {
+        ResponseFuture::new(transaction_id, self.transactions.clone())
     }
 
     fn get_transaction_id() -> TransactionId {
@@ -186,111 +163,5 @@ impl Peer {
                 implied_port,
             }),
         ).and_then(NodeIDResponse::from_response)
-    }
-}
-
-pub enum PortType {
-    Implied,
-    Port(u16),
-}
-
-/// A future which handles sending and receiving messages for the local peer.
-pub struct PeerFuture {
-    /// Socket for receiving messages from other peers
-    recv_socket: tokio::net::UdpSocket,
-
-    /// Collection of in-flight transactions awaiting a response
-    transactions: Arc<Mutex<TransactionMap>>,
-}
-
-impl PeerFuture {
-    fn handle_response(&self, buf: &[u8]) -> Result<()> {
-        let envelope = Envelope::decode(&buf).context(ErrorKind::InvalidResponse)?;
-
-        let transaction_id = (&envelope.transaction_id[..])
-            .read_u32::<NetworkEndian>()
-            .context(ErrorKind::InvalidResponse)?;
-
-        let mut map = self
-            .transactions
-            .lock()
-            .map_err(|_| ErrorKind::LockPoisoned)?;
-
-        let tx_state = map.remove(&transaction_id);
-
-        let task = match tx_state {
-            None => return Ok(()),
-            Some(tx_state @ TxState::GotResponse { .. }) => {
-                map.insert(transaction_id, tx_state);
-
-                return Ok(());
-            }
-            Some(TxState::AwaitingResponse { task }) => task,
-        };
-
-        map.insert(transaction_id, TxState::GotResponse { response: envelope });
-
-        if let Some(task) = task {
-            task.notify();
-        };
-
-        Ok(())
-    }
-}
-
-impl Future for PeerFuture {
-    type Item = ();
-    type Error = io::Error;
-
-    fn poll(&mut self) -> std::result::Result<Async<Self::Item>, Self::Error> {
-        let mut recv_buffer = [0 as u8; 1024];
-
-        loop {
-            try_ready!(self.recv_socket.poll_recv_from(&mut recv_buffer));
-            self.handle_response(&recv_buffer).is_err();
-        }
-    }
-}
-
-/// A future which resolves when the response for a transaction appears in a peer's transaction map.
-struct TransactionFuture {
-    transaction_id: TransactionId,
-
-    /// Collection of in-flight transactions awaiting a response
-    transactions: Arc<Mutex<TransactionMap>>,
-}
-
-impl Future for TransactionFuture {
-    type Item = Envelope;
-    type Error = Error;
-
-    fn poll(&mut self) -> Result<Async<Self::Item>> {
-        let mut map = self
-            .transactions
-            .lock()
-            .map_err(|_| ErrorKind::LockPoisoned)?;
-
-        let tx_state = map.remove(&self.transaction_id);
-
-        match tx_state {
-            None => Err(ErrorKind::TransactionNotFound {
-                transaction_id: self.transaction_id,
-            })?,
-            Some(tx_state @ TxState::AwaitingResponse { task: Some(..) }) => {
-                map.insert(self.transaction_id, tx_state);
-                Ok(Async::NotReady)
-            }
-            Some(TxState::AwaitingResponse { task: None }) => {
-                let task = task::current();
-
-                map.insert(
-                    self.transaction_id,
-                    TxState::AwaitingResponse { task: Some(task) },
-                );
-
-                Ok(Async::NotReady)
-            }
-            Some(TxState::GotResponse { response }) => Ok(Async::Ready(response)),
-        }
     }
 }

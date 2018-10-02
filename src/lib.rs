@@ -22,7 +22,7 @@ extern crate byteorder;
 extern crate chrono;
 extern crate core;
 
-mod client;
 mod errors;
+mod peer;
 mod proto;
 mod routing;

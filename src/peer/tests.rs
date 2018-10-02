@@ -1,5 +1,5 @@
-use client::messages::{Request, Response};
-use client::peer::Peer;
+use peer::messages::{Request, Response};
+use peer::peer::Peer;
 
 use proto;
 use proto::Query;

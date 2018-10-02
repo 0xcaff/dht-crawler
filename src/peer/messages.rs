@@ -9,6 +9,11 @@ use std::net::SocketAddrV4;
 
 pub type TransactionId = u32;
 
+pub enum PortType {
+    Implied,
+    Port(u16),
+}
+
 #[derive(Debug)]
 pub struct Request {
     pub transaction_id: TransactionId,
@@ -76,7 +81,7 @@ pub struct FindNodeResponse {
 }
 
 impl FindNodeResponse {
-    pub(crate) fn from_response(resp: Response) -> Result<FindNodeResponse> {
+    pub fn from_response(resp: Response) -> Result<FindNodeResponse> {
         Ok(match resp.response {
             proto::Response::NextHop { id, nodes, .. } => FindNodeResponse { id, nodes },
             _ => Err(ErrorKind::InvalidResponseType)?,
@@ -91,7 +96,7 @@ pub struct GetPeersResponse {
 }
 
 impl GetPeersResponse {
-    pub(crate) fn from_response(response: Response) -> Result<GetPeersResponse> {
+    pub fn from_response(response: Response) -> Result<GetPeersResponse> {
         Ok(match response.response {
             proto::Response::GetPeers { id, token, peers } => GetPeersResponse {
                 id,
@@ -115,10 +120,10 @@ pub enum GetPeersResponseType {
     NextHop(Vec<NodeInfo>),
 }
 
-pub(crate) struct NodeIDResponse;
+pub struct NodeIDResponse;
 
 impl NodeIDResponse {
-    pub(crate) fn from_response(resp: Response) -> Result<NodeID> {
+    pub fn from_response(resp: Response) -> Result<NodeID> {
         Ok(match resp.response {
             proto::Response::OnlyId { id } => id,
             _ => Err(ErrorKind::InvalidResponseType)?,
