@@ -90,6 +90,10 @@ pub enum Query {
         #[serde(with = "serde_bytes")]
         token: Vec<u8>,
     },
+
+    /// `sample_infohashes` request from BEP51.
+    #[serde(rename = "sample_infohashes")]
+    SampleInfoHashes { id: NodeID, target: NodeID },
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
@@ -115,4 +119,23 @@ pub enum Response {
     },
     /// Sent in response to Ping and AnnouncePeer
     OnlyId { id: NodeID },
+
+    /// Response to SampleInfoHashes from BEP51.
+    Samples {
+        /// Identifier of sending node
+        id: NodeID,
+
+        /// Number of seconds this node should not be queried again for
+        interval: Option<u16>,
+
+        /// Nodes close to target in request
+        #[serde(with = "node_info")]
+        nodes: Vec<NodeInfo>,
+
+        /// Number of info hashes this peer has
+        num: Option<u32>,
+
+        /// Sample of info-hashes
+        samples: Vec<NodeID>,
+    },
 }
