@@ -14,7 +14,7 @@ use tokio;
 use tokio::prelude::*;
 use tokio::reactor::Handle;
 
-use peer::inbound::{InboundMessagesFuture, TransactionMap, TxState};
+use peer::inbound::{InboundMessagesFuture, TransactionMap};
 use peer::messages::{
     FindNodeResponse, GetPeersResponse, NodeIDResponse, PortType, Request, Response, TransactionId,
 };
@@ -57,11 +57,13 @@ impl Peer {
         address: SocketAddr,
         request: Request,
     ) -> impl Future<Item = Response, Error = Error> {
-        let transaction_future = self.wait_for_response(request.transaction_id);
+        let transaction_future_result =
+            ResponseFuture::wait_for_tx(request.transaction_id, self.transactions.clone());
 
         self.send_request(address, request)
             .into_future()
-            .and_then(move |_| transaction_future)
+            .and_then(move |_| transaction_future_result)
+            .and_then(|fut| fut)
             .and_then(|envelope| Response::from(envelope))
     }
 
@@ -77,17 +79,7 @@ impl Peer {
             .send_to(&encoded, &address)
             .with_context(|_| ErrorKind::SendError { to: address })?;
 
-        self.transactions
-            .lock()
-            .map_err(|_| ErrorKind::LockPoisoned)
-            .with_context(|_| ErrorKind::SendError { to: address })?
-            .insert(transaction_id, TxState::AwaitingResponse { task: None });
-
         Ok(())
-    }
-
-    fn wait_for_response(&self, transaction_id: TransactionId) -> ResponseFuture {
-        ResponseFuture::new(transaction_id, self.transactions.clone())
     }
 
     fn get_transaction_id() -> TransactionId {

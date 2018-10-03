@@ -15,7 +15,31 @@ pub struct ResponseFuture {
 }
 
 impl ResponseFuture {
-    pub fn new(
+    pub fn wait_for_tx(
+        transaction_id: TransactionId,
+        transactions: Arc<Mutex<TransactionMap>>,
+    ) -> Result<ResponseFuture> {
+        let fut = ResponseFuture::new(transaction_id, transactions);
+        fut.add_to_tx_map()?;
+
+        Ok(fut)
+    }
+
+    fn add_to_tx_map(&self) -> Result<()> {
+        let mut map = self
+            .transactions
+            .lock()
+            .map_err(|_| ErrorKind::LockPoisoned)?;
+
+        map.insert(
+            self.transaction_id,
+            TxState::AwaitingResponse { task: None },
+        );
+
+        Ok(())
+    }
+
+    fn new(
         transaction_id: TransactionId,
         transactions: Arc<Mutex<TransactionMap>>,
     ) -> ResponseFuture {
@@ -60,5 +84,43 @@ impl Future for ResponseFuture {
             }
             TxState::GotResponse { response } => Async::Ready(response),
         })
+    }
+}
+
+impl Drop for ResponseFuture {
+    fn drop(&mut self) {
+        self.transactions
+            .lock()
+            .map(|mut map| map.remove(&self.transaction_id))
+            .is_ok();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
+
+    use super::ResponseFuture;
+    use peer::inbound::TxState;
+
+    #[test]
+    fn test_drop() {
+        let transaction_id = 0xafu32;
+        let transactions = Arc::new(Mutex::new(HashMap::new()));
+
+        {
+            let fut = ResponseFuture::wait_for_tx(transaction_id, transactions.clone()).unwrap();
+
+            let transactions = transactions.lock().unwrap();
+            let transaction = transactions.get(&transaction_id).unwrap();
+
+            match transaction {
+                TxState::AwaitingResponse { task: None } => assert!(true),
+                _ => assert!(false),
+            };
+        }
+
+        assert!(transactions.lock().unwrap().get(&transaction_id).is_none());
     }
 }
