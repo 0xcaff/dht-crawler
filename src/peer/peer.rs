@@ -10,15 +10,18 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
+use byteorder::{NetworkEndian, WriteBytesExt};
+
 use tokio;
 use tokio::prelude::*;
 use tokio::reactor::Handle;
 
-use peer::inbound::{InboundMessagesFuture, TransactionMap};
+use peer::inbound::InboundMessageStream;
 use peer::messages::{
     FindNodeResponse, GetPeersResponse, NodeIDResponse, PortType, Request, Response, TransactionId,
 };
-use peer::response::ResponseFuture;
+use peer::response::{ResponseFuture, TransactionMap};
+use proto::MessageType;
 
 pub struct Peer {
     id: NodeID,
@@ -41,26 +44,37 @@ impl Peer {
         })
     }
 
-    pub fn handle_responses(&self) -> Result<InboundMessagesFuture> {
+    pub fn handle_inbound(&self) -> Result<impl Stream<Item = Request, Error = Error>> {
         let raw_recv_socket = self.send_socket.try_clone().context(ErrorKind::BindError)?;
         let recv_socket = tokio::net::UdpSocket::from_std(raw_recv_socket, &Handle::default())
             .context(ErrorKind::BindError)?;
 
-        Ok(InboundMessagesFuture::new(
-            recv_socket,
-            self.transactions.clone(),
-        ))
+        let transactions = self.transactions.clone();
+
+        Ok(InboundMessageStream::new(recv_socket)
+            .map(move |envelope| match envelope.message_type {
+                MessageType::Response { .. } | MessageType::Error { .. } => {
+                    ResponseFuture::handle_response(envelope, transactions.clone())?;
+
+                    Ok(None)
+                }
+                MessageType::Query { query } => {
+                    Ok(Some(Request::new(envelope.transaction_id, query)))
+                }
+            }).and_then(|r| r.into_future())
+            .filter_map(|m| m))
     }
 
     pub fn request(
         &self,
         address: SocketAddr,
+        transaction_id: TransactionId,
         request: Request,
     ) -> impl Future<Item = Response, Error = Error> {
         let transaction_future_result =
-            ResponseFuture::wait_for_tx(request.transaction_id, self.transactions.clone());
+            ResponseFuture::wait_for_tx(transaction_id, self.transactions.clone());
 
-        self.send_request(address, request)
+        self.send_request(address, transaction_id, request)
             .into_future()
             .and_then(move |_| transaction_future_result)
             .and_then(|fut| fut)
@@ -71,8 +85,17 @@ impl Peer {
     ///
     /// The sending is done synchronously because doing it asynchronously was cumbersome and didn't
     /// make anything faster. UDP sending rarely blocks.
-    fn send_request(&self, address: SocketAddr, request: Request) -> Result<()> {
-        let transaction_id = request.transaction_id;
+    fn send_request(
+        &self,
+        address: SocketAddr,
+        transaction_id: TransactionId,
+        mut request: Request,
+    ) -> Result<()> {
+        request
+            .transaction_id
+            .write_u32::<NetworkEndian>(transaction_id)
+            .with_context(|_| ErrorKind::SendError { to: address })?;
+
         let encoded = request.encode()?;
 
         self.send_socket
@@ -88,7 +111,7 @@ impl Peer {
 
     fn build_request(query: Query) -> Request {
         Request {
-            transaction_id: Self::get_transaction_id(),
+            transaction_id: Vec::new(),
             version: None,
             query,
         }
@@ -97,6 +120,7 @@ impl Peer {
     pub fn ping(&self, address: SocketAddr) -> impl Future<Item = NodeID, Error = Error> {
         self.request(
             address,
+            Self::get_transaction_id(),
             Self::build_request(Query::Ping {
                 id: self.id.clone(),
             }),
@@ -110,6 +134,7 @@ impl Peer {
     ) -> impl Future<Item = FindNodeResponse, Error = Error> {
         self.request(
             address,
+            Self::get_transaction_id(),
             Self::build_request(Query::FindNode {
                 id: self.id.clone(),
                 target,
@@ -124,6 +149,7 @@ impl Peer {
     ) -> impl Future<Item = GetPeersResponse, Error = Error> {
         self.request(
             address,
+            Self::get_transaction_id(),
             Self::build_request(Query::GetPeers {
                 id: self.id.clone(),
                 info_hash,
@@ -145,6 +171,7 @@ impl Peer {
 
         self.request(
             address,
+            Self::get_transaction_id(),
             Self::build_request(Query::AnnouncePeer {
                 id: self.id.clone(),
                 token,

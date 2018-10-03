@@ -1,9 +1,10 @@
-use peer::messages::{Request, Response};
+use peer::messages::{Request, Response, TransactionId};
 use peer::peer::Peer;
 
 use proto;
 use proto::Query;
 
+use byteorder::{NetworkEndian, WriteBytesExt};
 use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::net::UdpSocket;
@@ -11,7 +12,7 @@ use std::str::FromStr;
 
 use tokio::runtime::Runtime;
 
-use futures::Future;
+use futures::{Future, Stream};
 
 #[test]
 fn test_ping() {
@@ -20,13 +21,17 @@ fn test_ping() {
     socket.connect(bootstrap_node).unwrap();
 
     let transaction_id = 0x8aba;
-    let req = Request {
-        transaction_id,
+    let mut req = Request {
+        transaction_id: Vec::new(),
         version: None,
         query: Query::Ping {
             id: b"abcdefghij0123456789".into(),
         },
     };
+
+    req.transaction_id
+        .write_u32::<NetworkEndian>(transaction_id)
+        .unwrap();
 
     let req_encoded = req.encode().unwrap();
     socket.send(&req_encoded).unwrap();
@@ -39,14 +44,26 @@ fn test_ping() {
     assert_eq!(resp.transaction_id, transaction_id);
 }
 
-fn make_async_request(bind_addr: &str, remote_addr: &str, request: Request) -> Response {
+fn make_async_request(
+    bind_addr: &str,
+    remote_addr: &str,
+    transaction_id: TransactionId,
+    request: Request,
+) -> Response {
     let local_addr = SocketAddr::from_str(bind_addr).unwrap();
     let bootstrap_node_addr = remote_addr.to_socket_addrs().unwrap().next().unwrap();
 
     let peer = Peer::new(local_addr).unwrap();
     let mut runtime = Runtime::new().unwrap();
-    let responses_future = peer.handle_responses().unwrap().map_err(|_e| ());
-    let request_future = peer.request(bootstrap_node_addr, request);
+
+    let responses_future = peer
+        .handle_inbound()
+        .unwrap()
+        .into_future()
+        .map_err(|_e| ())
+        .map(|_| ());
+
+    let request_future = peer.request(bootstrap_node_addr, transaction_id, request);
 
     runtime.spawn(responses_future);
     let resp = runtime.block_on(request_future).unwrap();
@@ -60,14 +77,19 @@ fn test_ping_async() {
     let transaction_id = 0xafda;
 
     let req = Request {
-        transaction_id,
+        transaction_id: Vec::new(),
         version: None,
         query: Query::Ping {
             id: b"abcdefghij0123456780".into(),
         },
     };
 
-    let resp = make_async_request("0.0.0.0:34258", "router.bittorrent.com:6881", req);
+    let resp = make_async_request(
+        "0.0.0.0:34258",
+        "router.bittorrent.com:6881",
+        transaction_id,
+        req,
+    );
 
     assert_eq!(resp.transaction_id, transaction_id)
 }
@@ -79,7 +101,7 @@ fn test_find_node() {
     let id = b"abcdefghij0123456780".into();
 
     let req = Request {
-        transaction_id,
+        transaction_id: Vec::new(),
         version: None,
         query: Query::FindNode {
             id,
@@ -87,7 +109,12 @@ fn test_find_node() {
         },
     };
 
-    let resp = make_async_request("0.0.0.0:34218", "router.bittorrent.com:6881", req);
+    let resp = make_async_request(
+        "0.0.0.0:34218",
+        "router.bittorrent.com:6881",
+        transaction_id,
+        req,
+    );
 
     assert_eq!(resp.transaction_id, transaction_id);
 
@@ -108,7 +135,13 @@ fn simple_ping() {
     let mut rt = Runtime::new().unwrap();
 
     let peer = Peer::new(bind).unwrap();
-    rt.spawn(peer.handle_responses().unwrap().map_err(|_| ()));
+    rt.spawn(
+        peer.handle_inbound()
+            .unwrap()
+            .into_future()
+            .map(|_| ())
+            .map_err(|_| ()),
+    );
     let response = rt.block_on(peer.ping(remote)).unwrap();
 
     assert_ne!(response, b"0000000000000000000000000000000000000000".into())

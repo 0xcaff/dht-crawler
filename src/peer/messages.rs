@@ -4,7 +4,7 @@ use failure::ResultExt;
 use proto;
 use proto::{Addr, Envelope, MessageType, NodeID, NodeInfo, Query};
 
-use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{NetworkEndian, ReadBytesExt};
 use std::net::SocketAddrV4;
 
 pub type TransactionId = u32;
@@ -16,28 +16,31 @@ pub enum PortType {
 
 #[derive(Debug)]
 pub struct Request {
-    pub transaction_id: TransactionId,
+    pub transaction_id: Vec<u8>,
     pub version: Option<String>,
     pub query: Query,
 }
 
 impl Request {
-    pub fn into(self) -> Result<Envelope> {
-        let mut transaction_id = Vec::new();
-        transaction_id
-            .write_u32::<NetworkEndian>(self.transaction_id)
-            .expect("converting request txid for envelope");
-
-        Ok(Envelope {
-            ip: None,
+    pub fn new(transaction_id: Vec<u8>, query: proto::Query) -> Request {
+        Request {
             transaction_id,
+            version: None,
+            query,
+        }
+    }
+
+    pub fn into(self) -> Envelope {
+        Envelope {
+            ip: None,
+            transaction_id: self.transaction_id,
             version: self.version,
             message_type: MessageType::Query { query: self.query },
-        })
+        }
     }
 
     pub fn encode(self) -> Result<Vec<u8>> {
-        Ok(self.into()?.encode().context(ErrorKind::EncodeError)?)
+        Ok(self.into().encode().context(ErrorKind::EncodeError)?)
     }
 }
 
