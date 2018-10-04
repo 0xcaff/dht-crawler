@@ -1,7 +1,7 @@
 mod inbound;
 mod messages;
-mod peer;
 mod response;
+mod transport;
 
 #[cfg(test)]
 mod tests;

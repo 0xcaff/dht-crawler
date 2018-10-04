@@ -1,5 +1,5 @@
-use peer::messages::{Request, Response, TransactionId};
-use peer::peer::Peer;
+use transport::messages::{Request, Response, TransactionId};
+use transport::transport::Transport;
 
 use proto;
 use proto::{NodeID, Query};
@@ -53,7 +53,7 @@ fn make_async_request(
     let local_addr = SocketAddr::from_str(bind_addr).unwrap();
     let bootstrap_node_addr = remote_addr.to_socket_addrs().unwrap().next().unwrap();
 
-    let peer = Peer::new(local_addr).unwrap();
+    let peer = Transport::new(local_addr).unwrap();
     let mut runtime = Runtime::new().unwrap();
 
     let responses_future = peer
@@ -136,7 +136,7 @@ fn simple_ping() {
 
     let mut rt = Runtime::new().unwrap();
 
-    let peer = Peer::new(bind).unwrap();
+    let peer = Transport::new(bind).unwrap();
     rt.spawn(
         peer.handle_inbound()
             .unwrap()

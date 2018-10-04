@@ -23,6 +23,6 @@ extern crate chrono;
 extern crate core;
 
 mod errors;
-mod peer;
 mod proto;
 mod routing;
+mod transport;

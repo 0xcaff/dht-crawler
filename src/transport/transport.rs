@@ -16,14 +16,14 @@ use tokio;
 use tokio::prelude::*;
 use tokio::reactor::Handle;
 
-use peer::inbound::InboundMessageStream;
-use peer::messages::{
+use proto::MessageType;
+use transport::inbound::InboundMessageStream;
+use transport::messages::{
     FindNodeResponse, GetPeersResponse, NodeIDResponse, PortType, Request, Response, TransactionId,
 };
-use peer::response::{ResponseFuture, TransactionMap};
-use proto::MessageType;
+use transport::response::{ResponseFuture, TransactionMap};
 
-pub struct Peer {
+pub struct Transport {
     /// Socket used for sending messages
     send_socket: std::net::UdpSocket,
 
@@ -31,11 +31,11 @@ pub struct Peer {
     transactions: Arc<Mutex<TransactionMap>>,
 }
 
-impl Peer {
-    pub fn new(bind_address: SocketAddr) -> Result<Peer> {
+impl Transport {
+    pub fn new(bind_address: SocketAddr) -> Result<Transport> {
         let send_socket = std::net::UdpSocket::bind(&bind_address).context(ErrorKind::BindError)?;
 
-        Ok(Peer {
+        Ok(Transport {
             send_socket,
             transactions: Arc::new(Mutex::new(HashMap::new())),
         })

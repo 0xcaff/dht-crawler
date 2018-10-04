@@ -1,5 +1,5 @@
-use peer::messages::TransactionId;
 use proto::Envelope;
+use transport::messages::TransactionId;
 
 use errors::{Error, ErrorKind, Result};
 use failure::ResultExt;
