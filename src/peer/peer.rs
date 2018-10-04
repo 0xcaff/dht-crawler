@@ -24,8 +24,6 @@ use peer::response::{ResponseFuture, TransactionMap};
 use proto::MessageType;
 
 pub struct Peer {
-    id: NodeID,
-
     /// Socket used for sending messages
     send_socket: std::net::UdpSocket,
 
@@ -38,7 +36,6 @@ impl Peer {
         let send_socket = std::net::UdpSocket::bind(&bind_address).context(ErrorKind::BindError)?;
 
         Ok(Peer {
-            id: NodeID::random(),
             send_socket,
             transactions: Arc::new(Mutex::new(HashMap::new())),
         })
@@ -117,48 +114,47 @@ impl Peer {
         }
     }
 
-    pub fn ping(&self, address: SocketAddr) -> impl Future<Item = NodeID, Error = Error> {
+    pub fn ping(
+        &self,
+        id: NodeID,
+        address: SocketAddr,
+    ) -> impl Future<Item = NodeID, Error = Error> {
         self.request(
             address,
             Self::get_transaction_id(),
-            Self::build_request(Query::Ping {
-                id: self.id.clone(),
-            }),
+            Self::build_request(Query::Ping { id }),
         ).and_then(NodeIDResponse::from_response)
     }
 
     pub fn find_node(
         &self,
+        id: NodeID,
         address: SocketAddr,
         target: NodeID,
     ) -> impl Future<Item = FindNodeResponse, Error = Error> {
         self.request(
             address,
             Self::get_transaction_id(),
-            Self::build_request(Query::FindNode {
-                id: self.id.clone(),
-                target,
-            }),
+            Self::build_request(Query::FindNode { id, target }),
         ).and_then(FindNodeResponse::from_response)
     }
 
     pub fn get_peers(
         &self,
+        id: NodeID,
         address: SocketAddr,
         info_hash: NodeID,
     ) -> impl Future<Item = GetPeersResponse, Error = Error> {
         self.request(
             address,
             Self::get_transaction_id(),
-            Self::build_request(Query::GetPeers {
-                id: self.id.clone(),
-                info_hash,
-            }),
+            Self::build_request(Query::GetPeers { id, info_hash }),
         ).and_then(GetPeersResponse::from_response)
     }
 
     pub fn announce_peer(
         &self,
+        id: NodeID,
         token: Vec<u8>,
         address: SocketAddr,
         info_hash: NodeID,
@@ -173,7 +169,7 @@ impl Peer {
             address,
             Self::get_transaction_id(),
             Self::build_request(Query::AnnouncePeer {
-                id: self.id.clone(),
+                id,
                 token,
                 info_hash,
                 port,

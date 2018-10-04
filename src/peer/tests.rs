@@ -2,7 +2,7 @@ use peer::messages::{Request, Response, TransactionId};
 use peer::peer::Peer;
 
 use proto;
-use proto::Query;
+use proto::{NodeID, Query};
 
 use byteorder::{NetworkEndian, WriteBytesExt};
 use std::net::SocketAddr;
@@ -132,6 +132,8 @@ fn simple_ping() {
         .unwrap()
         .next()
         .unwrap();
+    let id = NodeID::random();
+
     let mut rt = Runtime::new().unwrap();
 
     let peer = Peer::new(bind).unwrap();
@@ -142,7 +144,7 @@ fn simple_ping() {
             .map(|_| ())
             .map_err(|_| ()),
     );
-    let response = rt.block_on(peer.ping(remote)).unwrap();
+    let response = rt.block_on(peer.ping(id, remote)).unwrap();
 
     assert_ne!(response, b"0000000000000000000000000000000000000000".into())
 }
