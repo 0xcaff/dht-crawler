@@ -22,7 +22,10 @@ extern crate byteorder;
 extern crate chrono;
 extern crate core;
 
-mod errors;
+mod dht;
+pub mod errors;
 mod proto;
 mod routing;
 mod transport;
+
+pub use dht::Dht;
