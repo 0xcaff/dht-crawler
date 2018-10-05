@@ -41,14 +41,22 @@ impl Transport {
         })
     }
 
-    pub fn handle_inbound(&self) -> Result<impl Stream<Item = Request, Error = Error>> {
+    fn make_recv_socket(&self) -> Result<tokio::net::UdpSocket> {
         let raw_recv_socket = self.send_socket.try_clone().context(ErrorKind::BindError)?;
         let recv_socket = tokio::net::UdpSocket::from_std(raw_recv_socket, &Handle::default())
             .context(ErrorKind::BindError)?;
 
+        Ok(recv_socket)
+    }
+
+    pub fn handle_inbound(&self) -> impl Stream<Item = Request, Error = Error> {
         let transactions = self.transactions.clone();
 
-        Ok(InboundMessageStream::new(recv_socket)
+        self.make_recv_socket()
+            .into_future()
+            .into_stream()
+            .map(InboundMessageStream::new)
+            .flatten()
             .map(move |envelope| match envelope.message_type {
                 MessageType::Response { .. } | MessageType::Error { .. } => {
                     ResponseFuture::handle_response(envelope, transactions.clone())?;
@@ -59,7 +67,7 @@ impl Transport {
                     Ok(Some(Request::new(envelope.transaction_id, query)))
                 }
             }).and_then(|r| r.into_future())
-            .filter_map(|m| m))
+            .filter_map(|m| m)
     }
 
     pub fn request(

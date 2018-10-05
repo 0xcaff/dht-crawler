@@ -58,7 +58,6 @@ fn make_async_request(
 
     let responses_future = peer
         .handle_inbound()
-        .unwrap()
         .into_future()
         .map_err(|_e| ())
         .map(|_| ());
@@ -139,7 +138,6 @@ fn simple_ping() {
     let peer = Transport::new(bind).unwrap();
     rt.spawn(
         peer.handle_inbound()
-            .unwrap()
             .into_future()
             .map(|_| ())
             .map_err(|_| ()),
