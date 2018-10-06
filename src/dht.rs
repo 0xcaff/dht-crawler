@@ -1,6 +1,6 @@
 use errors::{Error, Result};
 use proto::NodeID;
-use transport::Transport;
+use transport::{PortType, Transport};
 
 use std::collections::HashMap;
 use std::net::{SocketAddr, SocketAddrV4};
@@ -56,5 +56,16 @@ impl Dht {
         // * Return From torrents Table if Exists
         // * Fetch By Calling get_nodes otherwise
         future::ok(Vec::new())
+    }
+
+    /// Announces that we have information about an info_hash on `port`.
+    pub fn announce(
+        &self,
+        info_hash: NodeID,
+        port: PortType,
+    ) -> impl Future<Item = (), Error = Error> {
+        // TODO:
+        // * Send Announce to all Peers With Tokens
+        future::ok(())
     }
 }
