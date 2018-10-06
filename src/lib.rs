@@ -20,7 +20,7 @@ extern crate failure;
 
 extern crate byteorder;
 extern crate chrono;
-extern crate core;
+extern crate num_bigint as bigint;
 
 mod dht;
 pub mod errors;

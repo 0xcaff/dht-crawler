@@ -24,7 +24,7 @@ impl NodeInfo {
 
     fn to_bytes(&self) -> [u8; 26] {
         let mut output = [0u8; 26];
-        output.copy_from_slice(&self.node_id.get_bytes()[..]);
+        output.copy_from_slice(&self.node_id.as_bytes()[..]);
         addr::write_to(&self.address, &mut output[20..]);
 
         output

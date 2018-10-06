@@ -97,13 +97,13 @@ fn test_ping_async() {
 fn test_find_node() {
     let transaction_id = 0x21312;
 
-    let id = b"abcdefghij0123456780".into();
+    let id: NodeID = b"abcdefghij0123456780".into();
 
     let req = Request {
         transaction_id: Vec::new(),
         version: None,
         query: Query::FindNode {
-            id,
+            id: id.clone(),
             target: id.clone(),
         },
     };

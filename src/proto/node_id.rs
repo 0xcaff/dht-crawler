@@ -2,18 +2,17 @@ use rand;
 
 use serde::de;
 use serde::de::Visitor;
-use serde::Deserialize;
-use serde::Deserializer;
-use serde::Serialize;
-use serde::Serializer;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use std::fmt;
+use std::ops::Deref;
 
+use bigint::BigUint;
 use hex;
 
 /// A 20 byte value representing keys in the DHT.
-#[derive(PartialEq, Eq, Copy, Clone, Hash)]
-pub struct NodeID([u8; 20]);
+#[derive(PartialEq, Eq, Clone, Hash)]
+pub struct NodeID(BigUint);
 
 impl NodeID {
     pub fn random() -> NodeID {
@@ -21,10 +20,7 @@ impl NodeID {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> NodeID {
-        let mut cloned = [0u8; 20];
-        cloned.copy_from_slice(&bytes[..20]);
-
-        NodeID(cloned)
+        NodeID(BigUint::from_bytes_be(bytes))
     }
 
     pub fn from_hex(bytes: &[u8; 40]) -> NodeID {
@@ -34,14 +30,26 @@ impl NodeID {
         NodeID::from_bytes(&bytes)
     }
 
-    pub fn get_bytes(&self) -> &[u8; 20] {
+    pub fn as_bytes(&self) -> [u8; 20] {
+        let bytes = self.0.to_bytes_be();
+        let mut output = [0u8; 20];
+        output.copy_from_slice(&bytes[..]);
+
+        output
+    }
+}
+
+impl Deref for NodeID {
+    type Target = BigUint;
+
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
 impl fmt::Debug for NodeID {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", hex::encode(self.get_bytes()))
+        write!(f, "{}", hex::encode(self.as_bytes()))
     }
 }
 
@@ -50,7 +58,7 @@ impl Serialize for NodeID {
     where
         S: Serializer,
     {
-        serializer.serialize_bytes(&self.0)
+        serializer.serialize_bytes(&self.as_bytes())
     }
 }
 
@@ -94,7 +102,7 @@ impl<'de> Visitor<'de> for NodeIDVisitor {
 
 impl<'a> From<&'a [u8; 20]> for NodeID {
     fn from(bytes: &[u8; 20]) -> Self {
-        NodeID(bytes.clone())
+        NodeID::from_bytes(bytes)
     }
 }
 
@@ -106,6 +114,6 @@ impl<'a> From<&'a [u8; 40]> for NodeID {
 
 impl From<[u8; 20]> for NodeID {
     fn from(arr: [u8; 20]) -> Self {
-        NodeID(arr)
+        NodeID::from_bytes(&arr)
     }
 }

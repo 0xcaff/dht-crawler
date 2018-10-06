@@ -6,9 +6,9 @@ use serde::Deserialize;
 use serde::Deserializer;
 
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use core::fmt;
 use serde::de::Visitor;
 
+use std::fmt;
 use std::net::Ipv4Addr;
 use std::net::SocketAddrV4;
 use std::ops::Deref;
