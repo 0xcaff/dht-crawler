@@ -35,7 +35,8 @@ impl NodeID {
     }
 
     pub fn as_bytes(&self) -> [u8; 20] {
-        let bytes = self.0.to_bytes_be();
+        let mut bytes = self.0.to_bytes_be();
+        bytes.resize(20, 0);
         let mut output = [0u8; 20];
         output.copy_from_slice(&bytes[..]);
 
@@ -119,5 +120,21 @@ impl<'a> From<&'a [u8; 40]> for NodeID {
 impl From<[u8; 20]> for NodeID {
     fn from(arr: [u8; 20]) -> Self {
         NodeID::from_bytes(&arr)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::NodeID;
+    use bigint::BigUint;
+
+    #[test]
+    fn as_bytes() {
+        let id = NodeID::new(BigUint::from(1u8));
+        let bytes = id.as_bytes();
+        let mut expected = [0u8; 20];
+        expected[0] = 1;
+
+        assert_eq!(bytes, expected);
     }
 }
