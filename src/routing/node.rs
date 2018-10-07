@@ -4,6 +4,7 @@ use chrono::{NaiveDate, NaiveDateTime, Utc};
 use proto::{NodeID, NodeInfo};
 use rand;
 
+#[derive(Debug, PartialEq)]
 pub struct Node {
     pub id: NodeID,
     pub address: SocketAddrV4,

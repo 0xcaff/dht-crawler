@@ -71,6 +71,10 @@ impl Bucket {
     }
 
     pub fn add_node(&mut self, node: Node) {
+        if !self.could_hold_node(&node.id) {
+            panic!("Called add_node on a bucket which can't hold a node");
+        }
+
         if self.nodes.len() < MAX_BUCKET_SIZE {
             self.nodes.push(node);
             return;
@@ -80,6 +84,7 @@ impl Bucket {
             .nodes
             .iter_mut()
             .find(|node| node.state() == NodeState::Bad);
+
         if let Some(bad_node) = bad_node_opt {
             mem::replace(bad_node, node);
         }
@@ -100,6 +105,8 @@ impl Bucket {
 mod tests {
     use super::{BigUint, Bucket, NodeID};
     use num;
+    use routing::node::Node;
+    use std::net::SocketAddrV4;
 
     #[test]
     fn lower_bound_initial_bucket() {
@@ -147,5 +154,56 @@ mod tests {
         let end = NodeID::new(BigUint::from(20u8));
         let bucket = Bucket::new(start, end);
         assert_eq!(BigUint::from(15u8), *bucket.midpoint());
+    }
+
+    fn get_node(id: u8) -> Node {
+        let addr: SocketAddrV4 = "127.0.0.1:3000".parse().unwrap();
+
+        Node::new(NodeID::new(BigUint::from(id)), addr.clone(), Vec::new())
+    }
+
+    #[test]
+    fn split() {
+        let start = NodeID::new(BigUint::from(10u8));
+        let end = NodeID::new(BigUint::from(16u8));
+        let mut bucket = Bucket::new(start, end);
+
+        for i in 10..16 {
+            bucket.add_node(get_node(i));
+        }
+
+        assert_eq!(bucket.nodes.len(), 6);
+
+        let next_bucket = bucket.split();
+
+        for i in (10 as u8)..13 {
+            let id = NodeID::new(BigUint::from(i));
+
+            assert!(bucket.get(&id).is_some());
+            assert!(next_bucket.get(&id).is_none());
+        }
+
+        for i in (13 as u8)..16 {
+            let id = NodeID::new(BigUint::from(i));
+
+            assert!(bucket.get(&id).is_none());
+            assert!(next_bucket.get(&id).is_some());
+        }
+    }
+
+    #[test]
+    fn get_empty() {
+        let bucket = Bucket::initial_bucket();
+        assert_eq!(bucket.get(&NodeID::new(BigUint::from(10u8))), None);
+    }
+
+    #[test]
+    fn get_some() {
+        let mut bucket = Bucket::initial_bucket();
+        let node = get_node(113u8);
+        let id = node.id.clone();
+        bucket.add_node(node);
+
+        assert!(bucket.get(&id).is_some());
     }
 }
