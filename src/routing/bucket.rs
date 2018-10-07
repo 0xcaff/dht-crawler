@@ -95,3 +95,57 @@ impl Bucket {
         self.nodes.iter().find(|node| &node.id == id)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{BigUint, Bucket, NodeID};
+    use num;
+
+    #[test]
+    fn lower_bound_initial_bucket() {
+        let bucket = Bucket::initial_bucket();
+        let lower_bound = BigUint::from(0u8);
+
+        assert!(bucket.could_hold_node(&NodeID::new(lower_bound)));
+    }
+
+    #[test]
+    fn upper_bound_initial_bucket() {
+        let bucket = Bucket::initial_bucket();
+        let upper_bound = BigUint::from_bytes_be(&[0xffu8; 20]);
+
+        assert!(bucket.could_hold_node(&NodeID::new(upper_bound)));
+    }
+
+    #[test]
+    fn inner_value_initial_bucket() {
+        let bucket = Bucket::initial_bucket();
+        let value = BigUint::from(80192381092u128);
+
+        assert!(bucket.could_hold_node(&NodeID::new(value)));
+    }
+
+    #[test]
+    fn outside_upper_bound_initial_bucket() {
+        let bucket = Bucket::initial_bucket();
+        let value = BigUint::from_bytes_be(&[0xffu8; 20]) + 10u8;
+
+        assert!(!bucket.could_hold_node(&NodeID::new(value)));
+    }
+
+    #[test]
+    fn initial_bucket_midpoint() {
+        let bucket = Bucket::initial_bucket();
+        let expected_midpoint = num::pow(BigUint::from(2u8), 159);
+
+        assert_eq!(expected_midpoint, *bucket.midpoint());
+    }
+
+    #[test]
+    fn after_beginning_midpoint() {
+        let start = NodeID::new(BigUint::from(10u8));
+        let end = NodeID::new(BigUint::from(20u8));
+        let bucket = Bucket::new(start, end);
+        assert_eq!(BigUint::from(15u8), *bucket.midpoint());
+    }
+}
