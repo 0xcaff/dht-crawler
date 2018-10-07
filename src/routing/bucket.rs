@@ -106,7 +106,6 @@ mod tests {
     use super::{BigUint, Bucket, NodeID};
     use num;
     use routing::node::Node;
-    use std::net::SocketAddrV4;
 
     #[test]
     fn lower_bound_initial_bucket() {
@@ -156,12 +155,6 @@ mod tests {
         assert_eq!(BigUint::from(15u8), *bucket.midpoint());
     }
 
-    fn get_node(id: u8) -> Node {
-        let addr: SocketAddrV4 = "127.0.0.1:3000".parse().unwrap();
-
-        Node::new(NodeID::new(BigUint::from(id)), addr.clone(), Vec::new())
-    }
-
     #[test]
     fn split() {
         let start = NodeID::new(BigUint::from(10u8));
@@ -169,7 +162,7 @@ mod tests {
         let mut bucket = Bucket::new(start, end);
 
         for i in 10..16 {
-            bucket.add_node(get_node(i));
+            bucket.add_node(Node::new_with_id(i));
         }
 
         assert_eq!(bucket.nodes.len(), 6);
@@ -200,7 +193,7 @@ mod tests {
     #[test]
     fn get_some() {
         let mut bucket = Bucket::initial_bucket();
-        let node = get_node(113u8);
+        let node = Node::new_with_id(113);
         let id = node.id.clone();
         bucket.add_node(node);
 
