@@ -53,7 +53,7 @@ fn error() {
         transaction_id: b"aa".to_vec(),
         version: None,
         message_type: MessageType::Error {
-            error: Error::new(201, "A Generic Error Ocurred".to_string()),
+            error: Error::new(201, "A Generic Error Ocurred"),
         },
     };
 

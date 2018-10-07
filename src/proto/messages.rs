@@ -57,8 +57,8 @@ pub enum MessageType {
 pub struct Error(u8, String);
 
 impl Error {
-    pub fn new(error_code: u8, message: String) -> Error {
-        Error(error_code, message)
+    pub fn new(error_code: u8, message: &str) -> Error {
+        Error(error_code, message.to_string())
     }
 }
 
