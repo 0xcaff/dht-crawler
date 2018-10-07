@@ -2,7 +2,6 @@ use std::net::SocketAddrV4;
 
 use chrono::{NaiveDate, NaiveDateTime, Utc};
 use proto::{NodeID, NodeInfo};
-use rand;
 
 #[derive(Debug, PartialEq)]
 pub struct Node {
@@ -11,13 +10,6 @@ pub struct Node {
 
     /// Token received when discovering this node. Used when announcing ourselves to this peer.
     announce_token: Vec<u8>,
-
-    /// Token which should be presented to us when announcing a peer. Updated every 10 minutes.
-    token: u64,
-
-    /// Last valid token which could also be presented when a peer announces. Updated every 10
-    /// minutes.
-    last_token: u64,
 
     /// Last time a message was sent from ourselves to this node and a response was received
     /// successfully.
@@ -65,20 +57,10 @@ impl Node {
             id,
             address,
             announce_token,
-            token: rand::random(),
-            last_token: rand::random(),
             last_request_to: epoch,
             last_request_from: epoch,
             failed_requests: 0,
         }
-    }
-
-    /// Updates `last_token` and `token` moving `token` to `last_token` and creating a new `token`.
-    /// Returns the new token.
-    pub fn update_token(&mut self) -> u64 {
-        self.last_token = self.token;
-        self.token = rand::random();
-        self.token
     }
 
     pub fn mark_successful_request(&mut self) {
@@ -108,9 +90,5 @@ impl Node {
         } else {
             NodeState::Questionable
         }
-    }
-
-    pub fn verify_token(&self, token: u64) -> bool {
-        self.token == token || self.last_token == token
     }
 }

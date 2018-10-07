@@ -59,7 +59,7 @@ pub fn write_to(addr: &SocketAddrV4, raw: &mut [u8]) {
         .expect("Failed to encode port.");
 }
 
-fn to_bytes(addr: &SocketAddrV4) -> [u8; 6] {
+pub fn to_bytes(addr: &SocketAddrV4) -> [u8; 6] {
     let mut raw = [0u8; 6];
     write_to(addr, &mut raw);
 

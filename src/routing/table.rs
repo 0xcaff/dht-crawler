@@ -1,7 +1,10 @@
+use crypto::digest::Digest;
+use crypto::sha1::Sha1;
+use rand;
 use std::cmp;
+use std::net::SocketAddrV4;
 
-use proto::{NodeID, NodeInfo};
-
+use proto::{self, NodeID, NodeInfo};
 use routing::bucket::Bucket;
 use routing::node::Node;
 
@@ -18,6 +21,12 @@ pub struct RoutingTable {
     /// Ordered list of buckets covering the key space. The first bucket starts at key 0 and the
     /// last bucket ends at key 2^160.
     buckets: Vec<Bucket>,
+
+    /// Secret used when generating tokens for `get_peers` and `announce_peer`.
+    token_secret: [u8; 4],
+
+    /// Last secret. Tokens generated with this secret are also valid.
+    last_token_secret: [u8; 4],
 }
 
 impl RoutingTable {
@@ -25,7 +34,12 @@ impl RoutingTable {
         let mut buckets = Vec::new();
         buckets.push(Bucket::initial_bucket());
 
-        RoutingTable { id, buckets }
+        RoutingTable {
+            id,
+            buckets,
+            token_secret: rand::random(),
+            last_token_secret: rand::random(),
+        }
     }
 
     /// Adds a node to the routing table.
@@ -103,4 +117,42 @@ impl RoutingTable {
 
         (idx, next_bucket_idx)
     }
+
+    pub fn verify_token(&self, token: &[u8], addr: &SocketAddrV4) -> bool {
+        verify_token(addr, &self.token_secret, token)
+            || verify_token(addr, &self.last_token_secret, token)
+    }
+
+    pub fn generate_token(&self, addr: &SocketAddrV4) -> [u8; 20] {
+        generate_token(addr, &self.token_secret)
+    }
+
+    /// Updates `last_token` and `token` moving `token` to `last_token` and creating a new `token`.
+    /// Returns the new token.
+    pub fn update_token(&mut self) -> [u8; 4] {
+        self.last_token_secret = self.token_secret;
+        self.token_secret = rand::random();
+        self.token_secret
+    }
+}
+
+/// Generates a token given an address and secret.
+fn generate_token(addr: &SocketAddrV4, secret: &[u8; 4]) -> [u8; 20] {
+    let mut hasher = Sha1::new();
+
+    let addr_bytes = proto::addr_to_bytes(addr);
+
+    hasher.input(&addr_bytes);
+    hasher.input(secret);
+
+    let mut output = [0u8; 20];
+    hasher.result(&mut output);
+
+    output
+}
+
+fn verify_token(addr: &SocketAddrV4, secret: &[u8; 4], token: &[u8]) -> bool {
+    let expected = generate_token(addr, secret);
+
+    token == expected
 }

@@ -20,6 +20,7 @@ extern crate failure;
 
 extern crate byteorder;
 extern crate chrono;
+extern crate crypto;
 extern crate num_bigint as bigint;
 extern crate num_traits as num;
 

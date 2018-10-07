@@ -6,6 +6,7 @@ mod messages;
 mod node_id;
 mod node_info;
 
+pub use self::addr::to_bytes as addr_to_bytes;
 pub use self::addr::Addr;
 pub use self::messages::{Envelope, Error, MessageType, Query, Response};
 pub use self::node_id::NodeID;
