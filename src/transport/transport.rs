@@ -49,7 +49,7 @@ impl Transport {
         Ok(recv_socket)
     }
 
-    pub fn handle_inbound(&self) -> impl Stream<Item = Request, Error = Error> {
+    pub fn handle_inbound(&self) -> impl Stream<Item = (Request, SocketAddr), Error = Error> {
         let transactions = self.transactions.clone();
 
         self.make_recv_socket()
@@ -57,15 +57,16 @@ impl Transport {
             .into_stream()
             .map(InboundMessageStream::new)
             .flatten()
-            .map(move |envelope| match envelope.message_type {
+            .map(move |(envelope, from_addr)| match envelope.message_type {
                 MessageType::Response { .. } | MessageType::Error { .. } => {
                     ResponseFuture::handle_response(envelope, transactions.clone())?;
 
                     Ok(None)
                 }
-                MessageType::Query { query } => {
-                    Ok(Some(Request::new(envelope.transaction_id, query)))
-                }
+                MessageType::Query { query } => Ok(Some((
+                    Request::new(envelope.transaction_id, query),
+                    from_addr,
+                ))),
             }).and_then(|r| r.into_future())
             .filter_map(|m| m)
     }
