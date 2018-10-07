@@ -15,6 +15,10 @@ use hex;
 pub struct NodeID(BigUint);
 
 impl NodeID {
+    pub fn new(id: BigUint) -> NodeID {
+        NodeID(id)
+    }
+
     pub fn random() -> NodeID {
         rand::random::<[u8; 20]>().into()
     }
