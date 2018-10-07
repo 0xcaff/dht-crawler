@@ -5,7 +5,7 @@ use proto::{NodeID, NodeInfo};
 use routing::bucket::Bucket;
 use routing::node::Node;
 
-enum FindNodeResult {
+pub enum FindNodeResult {
     Node(NodeInfo),
     Nodes(Vec<NodeInfo>),
 }
@@ -53,7 +53,7 @@ impl RoutingTable {
 
     /// Finds the node with `id`, or about the `k` nearest good nodes to the `id` if the exact node
     /// couldn't be found. More or less than `k` nodes may be returned.
-    fn find_node(&self, id: &NodeID) -> FindNodeResult {
+    pub fn find_node(&self, id: &NodeID) -> FindNodeResult {
         let bucket_idx = self.get_bucket_idx(id);
         let bucket = &self.buckets[bucket_idx];
 
@@ -64,7 +64,7 @@ impl RoutingTable {
     }
 
     /// Finds nodes in the same bucket as `id` in the routing table.
-    fn find_nodes(&self, id: &NodeID) -> Vec<NodeInfo> {
+    pub fn find_nodes(&self, id: &NodeID) -> Vec<NodeInfo> {
         let bucket_idx = self.get_bucket_idx(id);
         let bucket = &self.buckets[bucket_idx];
 
@@ -72,7 +72,7 @@ impl RoutingTable {
     }
 
     /// Gets the node with `id` from the table.
-    fn get_node(&self, id: &NodeID) -> Option<&Node> {
+    pub fn get_node(&self, id: &NodeID) -> Option<&Node> {
         let bucket_idx = self.get_bucket_idx(id);
         let bucket = &self.buckets[bucket_idx];
 
