@@ -6,5 +6,5 @@ mod transport;
 #[cfg(test)]
 mod tests;
 
-pub use transport::messages::PortType;
+pub use transport::messages::{PortType, Request, Response};
 pub use transport::transport::Transport;

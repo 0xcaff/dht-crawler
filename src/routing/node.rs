@@ -8,9 +8,6 @@ pub struct Node {
     pub id: NodeID,
     pub address: SocketAddrV4,
 
-    /// Token received when discovering this node. Used when announcing ourselves to this peer.
-    announce_token: Vec<u8>,
-
     /// Last time a message was sent from ourselves to this node and a response was received
     /// successfully.
     last_request_to: Option<NaiveDateTime>,
@@ -50,11 +47,10 @@ pub enum NodeState {
 }
 
 impl Node {
-    pub fn new(id: NodeID, address: SocketAddrV4, announce_token: Vec<u8>) -> Node {
+    pub fn new(id: NodeID, address: SocketAddrV4) -> Node {
         Node {
             id,
             address,
-            announce_token,
             last_request_to: None,
             last_request_from: None,
             failed_requests: 0,
@@ -102,7 +98,7 @@ impl Node {
 
         let addr: SocketAddrV4 = "127.0.0.1:3000".parse().unwrap();
 
-        Node::new(NodeID::new(BigUint::from(id)), addr.clone(), Vec::new())
+        Node::new(NodeID::new(BigUint::from(id)), addr.clone())
     }
 }
 
@@ -153,7 +149,6 @@ mod tests {
         let node = Node {
             id: NodeID::new(BigUint::from(10u8)),
             address: "127.0.0.1:3000".parse().unwrap(),
-            announce_token: Vec::new(),
             last_request_to: Some(epoch),
             last_request_from: Some(Utc::now().naive_utc() - Duration::minutes(10)),
             failed_requests: 0,
