@@ -33,7 +33,7 @@ fn test_ping() {
         .write_u32::<NetworkEndian>(transaction_id)
         .unwrap();
 
-    let req_encoded = req.encode().unwrap();
+    let req_encoded = req.into().encode().unwrap();
     socket.send(&req_encoded).unwrap();
 
     let mut recv_buffer = [0 as u8; 1024];

@@ -99,6 +99,10 @@ impl Bucket {
     pub fn get(&self, id: &NodeID) -> Option<&Node> {
         self.nodes.iter().find(|node| &node.id == id)
     }
+
+    pub fn get_mut(&mut self, id: &NodeID) -> Option<&mut Node> {
+        self.nodes.iter_mut().find(|node| &node.id == id)
+    }
 }
 
 #[cfg(test)]

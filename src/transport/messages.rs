@@ -38,10 +38,6 @@ impl Request {
             message_type: MessageType::Query { query: self.query },
         }
     }
-
-    pub fn encode(self) -> Result<Vec<u8>> {
-        Ok(self.into().encode().context(ErrorKind::EncodeError)?)
-    }
 }
 
 #[derive(Debug)]

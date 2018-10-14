@@ -1,7 +1,7 @@
 use errors::{Error, ErrorKind, Result};
 use failure::ResultExt;
 
-use proto::{NodeID, Query};
+use proto::{Message, NodeID, Query};
 
 use rand;
 
@@ -52,10 +52,7 @@ impl SendTransport {
             .and_then(|envelope| Response::from(envelope))
     }
 
-    /// Synchronously sends a request to `address`.
-    ///
-    /// The sending is done synchronously because doing it asynchronously was cumbersome and didn't
-    /// make anything faster. UDP sending rarely blocks.
+    /// Adds `transaction_id` to the request and sends it.
     fn send_request(
         &self,
         address: SocketAddr,
@@ -67,10 +64,16 @@ impl SendTransport {
             .write_u32::<NetworkEndian>(transaction_id)
             .with_context(|_| ErrorKind::SendError { to: address })?;
 
-        let encoded = request.encode()?;
+        Ok(self.send(address, request.into())?)
+    }
 
+    /// Synchronously sends a request to `address`.
+    ///
+    /// The sending is done synchronously because doing it asynchronously was cumbersome and didn't
+    /// make anything faster. UDP sending rarely blocks.
+    pub fn send(&self, address: SocketAddr, message: Message) -> Result<()> {
         self.socket
-            .send_to(&encoded, &address)
+            .send_to(&message.encode()?, &address)
             .with_context(|_| ErrorKind::SendError { to: address })?;
 
         Ok(())

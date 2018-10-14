@@ -1,3 +1,5 @@
+use errors::{ErrorKind, Result};
+use failure::ResultExt;
 use serde_bencode;
 use serde_bytes;
 
@@ -26,8 +28,8 @@ impl Message {
         serde_bencode::de::from_bytes(bytes)
     }
 
-    pub fn encode(&self) -> serde_bencode::Result<Vec<u8>> {
-        serde_bencode::ser::to_bytes(self)
+    pub fn encode(&self) -> Result<Vec<u8>> {
+        Ok(serde_bencode::ser::to_bytes(self).context(ErrorKind::EncodeError)?)
     }
 }
 

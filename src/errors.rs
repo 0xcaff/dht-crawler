@@ -42,6 +42,18 @@ pub enum ErrorKind {
 
     #[fail(display = "Failed to bind")]
     BindError,
+
+    #[fail(display = "Received IPv6 Address")]
+    UnsupportedAddressTypeError,
+
+    #[fail(display = "Unimplemented request type")]
+    UnimplementedRequestType,
+
+    #[fail(display = "Invalid Token")]
+    InvalidToken,
+
+    #[fail(display = "Insufficient address information provided.")]
+    InsufficientAddress,
 }
 
 impl Fail for Error {
@@ -51,6 +63,19 @@ impl Fail for Error {
 
     fn backtrace(&self) -> Option<&Backtrace> {
         self.inner.backtrace()
+    }
+}
+
+impl Error {
+    pub fn as_request_error(&self) -> proto::Error {
+        let (code, message) = match self.inner.get_context() {
+            ErrorKind::UnimplementedRequestType => (204, "Unimplemented"),
+            ErrorKind::InvalidToken => (203, "Invalid Token"),
+            ErrorKind::InsufficientAddress => (203, "Not enough address info provided."),
+            _ => (202, "Server Error"),
+        };
+
+        proto::Error::new(code, message)
     }
 }
 

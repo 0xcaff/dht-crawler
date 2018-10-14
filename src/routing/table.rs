@@ -134,6 +134,17 @@ impl RoutingTable {
         self.token_secret = rand::random();
         self.token_secret
     }
+
+    pub fn get_or_add(&mut self, id: NodeID, address: SocketAddrV4) -> Option<&mut Node> {
+        let bucket_idx = self.get_bucket_idx(&id);
+        let bucket = &mut self.buckets[bucket_idx];
+
+        if bucket.get(&id).is_none() {
+            bucket.add_node(Node::new(id.clone(), address));
+        }
+
+        bucket.get_mut(&id)
+    }
 }
 
 /// Generates a token given an address and secret.

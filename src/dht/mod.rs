@@ -1,38 +1,45 @@
 use errors::{Error, Result};
 use proto::NodeID;
-use transport::{PortType, RecvTransport};
+use routing::RoutingTable;
+use transport::{PortType, RecvTransport, SendTransport};
 
 use std::collections::HashMap;
 use std::net::{SocketAddr, SocketAddrV4};
+use std::sync::{Arc, Mutex};
 
 use tokio::prelude::*;
 
+mod handler;
+
 /// BitTorrent DHT node
+#[derive(Clone)]
 pub struct Dht {
     id: NodeID,
-    torrents: HashMap<NodeID, Vec<SocketAddrV4>>,
-    transport: RecvTransport,
+    torrents: Arc<Mutex<HashMap<NodeID, Vec<SocketAddrV4>>>>,
+    send_transport: Arc<SendTransport>,
+    routing_table: Arc<Mutex<RoutingTable>>,
     // TODO: Add Routing Table When Stabilized
 }
 
 impl Dht {
-    pub fn new(bind_addr: SocketAddr) -> Result<Dht> {
-        let id = NodeID::random();
-        let torrents = HashMap::new();
+    /// Start handling inbound messages from other peers in the network. Continues to handle while
+    /// the future is polled.
+    pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl Future<Item = (), Error = Error>)> {
         let transport = RecvTransport::new(bind_addr)?;
+        let (send_transport, request_stream) = transport.serve();
 
-        Ok(Dht {
+        let id = NodeID::random();
+        let torrents = Arc::new(Mutex::new(HashMap::new()));
+        let routing_table = Arc::new(Mutex::new(RoutingTable::new(id.clone())));
+
+        let dht = Dht {
             id,
             torrents,
-            transport,
-        })
-    }
+            send_transport: Arc::new(send_transport),
+            routing_table,
+        };
 
-    /// Start handling inbound messages from other peers in the network. Continues to handle while
-    /// the future is polled. This should be called once for each instance of the DHT before calling
-    /// other functions.
-    pub fn start(&self) -> impl Future<Item = (), Error = Error> {
-        future::ok(())
+        Ok((dht.clone(), dht.handle_requests(request_stream)))
     }
 
     /// Bootstraps the routing table by finding nodes near our node id and adding them to the
