@@ -1,6 +1,6 @@
 use errors::{Error, Result};
 use proto::NodeID;
-use transport::{PortType, Transport};
+use transport::{PortType, RecvTransport};
 
 use std::collections::HashMap;
 use std::net::{SocketAddr, SocketAddrV4};
@@ -11,7 +11,7 @@ use tokio::prelude::*;
 pub struct Dht {
     id: NodeID,
     torrents: HashMap<NodeID, Vec<SocketAddrV4>>,
-    transport: Transport,
+    transport: RecvTransport,
     // TODO: Add Routing Table When Stabilized
 }
 
@@ -19,7 +19,7 @@ impl Dht {
     pub fn new(bind_addr: SocketAddr) -> Result<Dht> {
         let id = NodeID::random();
         let torrents = HashMap::new();
-        let transport = Transport::new(bind_addr)?;
+        let transport = RecvTransport::new(bind_addr)?;
 
         Ok(Dht {
             id,

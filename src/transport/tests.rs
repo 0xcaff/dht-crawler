@@ -1,5 +1,5 @@
 use transport::messages::{Request, Response, TransactionId};
-use transport::transport::Transport;
+use transport::RecvTransport;
 
 use proto;
 use proto::{NodeID, Query};
@@ -53,16 +53,14 @@ fn make_async_request(
     let local_addr = SocketAddr::from_str(bind_addr).unwrap();
     let bootstrap_node_addr = remote_addr.to_socket_addrs().unwrap().next().unwrap();
 
-    let peer = Transport::new(local_addr).unwrap();
     let mut runtime = Runtime::new().unwrap();
 
-    let responses_future = peer
-        .handle_inbound()
-        .into_future()
-        .map_err(|_e| ())
-        .map(|_| ());
+    let recv_transport = RecvTransport::new(local_addr).unwrap();
+    let (send_transport, request_stream) = recv_transport.serve();
 
-    let request_future = peer.request(bootstrap_node_addr, transaction_id, request);
+    let responses_future = request_stream.into_future().map_err(|_| ()).map(|_| ());
+
+    let request_future = send_transport.request(bootstrap_node_addr, transaction_id, request);
 
     runtime.spawn(responses_future);
     let resp = runtime.block_on(request_future).unwrap();
@@ -131,18 +129,14 @@ fn simple_ping() {
         .unwrap()
         .next()
         .unwrap();
+
     let id = NodeID::random();
-
     let mut rt = Runtime::new().unwrap();
+    let recv_transport = RecvTransport::new(bind).unwrap();
+    let (send_transport, request_stream) = recv_transport.serve();
 
-    let peer = Transport::new(bind).unwrap();
-    rt.spawn(
-        peer.handle_inbound()
-            .into_future()
-            .map(|_| ())
-            .map_err(|_| ()),
-    );
-    let response = rt.block_on(peer.ping(id, remote)).unwrap();
+    rt.spawn(request_stream.into_future().map(|_| ()).map_err(|_| ()));
+    let response = rt.block_on(send_transport.ping(id, remote)).unwrap();
 
     assert_ne!(response, b"0000000000000000000000000000000000000000".into())
 }

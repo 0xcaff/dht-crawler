@@ -6,69 +6,34 @@ use proto::{NodeID, Query};
 use rand;
 
 use std;
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
 use byteorder::{NetworkEndian, WriteBytesExt};
 
-use tokio;
 use tokio::prelude::*;
-use tokio::reactor::Handle;
 
-use proto::MessageType;
-use transport::inbound::InboundMessageStream;
 use transport::messages::{
     FindNodeResponse, GetPeersResponse, NodeIDResponse, PortType, Request, Response, TransactionId,
 };
 use transport::response::{ResponseFuture, TransactionMap};
 
-pub struct Transport {
-    /// Socket used for sending messages
-    send_socket: std::net::UdpSocket,
+pub struct SendTransport {
+    socket: std::net::UdpSocket,
 
     /// Collection of in-flight transactions awaiting a response
     transactions: Arc<Mutex<TransactionMap>>,
 }
 
-impl Transport {
-    pub fn new(bind_address: SocketAddr) -> Result<Transport> {
-        let send_socket = std::net::UdpSocket::bind(&bind_address).context(ErrorKind::BindError)?;
-
-        Ok(Transport {
-            send_socket,
-            transactions: Arc::new(Mutex::new(HashMap::new())),
-        })
-    }
-
-    fn make_recv_socket(&self) -> Result<tokio::net::UdpSocket> {
-        let raw_recv_socket = self.send_socket.try_clone().context(ErrorKind::BindError)?;
-        let recv_socket = tokio::net::UdpSocket::from_std(raw_recv_socket, &Handle::default())
-            .context(ErrorKind::BindError)?;
-
-        Ok(recv_socket)
-    }
-
-    pub fn handle_inbound(&self) -> impl Stream<Item = (Request, SocketAddr), Error = Error> {
-        let transactions = self.transactions.clone();
-
-        self.make_recv_socket()
-            .into_future()
-            .into_stream()
-            .map(InboundMessageStream::new)
-            .flatten()
-            .map(move |(envelope, from_addr)| match envelope.message_type {
-                MessageType::Response { .. } | MessageType::Error { .. } => {
-                    ResponseFuture::handle_response(envelope, transactions.clone())?;
-
-                    Ok(None)
-                }
-                MessageType::Query { query } => Ok(Some((
-                    Request::new(envelope.transaction_id, query),
-                    from_addr,
-                ))),
-            }).and_then(|r| r.into_future())
-            .filter_map(|m| m)
+impl SendTransport {
+    pub fn new(
+        socket: std::net::UdpSocket,
+        transactions: Arc<Mutex<TransactionMap>>,
+    ) -> SendTransport {
+        SendTransport {
+            socket,
+            transactions,
+        }
     }
 
     pub fn request(
@@ -104,7 +69,7 @@ impl Transport {
 
         let encoded = request.encode()?;
 
-        self.send_socket
+        self.socket
             .send_to(&encoded, &address)
             .with_context(|_| ErrorKind::SendError { to: address })?;
 

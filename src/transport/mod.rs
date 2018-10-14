@@ -1,10 +1,12 @@
 mod inbound;
 mod messages;
+mod recv;
 mod response;
-mod transport;
+mod send;
 
 #[cfg(test)]
 mod tests;
 
 pub use transport::messages::{PortType, Request, Response};
-pub use transport::transport::Transport;
+pub use transport::recv::RecvTransport;
+pub use transport::send::SendTransport;
