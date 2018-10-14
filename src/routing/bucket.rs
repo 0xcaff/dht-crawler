@@ -8,6 +8,7 @@ use routing::node::{Node, NodeState};
 
 const MAX_BUCKET_SIZE: usize = 8;
 
+#[derive(Debug)]
 pub struct Bucket {
     /// Inclusive start key of nodes in the bucket.
     pub start: NodeID,

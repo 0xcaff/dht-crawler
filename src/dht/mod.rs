@@ -1,6 +1,7 @@
 use errors::{Error, Result};
+
 use proto::NodeID;
-use routing::RoutingTable;
+use routing::{Node, RoutingTable};
 use transport::{PortType, RecvTransport, SendTransport};
 
 use std::collections::HashMap;
@@ -46,12 +47,33 @@ impl Dht {
     /// routing table.
     pub fn bootstrap_routing_table(
         &self,
-        bootstrap_node: SocketAddr,
+        addrs: Vec<SocketAddrV4>,
     ) -> impl Future<Item = (), Error = Error> {
+        let send_transport = self.send_transport.clone();
+        let routing_table_arc = self.routing_table.clone();
+        let id = self.id.clone();
+
+        let bootstrap_futures = addrs.into_iter().map(move |addr| {
+            send_transport
+                .ping(id.clone(), addr.clone().into())
+                .and_then(move |id| Ok(Node::new(id, addr.clone().into())))
+        });
+
+        let bootstrap_future =
+            future::join_all(bootstrap_futures).and_then(move |nodes| -> Result<()> {
+                let mut routing_table = routing_table_arc.lock()?;
+
+                nodes
+                    .into_iter()
+                    .for_each(|node| routing_table.add_node(node));
+
+                Ok(())
+            });
+
+        bootstrap_future
+
         // TODO:
-        // * Add Node
         // * Query Node for Self Until Some Amount of Nodes Have Been Successfully Added
-        future::ok(())
     }
 
     /// Gets a list of peers seeding `info_hash`.
@@ -74,5 +96,49 @@ impl Dht {
         // TODO:
         // * Send Announce to all Peers With Tokens
         future::ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use futures::Future;
+    use std::net::{SocketAddr, SocketAddrV4, ToSocketAddrs};
+    use tokio::runtime::Runtime;
+
+    use Dht;
+
+    fn flatten_addrs<I, A>(nodes: Vec<A>) -> Vec<SocketAddrV4>
+    where
+        I: Iterator<Item = SocketAddr>,
+        A: ToSocketAddrs<Iter = I>,
+    {
+        nodes
+            .into_iter()
+            // TODO: Remove .unwrap
+            .flat_map(|addr| addr.to_socket_addrs().unwrap())
+            .filter_map(|addr| match addr {
+                SocketAddr::V4(v4) => Some(v4),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn test_bootstrap() {
+        let addr = "0.0.0.0:0".to_socket_addrs().unwrap().nth(0).unwrap();
+        let (dht, dht_future) = Dht::start(addr).unwrap();
+
+        let bootstrap_future = dht.bootstrap_routing_table(flatten_addrs(vec![
+            "router.utorrent.com:6881",
+            "router.bittorrent.com:6881",
+        ]));
+
+        let mut runtime = Runtime::new().unwrap();
+        runtime.spawn(dht_future.map_err(|_| ()));
+        runtime.block_on(bootstrap_future).unwrap();
+
+        let routing_table = dht.routing_table.lock().unwrap();
+
+        assert!(routing_table.len() > 0);
     }
 }

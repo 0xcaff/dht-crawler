@@ -13,6 +13,7 @@ pub enum FindNodeResult {
     Nodes(Vec<NodeInfo>),
 }
 
+#[derive(Debug)]
 pub struct RoutingTable {
     /// Node identifier of the node which the table is based around. There will be more buckets
     /// closer to this identifier.
@@ -144,6 +145,10 @@ impl RoutingTable {
         }
 
         bucket.get_mut(&id)
+    }
+
+    pub fn len(&self) -> usize {
+        self.buckets.iter().map(|bucket| bucket.nodes.len()).sum()
     }
 }
 

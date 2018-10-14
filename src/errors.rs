@@ -55,6 +55,9 @@ pub enum ErrorKind {
 
     #[fail(display = "Insufficient address information provided.")]
     InsufficientAddress,
+
+    #[fail(display = "Bootstrap Failed")]
+    BootstrapFailed,
 }
 
 impl Fail for Error {
