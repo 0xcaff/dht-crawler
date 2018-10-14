@@ -7,7 +7,7 @@ use super::node_info;
 use super::{Addr, NodeID, NodeInfo};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-pub struct Envelope {
+pub struct Message {
     /// Public IP address of the requester. Only sent by peers supporting BEP42.
     pub ip: Option<Addr>,
 
@@ -21,8 +21,8 @@ pub struct Envelope {
     pub message_type: MessageType,
 }
 
-impl Envelope {
-    pub fn decode(bytes: &[u8]) -> serde_bencode::Result<Envelope> {
+impl Message {
+    pub fn decode(bytes: &[u8]) -> serde_bencode::Result<Message> {
         serde_bencode::de::from_bytes(bytes)
     }
 

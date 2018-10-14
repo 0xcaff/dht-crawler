@@ -1,10 +1,10 @@
-use proto::{Envelope, Error, MessageType, NodeInfo, Query, Response};
+use proto::{Error, Message, MessageType, NodeInfo, Query, Response};
 
 use serde_bencode;
 
 use std::str;
 
-fn test_serialize_deserialize(parsed: Envelope, raw: &[u8]) {
+fn test_serialize_deserialize(parsed: Message, raw: &[u8]) {
     let serialized = serde_bencode::ser::to_string(&parsed).unwrap();
     let raw_string = str::from_utf8(raw).unwrap().to_string();
 
@@ -14,7 +14,7 @@ fn test_serialize_deserialize(parsed: Envelope, raw: &[u8]) {
 
 #[test]
 fn ping_request() {
-    let parsed = Envelope {
+    let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
@@ -31,7 +31,7 @@ fn ping_request() {
 
 #[test]
 fn ping_response() {
-    let parsed = Envelope {
+    let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
@@ -48,7 +48,7 @@ fn ping_response() {
 
 #[test]
 fn error() {
-    let parsed = Envelope {
+    let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
@@ -63,7 +63,7 @@ fn error() {
 
 #[test]
 fn announce_peer_request() {
-    let parsed = Envelope {
+    let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
@@ -84,7 +84,7 @@ fn announce_peer_request() {
 
 #[test]
 fn get_nodes_response() {
-    let parsed = Envelope {
+    let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
@@ -98,7 +98,7 @@ fn get_nodes_response() {
     };
 
     let serialized = serde_bencode::ser::to_bytes(&parsed).unwrap();
-    let decoded = Envelope::decode(&serialized).unwrap();
+    let decoded = Message::decode(&serialized).unwrap();
 
     assert_eq!(parsed, decoded);
 }
@@ -133,7 +133,7 @@ fn get_nodes_response_decode() {
         52, 58, 0, 0, 175, 218, 49, 58, 121, 49, 58, 114, 101,
     ];
 
-    let expected = Envelope {
+    let expected = Message {
         ip: Some("129.21.63.170:34238".parse().unwrap()),
         transaction_id: vec![0x00, 0x00, 0xAF, 0xDA],
         version: None,
@@ -211,7 +211,7 @@ fn get_nodes_response_decode() {
         },
     };
 
-    let envelope = Envelope::decode(encoded).unwrap();
+    let message = Message::decode(encoded).unwrap();
 
-    assert_eq!(envelope, expected);
+    assert_eq!(message, expected);
 }

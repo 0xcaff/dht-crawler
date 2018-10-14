@@ -1,4 +1,4 @@
-use proto::Envelope;
+use proto::Message;
 use transport::messages::TransactionId;
 
 use errors::{Error, ErrorKind, Result};
@@ -23,7 +23,7 @@ pub enum TxState {
     },
 
     GotResponse {
-        response: Envelope,
+        response: Message,
     },
 }
 
@@ -47,10 +47,10 @@ impl ResponseFuture {
     }
 
     pub fn handle_response(
-        envelope: Envelope,
+        message: Message,
         transactions: Arc<Mutex<TransactionMap>>,
     ) -> Result<()> {
-        let transaction_id = (&envelope.transaction_id[..])
+        let transaction_id = (&message.transaction_id[..])
             .read_u32::<NetworkEndian>()
             .context(ErrorKind::InvalidResponse)?;
 
@@ -65,7 +65,7 @@ impl ResponseFuture {
                 map.insert(transaction_id, tx_state);
             }
             TxState::AwaitingResponse { task } => {
-                map.insert(transaction_id, TxState::GotResponse { response: envelope });
+                map.insert(transaction_id, TxState::GotResponse { response: message });
 
                 if let Some(task) = task {
                     task.notify();
@@ -102,7 +102,7 @@ impl ResponseFuture {
 }
 
 impl Future for ResponseFuture {
-    type Item = Envelope;
+    type Item = Message;
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>> {

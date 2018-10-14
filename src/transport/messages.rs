@@ -2,7 +2,7 @@ use errors::{ErrorKind, Result};
 use failure::ResultExt;
 
 use proto;
-use proto::{Addr, Envelope, MessageType, NodeID, NodeInfo, Query};
+use proto::{Addr, Message, MessageType, NodeID, NodeInfo, Query};
 
 use byteorder::{NetworkEndian, ReadBytesExt};
 use std::net::SocketAddrV4;
@@ -30,8 +30,8 @@ impl Request {
         }
     }
 
-    pub fn into(self) -> Envelope {
-        Envelope {
+    pub fn into(self) -> Message {
+        Message {
             ip: None,
             transaction_id: self.transaction_id,
             version: self.version,
@@ -52,7 +52,7 @@ pub struct Response {
 }
 
 impl Response {
-    pub fn from(envelope: Envelope) -> Result<Response> {
+    pub fn from(envelope: Message) -> Result<Response> {
         let response = match envelope.message_type {
             MessageType::Error { error } => {
                 return Err(ErrorKind::PeerError {
@@ -73,7 +73,7 @@ impl Response {
     }
 
     pub fn parse(src: &[u8]) -> Result<Response> {
-        let envelope: Envelope = Envelope::decode(&src).context(ErrorKind::InvalidResponse)?;
+        let envelope: Message = Message::decode(&src).context(ErrorKind::InvalidResponse)?;
         Ok(Response::from(envelope)?)
     }
 }

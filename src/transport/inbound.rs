@@ -1,4 +1,4 @@
-use proto::Envelope;
+use proto::Message;
 
 use errors::{Error, ErrorKind, Result};
 use failure::ResultExt;
@@ -20,7 +20,7 @@ impl InboundMessageStream {
 }
 
 impl Stream for InboundMessageStream {
-    type Item = (Envelope, SocketAddr);
+    type Item = (Message, SocketAddr);
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>> {
@@ -32,8 +32,7 @@ impl Stream for InboundMessageStream {
                 .context(ErrorKind::BindError)
         );
 
-        let envelope =
-            Envelope::decode(&recv_buffer[..size]).context(ErrorKind::InvalidResponse)?;
+        let envelope = Message::decode(&recv_buffer[..size]).context(ErrorKind::InvalidResponse)?;
 
         Ok(Async::Ready(Some((envelope, from_addr))))
     }
