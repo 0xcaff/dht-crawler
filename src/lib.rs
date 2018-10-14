@@ -24,6 +24,7 @@ extern crate crypto;
 extern crate num_bigint as bigint;
 extern crate num_traits as num;
 
+mod addr;
 mod dht;
 pub mod errors;
 mod proto;

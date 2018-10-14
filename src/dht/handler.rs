@@ -1,3 +1,4 @@
+use addr::AsV4Address;
 use dht::Dht;
 use errors::{Error, ErrorKind, Result};
 use proto::{Addr, Message, MessageType, NodeID, Query, Response};
@@ -16,7 +17,7 @@ impl Dht {
     ) -> impl Future<Item = (), Error = Error> {
         stream
             .and_then(move |(request, from)| -> Result<()> {
-                let response = self.handle_request(request, as_v4_addr(from)?);
+                let response = self.handle_request(request, from.into_v4()?);
                 self.send_transport.send(from, response)
             }).filter_map(|_| -> Option<()> { None })
             .into_future()
@@ -150,13 +151,6 @@ impl Dht {
         Ok(Response::OnlyId {
             id: self.id.clone(),
         })
-    }
-}
-
-fn as_v4_addr(addr: SocketAddr) -> Result<SocketAddrV4> {
-    match addr {
-        SocketAddr::V4(addr) => Ok(addr),
-        SocketAddr::V6(..) => Err(ErrorKind::UnsupportedAddressTypeError)?,
     }
 }
 
