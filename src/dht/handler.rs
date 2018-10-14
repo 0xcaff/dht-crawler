@@ -6,7 +6,6 @@ use transport::Request;
 
 use std::net::{SocketAddr, SocketAddrV4};
 use std::ops::DerefMut;
-use std::sync::MutexGuard;
 
 use tokio::prelude::*;
 
@@ -56,7 +55,7 @@ impl Dht {
     }
 
     fn handle_ping(&self, from: SocketAddrV4, id: NodeID) -> Result<Response> {
-        let mut routing_table = self.routing_table()?;
+        let mut routing_table = self.routing_table.lock()?;
         record_request(&mut routing_table, id, from)?;
 
         Ok(Response::OnlyId {
@@ -65,7 +64,7 @@ impl Dht {
     }
 
     fn handle_find_node(&self, from: SocketAddrV4, id: NodeID, target: NodeID) -> Result<Response> {
-        let mut routing_table = self.routing_table()?;
+        let mut routing_table = self.routing_table.lock()?;
         record_request(&mut routing_table, id, from)?;
 
         let nodes = match routing_table.find_node(&target) {
@@ -86,12 +85,12 @@ impl Dht {
         id: NodeID,
         info_hash: NodeID,
     ) -> Result<Response> {
-        let mut routing_table = self.routing_table()?;
+        let mut routing_table = self.routing_table.lock()?;
         record_request(&mut routing_table, id, from)?;
 
         let token_bytes = routing_table.generate_token(&from).to_vec();
         let token = Some(token_bytes);
-        let torrents = self.torrents.lock().map_err(|_| ErrorKind::LockPoisoned)?;
+        let torrents = self.torrents.lock()?;
         let torrent = torrents.get(&info_hash);
 
         if let Some(peers) = torrent {
@@ -120,7 +119,7 @@ impl Dht {
         info_hash: NodeID,
         token: Vec<u8>,
     ) -> Result<Response> {
-        let mut routing_table = self.routing_table()?;
+        let mut routing_table = self.routing_table.lock()?;
 
         if !routing_table.verify_token(&token, &from) {
             return Err(ErrorKind::InvalidToken)?;
@@ -141,7 +140,7 @@ impl Dht {
         record_request(&mut routing_table, id, from)?;
 
         // TODO: Duplicates
-        let mut torrents = self.torrents.lock().map_err(|_| ErrorKind::LockPoisoned)?;
+        let mut torrents = self.torrents.lock()?;
 
         torrents
             .entry(info_hash)
@@ -151,13 +150,6 @@ impl Dht {
         Ok(Response::OnlyId {
             id: self.id.clone(),
         })
-    }
-
-    fn routing_table(&self) -> Result<MutexGuard<RoutingTable>> {
-        Ok(self
-            .routing_table
-            .lock()
-            .map_err(|_| ErrorKind::LockPoisoned)?)
     }
 }
 

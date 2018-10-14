@@ -6,6 +6,7 @@ use proto;
 use std;
 use std::fmt;
 use std::net::SocketAddr;
+use std::sync::PoisonError;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -96,5 +97,13 @@ impl From<ErrorKind> for Error {
 impl From<Context<ErrorKind>> for Error {
     fn from(inner: Context<ErrorKind>) -> Error {
         Error { inner }
+    }
+}
+
+/// Implementation allowing for converting to a `Fail` compatible error even when the lock isn't
+/// sync.
+impl<Guard> From<PoisonError<Guard>> for Error {
+    fn from(_err: PoisonError<Guard>) -> Error {
+        ErrorKind::LockPoisoned.into()
     }
 }

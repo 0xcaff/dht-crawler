@@ -54,7 +54,7 @@ impl ResponseFuture {
             .read_u32::<NetworkEndian>()
             .context(ErrorKind::InvalidResponse)?;
 
-        let mut map = transactions.lock().map_err(|_| ErrorKind::LockPoisoned)?;
+        let mut map = transactions.lock()?;
 
         let tx_state = map
             .remove(&transaction_id)
@@ -77,10 +77,7 @@ impl ResponseFuture {
     }
 
     fn add_to_tx_map(&self) -> Result<()> {
-        let mut map = self
-            .transactions
-            .lock()
-            .map_err(|_| ErrorKind::LockPoisoned)?;
+        let mut map = self.transactions.lock()?;
 
         map.insert(
             self.transaction_id,
@@ -106,10 +103,7 @@ impl Future for ResponseFuture {
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>> {
-        let mut map = self
-            .transactions
-            .lock()
-            .map_err(|_| ErrorKind::LockPoisoned)?;
+        let mut map = self.transactions.lock()?;
 
         let tx_state =
             map.remove(&self.transaction_id)
