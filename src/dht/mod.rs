@@ -54,21 +54,22 @@ impl Dht {
         let id = self.id.clone();
 
         let bootstrap_futures = addrs.into_iter().map(move |addr| {
+            let local_routing_table = routing_table_arc.clone();
+
             send_transport
                 .ping(id.clone(), addr.clone().into())
-                .and_then(move |id| Ok(Node::new(id, addr.clone().into())))
+                .and_then(move |id| {
+                    let mut node = Node::new(id, addr.clone().into());
+                    node.mark_successful_request();
+
+                    let mut routing_table = local_routing_table.lock()?;
+                    routing_table.add_node(node);
+
+                    Ok(())
+                })
         });
 
-        let bootstrap_future =
-            future::join_all(bootstrap_futures).and_then(move |nodes| -> Result<()> {
-                let mut routing_table = routing_table_arc.lock()?;
-
-                nodes
-                    .into_iter()
-                    .for_each(|node| routing_table.add_node(node));
-
-                Ok(())
-            });
+        let bootstrap_future = future::join_all(bootstrap_futures).and_then(|_| Ok(()));
 
         bootstrap_future
 
