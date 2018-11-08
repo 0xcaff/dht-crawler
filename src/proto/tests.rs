@@ -2,8 +2,9 @@ use proto::{Error, Message, MessageType, NodeInfo, Query, Response};
 
 use serde_bencode;
 
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::net::SocketAddrV4;
 use std::str;
+use std::str::FromStr;
 
 fn test_serialize_deserialize(parsed: Message, raw: &[u8]) {
     let serialized = serde_bencode::ser::to_string(&parsed).unwrap();
@@ -227,7 +228,7 @@ fn with_version() {
     ];
 
     let expected = Message {
-        ip: Some(SocketAddrV4::new(Ipv4Addr::new(129, 21, 60, 68), 34254).into()),
+        ip: Some(SocketAddrV4::from_str("129.21.60.68:3454").unwrap().into()),
         transaction_id: vec![0, 0, 138, 186],
         version: Some(vec![85, 84, 174, 88].into()),
         message_type: MessageType::Response {
