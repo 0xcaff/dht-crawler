@@ -106,6 +106,6 @@ mod tests {
             SocketAddrV4::from_str("129.21.60.68:3454").unwrap().into(),
         );
 
-        let bytes = node.to_bytes();
+        let _bytes = node.to_bytes();
     }
 }
