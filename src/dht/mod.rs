@@ -81,13 +81,10 @@ impl Dht {
         let fut = send_transport
             .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
             .timeout(Duration::from_secs(5))
-            .then(|result| {
-                match result {
-                    Ok(res) => Ok(Some(res)),
-                    Err(..) => Ok(None),
-                }
-            })
-            .and_then(move |opt| {
+            .then(|result| match result {
+                Ok(res) => Ok(Some(res)),
+                Err(..) => Ok(None),
+            }).and_then(move |opt| {
                 opt.map_or_else(
                     || Ok(vec![]),
                     |response| {
