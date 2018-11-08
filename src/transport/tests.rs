@@ -17,7 +17,7 @@ use futures::{Future, Stream};
 #[test]
 fn test_ping() {
     let socket = UdpSocket::bind("0.0.0.0:34254").unwrap();
-    let bootstrap_node = "router.bittorrent.com:6881";
+    let bootstrap_node = "176.63.31.116:56414";
     socket.connect(bootstrap_node).unwrap();
 
     let transaction_id = 0x8aba;
@@ -37,9 +37,9 @@ fn test_ping() {
     socket.send(&req_encoded).unwrap();
 
     let mut recv_buffer = [0 as u8; 1024];
-    socket.recv(&mut recv_buffer).unwrap();
+    let size = socket.recv(&mut recv_buffer).unwrap();
 
-    let resp = Response::parse(&recv_buffer).unwrap();
+    let resp = Response::parse(&recv_buffer[0..size]).unwrap();
 
     assert_eq!(resp.transaction_id, transaction_id);
 }
