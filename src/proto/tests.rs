@@ -228,7 +228,7 @@ fn with_version() {
     ];
 
     let expected = Message {
-        ip: Some(SocketAddrV4::from_str("129.21.60.68:3454").unwrap().into()),
+        ip: Some(SocketAddrV4::from_str("129.21.60.68:34254").unwrap().into()),
         transaction_id: vec![0, 0, 138, 186],
         version: Some(vec![85, 84, 174, 88].into()),
         message_type: MessageType::Response {
