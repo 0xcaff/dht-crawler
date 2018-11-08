@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::net::{SocketAddr, SocketAddrV4};
 use std::sync::{Arc, Mutex};
 
+use std::time::Duration;
 use tokio::prelude::*;
 
 mod handler;
@@ -19,7 +20,6 @@ pub struct Dht {
     torrents: Arc<Mutex<HashMap<NodeID, Vec<SocketAddrV4>>>>,
     send_transport: Arc<SendTransport>,
     routing_table: Arc<Mutex<RoutingTable>>,
-    // TODO: Add Routing Table When Stabilized
 }
 
 impl Dht {
@@ -54,19 +54,12 @@ impl Dht {
         let id = self.id.clone();
 
         let bootstrap_futures = addrs.into_iter().map(move |addr| {
-            let local_routing_table = routing_table_arc.clone();
-
-            send_transport
-                .ping(id.clone(), addr.clone().into())
-                .and_then(move |id| {
-                    let mut node = Node::new(id, addr.clone().into());
-                    node.mark_successful_request();
-
-                    let mut routing_table = local_routing_table.lock()?;
-                    routing_table.add_node(node);
-
-                    Ok(())
-                })
+            Self::discover_node(
+                addr,
+                id.clone(),
+                send_transport.clone(),
+                routing_table_arc.clone(),
+            )
         });
 
         let bootstrap_future = future::join_all(bootstrap_futures).and_then(|_| Ok(()));
@@ -75,6 +68,53 @@ impl Dht {
 
         // TODO:
         // * Query Node for Self Until Some Amount of Nodes Have Been Successfully Added
+    }
+
+    fn discover_node(
+        addr: SocketAddrV4,
+        self_id: NodeID,
+        send_transport: Arc<SendTransport>,
+        routing_table_arc: Arc<Mutex<RoutingTable>>,
+    ) -> Box<Future<Item = (), Error = Error> + Send> {
+        let cloned_routing_table = routing_table_arc.clone();
+
+        let fut = send_transport
+            .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
+            .timeout(Duration::from_secs(5))
+            .then(|result| {
+                match result {
+                    Ok(res) => Ok(Some(res)),
+                    Err(..) => Ok(None),
+                }
+            })
+            .and_then(move |opt| {
+                opt.map_or_else(
+                    || Ok(vec![]),
+                    |response| {
+                        let mut node = Node::new(response.id, addr.into());
+                        node.mark_successful_request();
+
+                        let mut routing_table = routing_table_arc.lock()?;
+                        routing_table.add_node(node);
+
+                        Ok(response.nodes)
+                    },
+                )
+            }).and_then(move |nodes| {
+                let cloned_send_transport = send_transport.clone();
+                let cloned_self_id = self_id;
+
+                future::join_all(nodes.into_iter().map(move |node| {
+                    Self::discover_node(
+                        node.address,
+                        cloned_self_id.clone(),
+                        cloned_send_transport.clone(),
+                        cloned_routing_table.clone(),
+                    )
+                })).and_then(|_| Ok(()))
+            });
+
+        Box::new(fut)
     }
 
     /// Gets a list of peers seeding `info_hash`.
