@@ -24,7 +24,7 @@ impl NodeInfo {
 
     fn to_bytes(&self) -> [u8; 26] {
         let mut output = [0u8; 26];
-        output.copy_from_slice(&self.node_id.as_bytes()[..]);
+        (&mut output[..20]).copy_from_slice(&self.node_id.as_bytes());
         addr::write_to(&self.address, &mut output[20..]);
 
         output
@@ -90,5 +90,22 @@ impl<'de> Visitor<'de> for NodeInfoVecVisitor {
         E: de::Error,
     {
         self.visit_bytes(&v)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use proto::NodeInfo;
+    use std::net::SocketAddrV4;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_to_bytes() {
+        let node = NodeInfo::new(
+            b"abcdefghij0123456789".into(),
+            SocketAddrV4::from_str("129.21.60.68:3454").unwrap().into(),
+        );
+
+        let bytes = node.to_bytes();
     }
 }
