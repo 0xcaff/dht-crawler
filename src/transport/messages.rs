@@ -17,7 +17,7 @@ pub enum PortType {
 #[derive(Debug)]
 pub struct Request {
     pub transaction_id: Vec<u8>,
-    pub version: Option<String>,
+    pub version: Option<Vec<u8>>,
     pub query: Query,
 }
 
@@ -34,7 +34,7 @@ impl Request {
         Message {
             ip: None,
             transaction_id: self.transaction_id,
-            version: self.version,
+            version: self.version.map(|version| version.into()),
             message_type: MessageType::Query { query: self.query },
         }
     }
@@ -43,7 +43,7 @@ impl Request {
 #[derive(Debug)]
 pub struct Response {
     pub transaction_id: TransactionId,
-    pub version: Option<String>,
+    pub version: Option<Vec<u8>>,
     pub response: proto::Response,
 }
 
@@ -63,7 +63,7 @@ impl Response {
             transaction_id: (&envelope.transaction_id[..])
                 .read_u32::<NetworkEndian>()
                 .context(ErrorKind::InvalidResponse)?,
-            version: envelope.version,
+            version: envelope.version.map(|e| e.into()),
             response,
         })
     }

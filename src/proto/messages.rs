@@ -1,7 +1,7 @@
 use errors::{ErrorKind, Result};
 use failure::ResultExt;
 use serde_bencode;
-use serde_bytes;
+use serde_bytes::{self, ByteBuf};
 
 use std::fmt;
 
@@ -17,7 +17,7 @@ pub struct Message {
     pub transaction_id: Vec<u8>,
 
     #[serde(rename = "v")]
-    pub version: Option<String>,
+    pub version: Option<ByteBuf>,
 
     #[serde(flatten)]
     pub message_type: MessageType,
