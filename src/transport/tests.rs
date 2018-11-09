@@ -16,7 +16,7 @@ use futures::{Future, Stream};
 
 #[test]
 fn test_ping() {
-    let socket = UdpSocket::bind("0.0.0.0:34254").unwrap();
+    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
     let bootstrap_node = "router.bittorrent.com:6881";
     socket.connect(bootstrap_node).unwrap();
 
@@ -45,12 +45,11 @@ fn test_ping() {
 }
 
 fn make_async_request(
-    bind_addr: &str,
     remote_addr: &str,
     transaction_id: TransactionId,
     request: Request,
 ) -> Response {
-    let local_addr = SocketAddr::from_str(bind_addr).unwrap();
+    let local_addr = SocketAddr::from_str("0.0.0.0:0").unwrap();
     let bootstrap_node_addr = remote_addr.to_socket_addrs().unwrap().next().unwrap();
 
     let mut runtime = Runtime::new().unwrap();
@@ -64,7 +63,6 @@ fn make_async_request(
 
     runtime.spawn(responses_future);
     let resp = runtime.block_on(request_future).unwrap();
-    runtime.shutdown_on_idle();
 
     resp
 }
@@ -81,12 +79,7 @@ fn test_ping_async() {
         },
     };
 
-    let resp = make_async_request(
-        "0.0.0.0:34258",
-        "router.bittorrent.com:6881",
-        transaction_id,
-        req,
-    );
+    let resp = make_async_request("router.bittorrent.com:6881", transaction_id, req);
 
     assert_eq!(resp.transaction_id, transaction_id)
 }
@@ -106,12 +99,7 @@ fn test_find_node() {
         },
     };
 
-    let resp = make_async_request(
-        "0.0.0.0:34218",
-        "router.bittorrent.com:6881",
-        transaction_id,
-        req,
-    );
+    let resp = make_async_request("router.bittorrent.com:6881", transaction_id, req);
 
     assert_eq!(resp.transaction_id, transaction_id);
 
@@ -123,7 +111,7 @@ fn test_find_node() {
 
 #[test]
 fn simple_ping() {
-    let bind = SocketAddr::from_str("0.0.0.0:31423").unwrap();
+    let bind = SocketAddr::from_str("0.0.0.0:0").unwrap();
     let remote = "router.bittorrent.com:6881"
         .to_socket_addrs()
         .unwrap()
