@@ -2,7 +2,9 @@ use proto::{Error, Message, MessageType, NodeInfo, Query, Response};
 
 use serde_bencode;
 
+use std::net::SocketAddrV4;
 use std::str;
+use std::str::FromStr;
 
 fn test_serialize_deserialize(parsed: Message, raw: &[u8]) {
     let serialized = serde_bencode::ser::to_string(&parsed).unwrap();
@@ -207,6 +209,31 @@ fn get_nodes_response_decode() {
                         "119.237.152.161:6890".parse().unwrap(),
                     ),
                 ],
+            },
+        },
+    };
+
+    let message = Message::decode(encoded).unwrap();
+
+    assert_eq!(message, expected);
+}
+
+#[test]
+fn with_version() {
+    let encoded: &[u8] = &[
+        100, 50, 58, 105, 112, 54, 58, 129, 21, 60, 68, 133, 206, 49, 58, 114, 100, 50, 58, 105,
+        100, 50, 48, 58, 189, 93, 60, 187, 233, 235, 179, 166, 219, 60, 135, 12, 62, 153, 36, 94,
+        13, 28, 6, 241, 101, 49, 58, 116, 52, 58, 0, 0, 138, 186, 49, 58, 118, 52, 58, 85, 84, 174,
+        88, 49, 58, 121, 49, 58, 114, 101,
+    ];
+
+    let expected = Message {
+        ip: Some(SocketAddrV4::from_str("129.21.60.68:34254").unwrap().into()),
+        transaction_id: vec![0, 0, 138, 186],
+        version: Some(vec![85, 84, 174, 88].into()),
+        message_type: MessageType::Response {
+            response: Response::OnlyId {
+                id: b"bd5d3cbbe9ebb3a6db3c870c3e99245e0d1c06f1".into(),
             },
         },
     };

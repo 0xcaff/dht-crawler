@@ -8,6 +8,8 @@ use std::fmt;
 use std::net::SocketAddr;
 use std::sync::PoisonError;
 
+use tokio::timer::timeout;
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
@@ -58,6 +60,12 @@ pub enum ErrorKind {
 
     #[fail(display = "Bootstrap Failed")]
     BootstrapFailed,
+
+    #[fail(display = "Timer error")]
+    TimerError,
+
+    #[fail(display = "Timeout")]
+    Timeout,
 }
 
 impl Fail for Error {
@@ -108,5 +116,23 @@ impl From<Context<ErrorKind>> for Error {
 impl<Guard> From<PoisonError<Guard>> for Error {
     fn from(_err: PoisonError<Guard>) -> Error {
         ErrorKind::LockPoisoned.into()
+    }
+}
+
+impl From<timeout::Error<Error>> for Error {
+    fn from(err: timeout::Error<Error>) -> Self {
+        if err.is_inner() {
+            return err.into_inner().unwrap();
+        }
+
+        if err.is_timer() {
+            return err
+                .into_timer()
+                .unwrap()
+                .context(ErrorKind::TimerError)
+                .into();
+        }
+
+        ErrorKind::Timeout.into()
     }
 }

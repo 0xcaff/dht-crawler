@@ -76,6 +76,10 @@ impl Bucket {
             panic!("Called add_node on a bucket which can't hold a node");
         }
 
+        if self.nodes.iter().find(|n| n.id == node.id).is_some() {
+            return;
+        }
+
         if self.nodes.len() < MAX_BUCKET_SIZE {
             self.nodes.push(node);
             return;

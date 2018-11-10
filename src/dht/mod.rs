@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::net::{SocketAddr, SocketAddrV4};
 use std::sync::{Arc, Mutex};
 
+use std::time::Duration;
 use tokio::prelude::*;
 
 mod handler;
@@ -19,7 +20,6 @@ pub struct Dht {
     torrents: Arc<Mutex<HashMap<NodeID, Vec<SocketAddrV4>>>>,
     send_transport: Arc<SendTransport>,
     routing_table: Arc<Mutex<RoutingTable>>,
-    // TODO: Add Routing Table When Stabilized
 }
 
 impl Dht {
@@ -54,26 +54,57 @@ impl Dht {
         let id = self.id.clone();
 
         let bootstrap_futures = addrs.into_iter().map(move |addr| {
-            send_transport
-                .ping(id.clone(), addr.clone().into())
-                .and_then(move |id| Ok(Node::new(id, addr.clone().into())))
+            Self::discover_nodes_of(
+                addr,
+                id.clone(),
+                send_transport.clone(),
+                routing_table_arc.clone(),
+            )
         });
 
-        let bootstrap_future =
-            future::join_all(bootstrap_futures).and_then(move |nodes| -> Result<()> {
-                let mut routing_table = routing_table_arc.lock()?;
-
-                nodes
-                    .into_iter()
-                    .for_each(|node| routing_table.add_node(node));
-
-                Ok(())
-            });
+        let bootstrap_future = future::join_all(bootstrap_futures).and_then(|_| Ok(()));
 
         bootstrap_future
+    }
 
-        // TODO:
-        // * Query Node for Self Until Some Amount of Nodes Have Been Successfully Added
+    fn discover_nodes_of(
+        addr: SocketAddrV4,
+        self_id: NodeID,
+        send_transport: Arc<SendTransport>,
+        routing_table_arc: Arc<Mutex<RoutingTable>>,
+    ) -> Box<Future<Item = (), Error = Error> + Send> {
+        let cloned_routing_table = routing_table_arc.clone();
+
+        let fut = send_transport
+            .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
+            .timeout(Duration::from_secs(5))
+            .map_err(Error::from)
+            .and_then(move |response| {
+                let mut node = Node::new(response.id, addr.into());
+                node.mark_successful_request();
+
+                let mut routing_table = routing_table_arc.lock()?;
+                routing_table.add_node(node);
+
+                Ok(response.nodes)
+            }).and_then(move |nodes| {
+                let cloned_send_transport = send_transport.clone();
+                let cloned_self_id = self_id;
+
+                future::join_all(nodes.into_iter().map(move |node| {
+                    Self::discover_nodes_of(
+                        node.address,
+                        cloned_self_id.clone(),
+                        cloned_send_transport.clone(),
+                        cloned_routing_table.clone(),
+                    ).or_else(|e| {
+                        println!("Received Error While Bootstrapping {}", e);
+                        Ok(())
+                    })
+                })).and_then(|_| Ok(()))
+            });
+
+        Box::new(fut)
     }
 
     /// Gets a list of peers seeding `info_hash`.
@@ -104,7 +135,6 @@ mod tests {
     use futures::Future;
     use std::net::{SocketAddr, SocketAddrV4, ToSocketAddrs};
     use tokio::runtime::Runtime;
-
     use Dht;
 
     fn flatten_addrs<I, A>(nodes: Vec<A>) -> Vec<SocketAddrV4>
@@ -124,8 +154,9 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_bootstrap() {
-        let addr = "0.0.0.0:0".to_socket_addrs().unwrap().nth(0).unwrap();
+        let addr = "0.0.0.0:23170".to_socket_addrs().unwrap().nth(0).unwrap();
         let (dht, dht_future) = Dht::start(addr).unwrap();
 
         let bootstrap_future = dht.bootstrap_routing_table(flatten_addrs(vec![
@@ -134,7 +165,7 @@ mod tests {
         ]));
 
         let mut runtime = Runtime::new().unwrap();
-        runtime.spawn(dht_future.map_err(|_| ()));
+        runtime.spawn(dht_future.map_err(|e| println!("{}", e)));
         runtime.block_on(bootstrap_future).unwrap();
 
         let routing_table = dht.routing_table.lock().unwrap();

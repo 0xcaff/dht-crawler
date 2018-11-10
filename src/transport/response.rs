@@ -153,7 +153,7 @@ mod tests {
         let transactions = Arc::new(Mutex::new(HashMap::new()));
 
         {
-            let fut = ResponseFuture::wait_for_tx(transaction_id, transactions.clone()).unwrap();
+            let _fut = ResponseFuture::wait_for_tx(transaction_id, transactions.clone()).unwrap();
 
             let transactions = transactions.lock().unwrap();
             let transaction = transactions.get(&transaction_id).unwrap();
