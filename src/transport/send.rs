@@ -9,7 +9,8 @@ use std;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
-use byteorder::{NetworkEndian, WriteBytesExt};
+use byteorder::NetworkEndian;
+use bytes::ByteOrder;
 
 use tokio::prelude::*;
 
@@ -59,10 +60,9 @@ impl SendTransport {
         transaction_id: TransactionId,
         mut request: Request,
     ) -> Result<()> {
-        request
-            .transaction_id
-            .write_u32::<NetworkEndian>(transaction_id)
-            .with_context(|_| ErrorKind::SendError { to: address })?;
+        let mut buf = [0u8; 4];
+        NetworkEndian::write_u32(&mut buf, transaction_id);
+        request.transaction_id.extend_from_slice(&buf);
 
         Ok(self.send(address, request.into())?)
     }

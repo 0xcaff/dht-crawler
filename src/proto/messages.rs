@@ -24,8 +24,8 @@ pub struct Message {
 }
 
 impl Message {
-    pub fn decode(bytes: &[u8]) -> serde_bencode::Result<Message> {
-        serde_bencode::de::from_bytes(bytes)
+    pub fn decode(bytes: &[u8]) -> Result<Message> {
+        Ok(serde_bencode::de::from_bytes(bytes).context(ErrorKind::DecodeError)?)
     }
 
     pub fn encode(&self) -> Result<Vec<u8>> {

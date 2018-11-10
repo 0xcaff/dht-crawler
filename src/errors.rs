@@ -8,6 +8,7 @@ use std::fmt;
 use std::net::SocketAddr;
 use std::sync::PoisonError;
 
+use std::net::SocketAddrV6;
 use tokio::timer::timeout;
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -17,49 +18,81 @@ pub struct Error {
     inner: Context<ErrorKind>,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Fail)]
+#[derive(Debug, Fail)]
 pub enum ErrorKind {
+    //// Originating Errors
     #[fail(
-        display = "Received an error message from peer: {}",
-        protocol_error
+        display = "Received an error message from node {}",
+        error_message
     )]
-    PeerError { protocol_error: proto::Error },
+    ProtocolError { error_message: proto::Error },
 
-    #[fail(display = "Failed to parse response")]
-    InvalidResponse,
+    #[fail(display = "Failed to parse inbound message from {}", from)]
+    InvalidInboundMessage { from: SocketAddr, message: Vec<u8> },
 
-    #[fail(display = "The response received wasn't the type expected for the request")]
-    InvalidResponseType,
+    #[fail(display = "Invalid transaction id")]
+    InvalidResponseTransactionId,
 
-    #[fail(display = "The lock was poisoned")]
-    LockPoisoned,
+    #[fail(
+        display = "Transaction state missing for transaction_id={}",
+        transaction_id
+    )]
+    MissingTransactionState { transaction_id: u32 },
 
-    #[fail(display = "Transaction not found. {}", transaction_id)]
-    TransactionNotFound { transaction_id: u32 },
+    #[fail(
+        display = "Received response for unknown transaction transaction_id={}",
+        transaction_id
+    )]
+    UnknownTransaction { transaction_id: u32 },
 
-    #[fail(display = "Failed to encode request")]
-    EncodeError,
+    #[fail(display = "Received IPv6 Address where an IPv4 address was expected")]
+    UnsupportedAddressTypeError { addr: SocketAddrV6 },
 
-    #[fail(display = "Failed to send to {}", to)]
-    SendError { to: SocketAddr },
+    #[fail(
+        display = "Invalid message type, expected {} got {:?}",
+        expected,
+        got
+    )]
+    InvalidMessageType {
+        expected: &'static str,
+        got: proto::MessageType,
+    },
+
+    #[fail(
+        display = "Invalid response type, expected {} got {:?}",
+        expected,
+        got
+    )]
+    InvalidResponseType {
+        expected: &'static str,
+        got: proto::Response,
+    },
 
     #[fail(display = "Failed to bind")]
     BindError,
 
-    #[fail(display = "Received IPv6 Address")]
-    UnsupportedAddressTypeError,
+    #[fail(display = "Failed to send to {}", to)]
+    SendError { to: SocketAddr },
 
+    //// Protocol Errors
     #[fail(display = "Unimplemented request type")]
     UnimplementedRequestType,
 
     #[fail(display = "Invalid Token")]
     InvalidToken,
 
-    #[fail(display = "Insufficient address information provided.")]
+    #[fail(display = "Insufficient address information provided")]
     InsufficientAddress,
 
-    #[fail(display = "Bootstrap Failed")]
-    BootstrapFailed,
+    //// Wrapping Other Errors
+    #[fail(display = "Lock poisoned")]
+    LockPoisoned,
+
+    #[fail(display = "Error while encoding message")]
+    EncodeError,
+
+    #[fail(display = "Error while decoding message")]
+    DecodeError,
 
     #[fail(display = "Timer error")]
     TimerError,
@@ -83,7 +116,7 @@ impl Error {
         let (code, message) = match self.inner.get_context() {
             ErrorKind::UnimplementedRequestType => (204, "Unimplemented"),
             ErrorKind::InvalidToken => (203, "Invalid Token"),
-            ErrorKind::InsufficientAddress => (203, "Not enough address info provided."),
+            ErrorKind::InsufficientAddress => (203, "Not enough address info provided"),
             _ => (202, "Server Error"),
         };
 
