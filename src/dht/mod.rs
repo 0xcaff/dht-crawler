@@ -154,6 +154,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_bootstrap() {
         let addr = "0.0.0.0:23170".to_socket_addrs().unwrap().nth(0).unwrap();
         let (dht, dht_future) = Dht::start(addr).unwrap();

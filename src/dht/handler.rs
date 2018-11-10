@@ -19,7 +19,10 @@ impl Dht {
             .and_then(move |(request, from)| -> Result<()> {
                 let response = self.handle_request(request, from.into_v4()?);
                 self.send_transport.send(from, response)
-            }).filter_map(|_| -> Option<()> { None })
+            }).or_else(|err| {
+                println!("Error While Handling Requests: {}", err);
+                Ok(())
+            }).skip_while(|_| Ok(true))
             .into_future()
             .map(|_| ())
             .map_err(|next| next.0)
