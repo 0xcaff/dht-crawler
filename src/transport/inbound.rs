@@ -32,7 +32,12 @@ impl Stream for InboundMessageStream {
                 .context(ErrorKind::BindError)
         );
 
-        let envelope = Message::decode(&recv_buffer[..size]).context(ErrorKind::InvalidResponse)?;
+        let envelope = Message::decode(&recv_buffer[..size]).with_context(|_| {
+            ErrorKind::InvalidInboundMessage {
+                from: from_addr,
+                message: recv_buffer[..size].to_vec(),
+            }
+        })?;
 
         Ok(Async::Ready(Some((envelope, from_addr))))
     }

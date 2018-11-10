@@ -144,13 +144,11 @@ mod tests {
     {
         nodes
             .into_iter()
-            // TODO: Remove .unwrap
             .flat_map(|addr| addr.to_socket_addrs().unwrap())
             .filter_map(|addr| match addr {
                 SocketAddr::V4(v4) => Some(v4),
                 _ => None,
-            })
-            .collect()
+            }).collect()
     }
 
     #[test]

@@ -51,25 +51,30 @@ impl Response {
     pub fn from(envelope: Message) -> Result<Response> {
         let response = match envelope.message_type {
             MessageType::Error { error } => {
-                return Err(ErrorKind::PeerError {
-                    protocol_error: error,
+                return Err(ErrorKind::ProtocolError {
+                    error_message: error,
                 })?;
             }
-            MessageType::Query { .. } => return Err(ErrorKind::InvalidResponse)?,
+            MessageType::Query { .. } => {
+                return Err(ErrorKind::InvalidMessageType {
+                    expected: "Response or Error",
+                    got: envelope.message_type,
+                })?
+            }
             MessageType::Response { response } => response,
         };
 
         Ok(Response {
             transaction_id: (&envelope.transaction_id[..])
                 .read_u32::<NetworkEndian>()
-                .context(ErrorKind::InvalidResponse)?,
+                .context(ErrorKind::InvalidResponseTransactionId)?,
             version: envelope.version.map(|e| e.into()),
             response,
         })
     }
 
     pub fn parse(src: &[u8]) -> Result<Response> {
-        let envelope: Message = Message::decode(&src).context(ErrorKind::InvalidResponse)?;
+        let envelope: Message = Message::decode(&src)?;
         Ok(Response::from(envelope)?)
     }
 }
@@ -83,7 +88,10 @@ impl FindNodeResponse {
     pub fn from_response(resp: Response) -> Result<FindNodeResponse> {
         Ok(match resp.response {
             proto::Response::NextHop { id, nodes, .. } => FindNodeResponse { id, nodes },
-            _ => Err(ErrorKind::InvalidResponseType)?,
+            got => Err(ErrorKind::InvalidResponseType {
+                expected: "FindNodeResponse (NextHop)",
+                got,
+            })?,
         })
     }
 }
@@ -109,7 +117,10 @@ impl GetPeersResponse {
                 token,
                 message_type: GetPeersResponseType::NextHop(nodes),
             },
-            _ => Err(ErrorKind::InvalidResponseType)?,
+            got => Err(ErrorKind::InvalidResponseType {
+                expected: "GetPeersResponse (GetPeers or NextHop)",
+                got,
+            })?,
         })
     }
 }
@@ -125,7 +136,10 @@ impl NodeIDResponse {
     pub fn from_response(resp: Response) -> Result<NodeID> {
         Ok(match resp.response {
             proto::Response::OnlyId { id } => id,
-            _ => Err(ErrorKind::InvalidResponseType)?,
+            got => Err(ErrorKind::InvalidResponseType {
+                expected: "NodeIDResponse",
+                got,
+            })?,
         })
     }
 }

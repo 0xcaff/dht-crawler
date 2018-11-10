@@ -50,7 +50,7 @@ impl RecvTransport {
     ) {
         let transactions = self.transactions.clone();
 
-        let stream = self
+        let query_stream = self
             .make_tokio_socket()
             .into_future()
             .into_stream()
@@ -69,7 +69,7 @@ impl RecvTransport {
             }).and_then(|r| r.into_future())
             .filter_map(|m| m);
 
-        (self.into_send_transport(), stream)
+        (self.into_send_transport(), query_stream)
     }
 
     /// Consumes the `RecvTransport` and make a `SendTransport`

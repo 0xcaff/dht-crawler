@@ -52,13 +52,13 @@ impl ResponseFuture {
     ) -> Result<()> {
         let transaction_id = (&message.transaction_id[..])
             .read_u32::<NetworkEndian>()
-            .context(ErrorKind::InvalidResponse)?;
+            .context(ErrorKind::InvalidResponseTransactionId)?;
 
         let mut map = transactions.lock()?;
 
         let tx_state = map
             .remove(&transaction_id)
-            .ok_or_else(|| ErrorKind::TransactionNotFound { transaction_id })?;
+            .ok_or_else(|| ErrorKind::UnknownTransaction { transaction_id })?;
 
         match tx_state {
             TxState::GotResponse { .. } => {
@@ -107,7 +107,7 @@ impl Future for ResponseFuture {
 
         let tx_state =
             map.remove(&self.transaction_id)
-                .ok_or_else(|| ErrorKind::TransactionNotFound {
+                .ok_or_else(|| ErrorKind::MissingTransactionState {
                     transaction_id: self.transaction_id,
                 })?;
 

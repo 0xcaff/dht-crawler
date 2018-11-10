@@ -143,7 +143,6 @@ impl Dht {
 
         record_request(&mut routing_table, id, from)?;
 
-        // TODO: Duplicates
         let mut torrents = self.torrents.lock()?;
 
         torrents
