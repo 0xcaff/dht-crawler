@@ -29,6 +29,9 @@ mod dht;
 pub mod errors;
 mod proto;
 mod routing;
+mod stream;
 mod transport;
 
 pub use dht::Dht;
+pub use stream::run_forever;
+pub use transport::RecvTransport;

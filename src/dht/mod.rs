@@ -25,7 +25,7 @@ pub struct Dht {
 impl Dht {
     /// Start handling inbound messages from other peers in the network. Continues to handle while
     /// the future is polled.
-    pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl Future<Item = (), Error = Error>)> {
+    pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl Future<Item = (), Error = ()>)> {
         let transport = RecvTransport::new(bind_addr)?;
         let (send_transport, request_stream) = transport.serve();
 
@@ -98,7 +98,7 @@ impl Dht {
                         cloned_send_transport.clone(),
                         cloned_routing_table.clone(),
                     ).or_else(|e| {
-                        println!("Error While Bootstrapping {}", e);
+                        eprintln!("Error While Bootstrapping {}", e);
                         Ok(())
                     })
                 })).and_then(|_| Ok(()))
@@ -132,7 +132,6 @@ impl Dht {
 
 #[cfg(test)]
 mod tests {
-    use futures::Future;
     use std::net::{SocketAddr, SocketAddrV4, ToSocketAddrs};
     use tokio::runtime::Runtime;
     use Dht;
@@ -163,7 +162,7 @@ mod tests {
         ]));
 
         let mut runtime = Runtime::new().unwrap();
-        runtime.spawn(dht_future.map_err(|e| println!("{}", e)));
+        runtime.spawn(dht_future);
         runtime.block_on(bootstrap_future).unwrap();
 
         let routing_table = dht.routing_table.lock().unwrap();

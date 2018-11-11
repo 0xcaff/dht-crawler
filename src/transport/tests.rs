@@ -1,3 +1,4 @@
+use stream::run_forever;
 use transport::messages::{Request, Response, TransactionId};
 use transport::RecvTransport;
 
@@ -12,7 +13,7 @@ use std::str::FromStr;
 
 use tokio::runtime::Runtime;
 
-use futures::{Future, Stream};
+use futures::Stream;
 
 #[test]
 fn test_ping() {
@@ -58,7 +59,11 @@ fn make_async_request(
     let recv_transport = RecvTransport::new(local_addr).unwrap();
     let (send_transport, request_stream) = recv_transport.serve();
 
-    let responses_future = request_stream.into_future().map_err(|_| ()).map(|_| ());
+    let responses_future = run_forever(
+        request_stream
+            .map(|_| ())
+            .map_err(|e| println!("Error In Request Stream: {}", e)),
+    );
 
     let request_future = send_transport.request(bootstrap_node_addr, transaction_id, request);
 
@@ -126,7 +131,11 @@ fn simple_ping() {
     let recv_transport = RecvTransport::new(bind).unwrap();
     let (send_transport, request_stream) = recv_transport.serve();
 
-    rt.spawn(request_stream.into_future().map(|_| ()).map_err(|_| ()));
+    rt.spawn(run_forever(
+        request_stream
+            .map(|_| ())
+            .map_err(|err| println!("Error in Request Stream: {}", err)),
+    ));
     let response = rt.block_on(send_transport.ping(id, remote)).unwrap();
 
     assert_ne!(response, b"0000000000000000000000000000000000000000".into())

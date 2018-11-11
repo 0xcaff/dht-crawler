@@ -3,6 +3,7 @@ use dht::Dht;
 use errors::{Error, ErrorKind, Result};
 use proto::{Addr, Message, MessageType, NodeID, Query, Response};
 use routing::{FindNodeResult, RoutingTable};
+use stream::run_forever;
 use transport::Request;
 
 use std::net::{SocketAddr, SocketAddrV4};
@@ -14,18 +15,18 @@ impl Dht {
     pub fn handle_requests<S: Stream<Item = (Request, SocketAddr), Error = Error>>(
         self,
         stream: S,
-    ) -> impl Future<Item = (), Error = Error> {
-        stream
-            .and_then(move |(request, from)| -> Result<()> {
-                let response = self.handle_request(request, from.into_v4()?);
-                self.send_transport.send(from, response)
-            }).or_else(|err| {
-                println!("Error While Handling Requests: {}", err);
-                Ok(())
-            }).skip_while(|_| Ok(true))
-            .into_future()
-            .map(|_| ())
-            .map_err(|next| next.0)
+    ) -> impl Future<Item = (), Error = ()> {
+        run_forever(
+            stream
+                .and_then(move |(request, from)| -> Result<()> {
+                    let response = self.handle_request(request, from.into_v4()?);
+                    self.send_transport.send(from, response)
+                }).or_else(|err| {
+                    eprintln!("Error While Handling Requests: {}", err);
+
+                    Ok(())
+                }),
+        )
     }
 
     fn handle_request(&self, request: Request, from: SocketAddrV4) -> Message {
