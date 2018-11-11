@@ -98,7 +98,7 @@ impl Dht {
                         cloned_send_transport.clone(),
                         cloned_routing_table.clone(),
                     ).or_else(|e| {
-                        println!("Received Error While Bootstrapping {}", e);
+                        println!("Error While Bootstrapping {}", e);
                         Ok(())
                     })
                 })).and_then(|_| Ok(()))
