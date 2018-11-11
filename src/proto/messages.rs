@@ -5,7 +5,7 @@ use serde_bytes::{self, ByteBuf};
 
 use std::fmt;
 
-use super::node_info;
+use super::{booleans, node_info};
 use super::{Addr, NodeID, NodeInfo};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
@@ -21,6 +21,15 @@ pub struct Message {
 
     #[serde(flatten)]
     pub message_type: MessageType,
+
+    /// From BEP43.
+    #[serde(
+        rename = "ro",
+        default,
+        skip_serializing_if = "booleans::is_false",
+        deserialize_with = "booleans::deserialize"
+    )]
+    pub read_only: bool,
 }
 
 impl Message {
@@ -85,7 +94,9 @@ pub enum Query {
     #[serde(rename = "announce_peer")]
     AnnouncePeer {
         id: NodeID,
-        implied_port: u8,
+
+        #[serde(deserialize_with = "booleans::deserialize")]
+        implied_port: bool,
         port: Option<u16>,
         info_hash: NodeID,
 

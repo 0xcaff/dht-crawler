@@ -42,8 +42,27 @@ impl RecvTransport {
         Ok(tokio_socket)
     }
 
+    pub fn serve_read_only(
+        self,
+    ) -> (
+        SendTransport,
+        impl Stream<Item = (Request, SocketAddr), Error = Error>,
+    ) {
+        self.serve_impl(true)
+    }
+
     pub fn serve(
         self,
+    ) -> (
+        SendTransport,
+        impl Stream<Item = (Request, SocketAddr), Error = Error>,
+    ) {
+        self.serve_impl(false)
+    }
+
+    fn serve_impl(
+        self,
+        read_only: bool,
     ) -> (
         SendTransport,
         impl Stream<Item = (Request, SocketAddr), Error = Error>,
@@ -63,17 +82,15 @@ impl RecvTransport {
                     Ok(None)
                 }
                 MessageType::Query { query } => Ok(Some((
-                    Request::new(envelope.transaction_id, query),
+                    Request::new(envelope.transaction_id, query, envelope.read_only),
                     from_addr,
                 ))),
             }).and_then(|r| r.into_future())
             .filter_map(|m| m);
 
-        (self.into_send_transport(), query_stream)
-    }
-
-    /// Consumes the `RecvTransport` and make a `SendTransport`
-    fn into_send_transport(self) -> SendTransport {
-        SendTransport::new(self.socket, self.transactions)
+        (
+            SendTransport::new(self.socket, self.transactions, read_only),
+            query_stream,
+        )
     }
 }

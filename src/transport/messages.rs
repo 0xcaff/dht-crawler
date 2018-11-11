@@ -19,14 +19,16 @@ pub struct Request {
     pub transaction_id: Vec<u8>,
     pub version: Option<Vec<u8>>,
     pub query: Query,
+    pub read_only: bool,
 }
 
 impl Request {
-    pub fn new(transaction_id: Vec<u8>, query: proto::Query) -> Request {
+    pub fn new(transaction_id: Vec<u8>, query: proto::Query, read_only: bool) -> Request {
         Request {
             transaction_id,
             version: None,
             query,
+            read_only,
         }
     }
 
@@ -36,6 +38,7 @@ impl Request {
             transaction_id: self.transaction_id,
             version: self.version.map(|version| version.into()),
             message_type: MessageType::Query { query: self.query },
+            read_only: self.read_only,
         }
     }
 }

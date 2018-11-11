@@ -30,16 +30,28 @@ impl Dht {
 
     fn handle_request(&self, request: Request, from: SocketAddrV4) -> Message {
         let result = match request.query {
-            Query::Ping { id } => self.handle_ping(from, id),
-            Query::FindNode { id, target } => self.handle_find_node(from, id, target),
-            Query::GetPeers { id, info_hash } => self.handle_get_peers(from, id, info_hash),
+            Query::Ping { id } => self.handle_ping(from, id, request.read_only),
+            Query::FindNode { id, target } => {
+                self.handle_find_node(from, id, target, request.read_only)
+            }
+            Query::GetPeers { id, info_hash } => {
+                self.handle_get_peers(from, id, info_hash, request.read_only)
+            }
             Query::AnnouncePeer {
                 id,
                 implied_port,
                 port,
                 info_hash,
                 token,
-            } => self.handle_announce_peer(from, id, implied_port, port, info_hash, token),
+            } => self.handle_announce_peer(
+                from,
+                id,
+                implied_port,
+                port,
+                info_hash,
+                token,
+                request.read_only,
+            ),
             _ => Err(ErrorKind::UnimplementedRequestType.into()),
         };
 
@@ -55,21 +67,28 @@ impl Dht {
             transaction_id: request.transaction_id,
             version: None,
             message_type,
+            read_only: false,
         }
     }
 
-    fn handle_ping(&self, from: SocketAddrV4, id: NodeID) -> Result<Response> {
+    fn handle_ping(&self, from: SocketAddrV4, id: NodeID, read_only: bool) -> Result<Response> {
         let mut routing_table = self.routing_table.lock()?;
-        record_request(&mut routing_table, id, from)?;
+        record_request(&mut routing_table, id, from, read_only)?;
 
         Ok(Response::OnlyId {
             id: self.id.clone(),
         })
     }
 
-    fn handle_find_node(&self, from: SocketAddrV4, id: NodeID, target: NodeID) -> Result<Response> {
+    fn handle_find_node(
+        &self,
+        from: SocketAddrV4,
+        id: NodeID,
+        target: NodeID,
+        read_only: bool,
+    ) -> Result<Response> {
         let mut routing_table = self.routing_table.lock()?;
-        record_request(&mut routing_table, id, from)?;
+        record_request(&mut routing_table, id, from, read_only)?;
 
         let nodes = match routing_table.find_node(&target) {
             FindNodeResult::Node(node) => vec![node],
@@ -88,9 +107,10 @@ impl Dht {
         from: SocketAddrV4,
         id: NodeID,
         info_hash: NodeID,
+        read_only: bool,
     ) -> Result<Response> {
         let mut routing_table = self.routing_table.lock()?;
-        record_request(&mut routing_table, id, from)?;
+        record_request(&mut routing_table, id, from, read_only)?;
 
         let token_bytes = routing_table.generate_token(&from).to_vec();
         let token = Some(token_bytes);
@@ -118,10 +138,11 @@ impl Dht {
         &self,
         mut from: SocketAddrV4,
         id: NodeID,
-        implied_port: u8,
+        implied_port: bool,
         port: Option<u16>,
         info_hash: NodeID,
         token: Vec<u8>,
+        read_only: bool,
     ) -> Result<Response> {
         let mut routing_table = self.routing_table.lock()?;
 
@@ -129,7 +150,7 @@ impl Dht {
             return Err(ErrorKind::InvalidToken)?;
         };
 
-        let addr = if implied_port == 1 {
+        let addr = if implied_port {
             from
         } else {
             let actual_port = match port {
@@ -141,7 +162,7 @@ impl Dht {
             from
         };
 
-        record_request(&mut routing_table, id, from)?;
+        record_request(&mut routing_table, id, from, read_only)?;
 
         let mut torrents = self.torrents.lock()?;
 
@@ -160,11 +181,14 @@ fn record_request<T: DerefMut<Target = RoutingTable>>(
     routing_table: &mut T,
     id: NodeID,
     from: SocketAddrV4,
+    read_only: bool,
 ) -> Result<()> {
-    routing_table
-        .deref_mut()
-        .get_or_add(id, from)
-        .map(|node| node.mark_successful_request_from());
+    if !read_only {
+        routing_table
+            .deref_mut()
+            .get_or_add(id, from)
+            .map(|node| node.mark_successful_request_from());
+    }
 
     Ok(())
 }

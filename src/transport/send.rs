@@ -24,16 +24,20 @@ pub struct SendTransport {
 
     /// Collection of in-flight transactions awaiting a response
     transactions: Arc<Mutex<TransactionMap>>,
+
+    read_only: bool,
 }
 
 impl SendTransport {
     pub fn new(
         socket: std::net::UdpSocket,
         transactions: Arc<Mutex<TransactionMap>>,
+        read_only: bool,
     ) -> SendTransport {
         SendTransport {
             socket,
             transactions,
+            read_only,
         }
     }
 
@@ -83,11 +87,12 @@ impl SendTransport {
         rand::random::<TransactionId>()
     }
 
-    fn build_request(query: Query) -> Request {
+    fn build_request(&self, query: Query) -> Request {
         Request {
             transaction_id: Vec::new(),
             version: None,
             query,
+            read_only: self.read_only,
         }
     }
 
@@ -99,7 +104,7 @@ impl SendTransport {
         self.request(
             address,
             Self::get_transaction_id(),
-            Self::build_request(Query::Ping { id }),
+            self.build_request(Query::Ping { id }),
         ).and_then(NodeIDResponse::from_response)
     }
 
@@ -112,7 +117,7 @@ impl SendTransport {
         self.request(
             address,
             Self::get_transaction_id(),
-            Self::build_request(Query::FindNode { id, target }),
+            self.build_request(Query::FindNode { id, target }),
         ).and_then(FindNodeResponse::from_response)
     }
 
@@ -125,7 +130,7 @@ impl SendTransport {
         self.request(
             address,
             Self::get_transaction_id(),
-            Self::build_request(Query::GetPeers { id, info_hash }),
+            self.build_request(Query::GetPeers { id, info_hash }),
         ).and_then(GetPeersResponse::from_response)
     }
 
@@ -138,14 +143,14 @@ impl SendTransport {
         port_type: PortType,
     ) -> impl Future<Item = NodeID, Error = Error> {
         let (port, implied_port) = match port_type {
-            PortType::Implied => (None, 1),
-            PortType::Port(port) => (Some(port), 0),
+            PortType::Implied => (None, true),
+            PortType::Port(port) => (Some(port), false),
         };
 
         self.request(
             address,
             Self::get_transaction_id(),
-            Self::build_request(Query::AnnouncePeer {
+            self.build_request(Query::AnnouncePeer {
                 id,
                 token,
                 info_hash,

@@ -2,6 +2,7 @@
 mod tests;
 
 mod addr;
+mod booleans;
 mod messages;
 mod node_id;
 mod node_info;
