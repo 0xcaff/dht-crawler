@@ -27,6 +27,7 @@ fn test_ping() {
         query: Query::Ping {
             id: b"abcdefghij0123456789".into(),
         },
+        read_only: false,
     };
 
     req.transaction_id
@@ -77,6 +78,7 @@ fn test_ping_async() {
         query: Query::Ping {
             id: b"abcdefghij0123456780".into(),
         },
+        read_only: false,
     };
 
     let resp = make_async_request("router.bittorrent.com:6881", transaction_id, req);
@@ -97,6 +99,7 @@ fn test_find_node() {
             id: id.clone(),
             target: id.clone(),
         },
+        read_only: false,
     };
 
     let resp = make_async_request("router.bittorrent.com:6881", transaction_id, req);
