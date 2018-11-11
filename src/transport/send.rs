@@ -138,8 +138,8 @@ impl SendTransport {
         port_type: PortType,
     ) -> impl Future<Item = NodeID, Error = Error> {
         let (port, implied_port) = match port_type {
-            PortType::Implied => (None, 1),
-            PortType::Port(port) => (Some(port), 0),
+            PortType::Implied => (None, true),
+            PortType::Port(port) => (Some(port), false),
         };
 
         self.request(

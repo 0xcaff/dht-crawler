@@ -36,6 +36,7 @@ impl Request {
             transaction_id: self.transaction_id,
             version: self.version.map(|version| version.into()),
             message_type: MessageType::Query { query: self.query },
+            read_only: false,
         }
     }
 }

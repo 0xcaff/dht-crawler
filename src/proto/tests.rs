@@ -25,9 +25,28 @@ fn ping_request() {
                 id: b"abcdefghij0123456789".into(),
             },
         },
+        read_only: false,
     };
 
     let raw = b"d1:ad2:id20:abcdefghij0123456789e1:q4:ping1:t2:aa1:y1:qe";
+    test_serialize_deserialize(parsed, raw);
+}
+
+#[test]
+fn ping_read_only() {
+    let parsed = Message {
+        ip: None,
+        transaction_id: b"aa".to_vec(),
+        version: None,
+        message_type: MessageType::Query {
+            query: Query::Ping {
+                id: b"abcdefghij0123456789".into(),
+            },
+        },
+        read_only: true,
+    };
+
+    let raw = b"d1:ad2:id20:abcdefghij0123456789e1:q4:ping2:roi1e1:t2:aa1:y1:qe";
     test_serialize_deserialize(parsed, raw);
 }
 
@@ -42,6 +61,7 @@ fn ping_response() {
                 id: b"mnopqrstuvwxyz123456".into(),
             },
         },
+        read_only: false,
     };
 
     let raw = b"d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re";
@@ -57,6 +77,7 @@ fn error() {
         message_type: MessageType::Error {
             error: Error::new(201, "A Generic Error Ocurred"),
         },
+        read_only: false,
     };
 
     let raw = b"d1:eli201e23:A Generic Error Ocurrede1:t2:aa1:y1:ee";
@@ -72,12 +93,13 @@ fn announce_peer_request() {
         message_type: MessageType::Query {
             query: Query::AnnouncePeer {
                 id: b"abcdefghij0123456789".into(),
-                implied_port: 1,
+                implied_port: true,
                 port: Some(6881),
                 info_hash: b"mnopqrstuvwxyz123456".into(),
                 token: b"aoeusnth".to_vec(),
             },
         },
+        read_only: false,
     };
 
     let raw = b"d1:ad2:id20:abcdefghij012345678912:implied_porti1e9:info_hash20:mnopqrstuvwxyz1234564:porti6881e5:token8:aoeusnthe1:q13:announce_peer1:t2:aa1:y1:qe";
@@ -97,6 +119,7 @@ fn get_nodes_response() {
                 nodes: Vec::new(),
             },
         },
+        read_only: false,
     };
 
     let serialized = serde_bencode::ser::to_bytes(&parsed).unwrap();
@@ -211,6 +234,7 @@ fn get_nodes_response_decode() {
                 ],
             },
         },
+        read_only: false,
     };
 
     let message = Message::decode(encoded).unwrap();
@@ -236,6 +260,7 @@ fn with_version() {
                 id: b"bd5d3cbbe9ebb3a6db3c870c3e99245e0d1c06f1".into(),
             },
         },
+        read_only: false,
     };
 
     let message = Message::decode(encoded).unwrap();

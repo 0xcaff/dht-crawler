@@ -55,6 +55,7 @@ impl Dht {
             transaction_id: request.transaction_id,
             version: None,
             message_type,
+            read_only: false,
         }
     }
 
@@ -118,7 +119,7 @@ impl Dht {
         &self,
         mut from: SocketAddrV4,
         id: NodeID,
-        implied_port: u8,
+        implied_port: bool,
         port: Option<u16>,
         info_hash: NodeID,
         token: Vec<u8>,
@@ -129,7 +130,7 @@ impl Dht {
             return Err(ErrorKind::InvalidToken)?;
         };
 
-        let addr = if implied_port == 1 {
+        let addr = if implied_port {
             from
         } else {
             let actual_port = match port {
