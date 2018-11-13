@@ -62,7 +62,7 @@ impl Dht {
             )
         });
 
-        let bootstrap_future = future::join_all(bootstrap_futures).and_then(|_| Ok(()));
+        let bootstrap_future = future::join_all(bootstrap_futures).map(|_| ());
 
         bootstrap_future
     }
@@ -101,7 +101,7 @@ impl Dht {
                         eprintln!("Error While Bootstrapping {}", e);
                         Ok(())
                     })
-                })).and_then(|_| Ok(()))
+                })).map(|_| ())
             });
 
         Box::new(fut)
