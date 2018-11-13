@@ -133,8 +133,21 @@ impl Dht {
 #[cfg(test)]
 mod tests {
     use std::net::{SocketAddr, SocketAddrV4, ToSocketAddrs};
+    use std::sync::Arc;
+    use std::time::{Duration, Instant};
+
+    use futures::Stream;
+    use tokio::prelude::*;
     use tokio::runtime::Runtime;
+
+    use addr::AsV4Address;
+    use errors::{Error, Result};
+    use futures::sync::mpsc::{channel, Sender};
+    use proto::NodeID;
+    use stream::run_forever;
+    use transport::SendTransport;
     use Dht;
+    use RecvTransport;
 
     fn flatten_addrs<I, A>(nodes: Vec<A>) -> Vec<SocketAddrV4>
     where
@@ -153,7 +166,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_bootstrap() {
-        let addr = "0.0.0.0:23170".to_socket_addrs().unwrap().nth(0).unwrap();
+        let addr = "0.0.0.0:23130".to_socket_addrs().unwrap().nth(0).unwrap();
         let (dht, dht_future) = Dht::start(addr).unwrap();
 
         let bootstrap_future = dht.bootstrap_routing_table(flatten_addrs(vec![
@@ -168,5 +181,104 @@ mod tests {
         let routing_table = dht.routing_table.lock().unwrap();
 
         assert!(routing_table.len() > 0);
+    }
+
+    #[derive(Debug)]
+    struct Node {
+        id: NodeID,
+        address: SocketAddrV4,
+        time_discovered: Instant,
+    }
+
+    impl Node {
+        pub fn new(id: NodeID, address: SocketAddrV4) -> Node {
+            Node {
+                id,
+                address,
+                time_discovered: Instant::now(),
+            }
+        }
+    }
+
+    #[test]
+    fn test_traversal() -> Result<()> {
+        println!("start traversal");
+        let bind_addr = "0.0.0.0:23130".to_socket_addrs().unwrap().nth(0).unwrap();
+
+        let transport = RecvTransport::new(bind_addr)?;
+        let (send_transport, request_stream) = transport.serve_read_only();
+
+        let mut runtime = Runtime::new().unwrap();
+        runtime.spawn(run_forever(request_stream.map(move |_| ()).or_else(
+            |err| {
+                eprintln!("Error While Handling Requests: {}", err);
+
+                Ok(())
+            },
+        )));
+
+        let node_id = NodeID::random();
+
+        let bootstrap_addr = "router.bittorrent.com:6881"
+            .to_socket_addrs()
+            .unwrap()
+            .nth(0)
+            .unwrap()
+            .into_v4()
+            .unwrap();
+
+        let send_transport_arc = Arc::new(send_transport);
+
+        let (sender, receiver) = channel::<Node>(0);
+
+        runtime.spawn(
+            traverse(node_id, bootstrap_addr, send_transport_arc, sender).or_else(|e| {
+                println!("Error While Traversing: {}", e);
+                Ok(())
+            }),
+        );
+
+        runtime
+            .block_on(run_forever(
+                receiver.map(|node| ()) // println!("Node Discovered: {:#?}", node)),
+            )).unwrap();
+
+        Ok(())
+    }
+
+    fn traverse(
+        self_id: NodeID,
+        addr: SocketAddrV4,
+        send_transport: Arc<SendTransport>,
+        sender: Sender<Node>,
+    ) -> Box<Future<Item = (), Error = Error> + Send> {
+        Box::new(
+            send_transport
+                .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
+                .timeout(Duration::from_secs(5))
+                .map_err(Error::from)
+                .and_then(move |response| {
+                    let node = Node::new(response.id, addr);
+                    let nodes = response.nodes;
+
+                    sender
+                        .send(node)
+                        .map_err(Error::from)
+                        .and_then(move |sender| {
+                            future::join_all(nodes.into_iter().map(move |node| {
+                                traverse(
+                                    self_id.clone(),
+                                    node.address,
+                                    send_transport.clone(),
+                                    sender.clone(),
+                                ).or_else(|e| {
+                                    eprintln!("ERROR!!! {}", e);
+
+                                    Ok(())
+                                })
+                            }))
+                        }).map(|_| ())
+                }),
+        )
     }
 }

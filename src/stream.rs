@@ -1,4 +1,7 @@
-use futures::{Future, Stream};
+use futures::stream::{FuturesUnordered, StreamFuture};
+use futures::{Async, Future, Poll, Stream};
+use std::fmt;
+use std::fmt::Debug;
 
 pub fn run_forever<S: Stream<Item = (), Error = ()>>(
     stream: S,
@@ -8,4 +11,56 @@ pub fn run_forever<S: Stream<Item = (), Error = ()>>(
         .into_future()
         .map(|_| ())
         .map_err(|_| ())
+}
+
+pub fn select_all<I>(streams: I) -> SelectAll<I::Item>
+where
+    I: IntoIterator,
+    I::Item: Stream,
+{
+    let mut set = SelectAll::new();
+    for stream in streams {
+        set.push(stream);
+    }
+    return set;
+}
+
+pub struct SelectAll<S> {
+    inner: FuturesUnordered<StreamFuture<S>>,
+}
+
+impl<T: Debug> Debug for SelectAll<T> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "SelectAll {{ ... }}")
+    }
+}
+impl<S: Stream> SelectAll<S> {
+    fn new() -> SelectAll<S> {
+        SelectAll {
+            inner: FuturesUnordered::new(),
+        }
+    }
+
+    pub fn push(&mut self, stream: S) {
+        self.inner.push(stream.into_future());
+    }
+}
+
+impl<S: Stream> Stream for SelectAll<S> {
+    type Item = S::Item;
+    type Error = S::Error;
+
+    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
+        loop {
+            match self.inner.poll().map_err(|(err, _)| err)? {
+                Async::NotReady => return Ok(Async::NotReady),
+                Async::Ready(Some((Some(item), remaining))) => {
+                    self.push(remaining);
+                    return Ok(Async::Ready(Some(item)));
+                }
+                Async::Ready(Some((None, _))) => {}
+                Async::Ready(None) => return Ok(Async::Ready(None)),
+            }
+        }
+    }
 }
