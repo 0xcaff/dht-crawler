@@ -52,14 +52,18 @@ impl<S: Stream> Stream for SelectAll<S> {
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         loop {
-            match self.inner.poll().map_err(|(err, _)| err)? {
-                Async::NotReady => return Ok(Async::NotReady),
-                Async::Ready(Some((Some(item), remaining))) => {
+            match self.inner.poll() {
+                Ok(Async::NotReady) => return Ok(Async::NotReady),
+                Ok(Async::Ready(Some((Some(item), remaining)))) => {
                     self.push(remaining);
                     return Ok(Async::Ready(Some(item)));
                 }
-                Async::Ready(Some((None, _))) => {}
-                Async::Ready(None) => return Ok(Async::Ready(None)),
+                Err((err, remaining)) => {
+                    self.push(remaining);
+                    return Err(err);
+                }
+                Ok(Async::Ready(Some((None, _remaining)))) => {}
+                Ok(Async::Ready(None)) => return Ok(Async::Ready(None)),
             }
         }
     }

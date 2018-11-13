@@ -132,6 +132,7 @@ impl Dht {
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
     use std::net::{SocketAddr, SocketAddrV4, ToSocketAddrs};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
@@ -142,9 +143,8 @@ mod tests {
 
     use addr::AsV4Address;
     use errors::{Error, Result};
-    use futures::sync::mpsc::{channel, Sender};
     use proto::NodeID;
-    use stream::run_forever;
+    use stream::{run_forever, select_all};
     use transport::SendTransport;
     use Dht;
     use RecvTransport;
@@ -166,7 +166,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_bootstrap() {
-        let addr = "0.0.0.0:23130".to_socket_addrs().unwrap().nth(0).unwrap();
+        let addr = "0.0.0.0:23170".to_socket_addrs().unwrap().nth(0).unwrap();
         let (dht, dht_future) = Dht::start(addr).unwrap();
 
         let bootstrap_future = dht.bootstrap_routing_table(flatten_addrs(vec![
@@ -201,24 +201,10 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_traversal() -> Result<()> {
-        println!("start traversal");
-        let bind_addr = "0.0.0.0:23130".to_socket_addrs().unwrap().nth(0).unwrap();
-
-        let transport = RecvTransport::new(bind_addr)?;
-        let (send_transport, request_stream) = transport.serve_read_only();
-
-        let mut runtime = Runtime::new().unwrap();
-        runtime.spawn(run_forever(request_stream.map(move |_| ()).or_else(
-            |err| {
-                eprintln!("Error While Handling Requests: {}", err);
-
-                Ok(())
-            },
-        )));
-
         let node_id = NodeID::random();
-
+        let bind_addr = "0.0.0.0:21130".to_socket_addrs().unwrap().nth(0).unwrap();
         let bootstrap_addr = "router.bittorrent.com:6881"
             .to_socket_addrs()
             .unwrap()
@@ -227,20 +213,26 @@ mod tests {
             .into_v4()
             .unwrap();
 
+        let transport = RecvTransport::new(bind_addr)?;
+        let (send_transport, request_stream) = transport.serve_read_only();
+
         let send_transport_arc = Arc::new(send_transport);
 
-        let (sender, receiver) = channel::<Node>(0);
+        let mut runtime = Runtime::new().unwrap();
+        runtime.spawn(run_forever(request_stream.map(|_| ()).or_else(|err| {
+            eprintln!("Error While Handling Requests: {}", err);
 
-        runtime.spawn(
-            traverse(node_id, bootstrap_addr, send_transport_arc, sender).or_else(|e| {
-                println!("Error While Traversing: {}", e);
-                Ok(())
-            }),
-        );
+            Ok(())
+        })));
 
         runtime
             .block_on(run_forever(
-                receiver.map(|node| ()) // println!("Node Discovered: {:#?}", node)),
+                traverse(node_id, bootstrap_addr, send_transport_arc)
+                    .map(|node| println!("Node Discovered: {:#?}", node))
+                    .or_else(|e| {
+                        eprintln!("Error While Traversing: {}", e);
+                        Ok(())
+                    }),
             )).unwrap();
 
         Ok(())
@@ -250,35 +242,24 @@ mod tests {
         self_id: NodeID,
         addr: SocketAddrV4,
         send_transport: Arc<SendTransport>,
-        sender: Sender<Node>,
-    ) -> Box<Future<Item = (), Error = Error> + Send> {
+    ) -> Box<Stream<Item = Node, Error = Error> + Send> {
         Box::new(
             send_transport
                 .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
                 .timeout(Duration::from_secs(5))
                 .map_err(Error::from)
-                .and_then(move |response| {
+                .map(move |response| {
                     let node = Node::new(response.id, addr);
-                    let nodes = response.nodes;
+                    let result_stream = Box::new(stream::once(Ok(node)))
+                        as Box<dyn Stream<Item = Node, Error = Error> + Send>;
 
-                    sender
-                        .send(node)
-                        .map_err(Error::from)
-                        .and_then(move |sender| {
-                            future::join_all(nodes.into_iter().map(move |node| {
-                                traverse(
-                                    self_id.clone(),
-                                    node.address,
-                                    send_transport.clone(),
-                                    sender.clone(),
-                                ).or_else(|e| {
-                                    eprintln!("ERROR!!! {}", e);
-
-                                    Ok(())
-                                })
-                            }))
-                        }).map(|_| ())
-                }),
+                    select_all(
+                        iter::once(result_stream).chain(response.nodes.into_iter().map(|node| {
+                            traverse(self_id.clone(), node.address, send_transport.clone())
+                        })),
+                    )
+                }).into_stream()
+                .flatten(),
         )
     }
 }
