@@ -18,7 +18,7 @@ impl Dht {
     ) -> impl Future<Item = (), Error = ()> {
         run_forever(
             stream
-                .and_then(move |(request, from)| -> Result<()> {
+                .and_then(move |(request, from)| {
                     let response = self.handle_request(request, from.into_v4()?);
                     self.send_transport.send(from, response)
                 }).or_else(|err| {
