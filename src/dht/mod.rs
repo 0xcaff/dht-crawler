@@ -133,7 +133,7 @@ impl Dht {
 #[cfg(test)]
 mod tests {
     use std::iter;
-    use std::net::{SocketAddr, SocketAddrV4, ToSocketAddrs};
+    use std::net::SocketAddrV4;
     use std::sync::Arc;
     use std::time::{Duration, Instant};
 
@@ -149,30 +149,16 @@ mod tests {
     use Dht;
     use RecvTransport;
 
-    fn flatten_addrs<I, A>(nodes: Vec<A>) -> Vec<SocketAddrV4>
-    where
-        I: Iterator<Item = SocketAddr>,
-        A: ToSocketAddrs<Iter = I>,
-    {
-        nodes
-            .into_iter()
-            .flat_map(|addr| addr.to_socket_addrs().unwrap())
-            .filter_map(|addr| match addr {
-                SocketAddr::V4(v4) => Some(v4),
-                _ => None,
-            }).collect()
-    }
-
     #[test]
     #[ignore]
     fn test_bootstrap() {
         let addr = "0.0.0.0:23170".into_addr();
         let (dht, dht_future) = Dht::start(addr).unwrap();
 
-        let bootstrap_future = dht.bootstrap_routing_table(flatten_addrs(vec![
-            "router.utorrent.com:6881",
-            "router.bittorrent.com:6881",
-        ]));
+        let bootstrap_future = dht.bootstrap_routing_table(vec![
+            "router.utorrent.com:6881".into_addr().into_v4().unwrap(),
+            "router.bittorrent.com:6881".into_addr().into_v4().unwrap(),
+        ]);
 
         let mut runtime = Runtime::new().unwrap();
         runtime.spawn(dht_future);
