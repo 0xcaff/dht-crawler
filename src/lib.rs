@@ -24,14 +24,12 @@ extern crate crypto;
 extern crate num_bigint as bigint;
 extern crate num_traits as num;
 
-mod addr;
-mod dht;
+pub mod addr;
+pub mod dht;
 pub mod errors;
-mod proto;
-mod routing;
-mod stream;
-mod transport;
+pub mod proto;
+pub mod routing;
+pub mod stream;
+pub mod transport;
 
 pub use dht::Dht;
-pub use stream::run_forever;
-pub use transport::RecvTransport;

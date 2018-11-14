@@ -1,5 +1,5 @@
 [package]
-name = "dht-crawler"
+name = "dht_crawler"
 version = "0.1.0"
 authors = ["Martin Charles <martincharles07@gmail.com>"]
 
