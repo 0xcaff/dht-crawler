@@ -141,7 +141,7 @@ mod tests {
     use tokio::prelude::*;
     use tokio::runtime::Runtime;
 
-    use addr::AsV4Address;
+    use addr::{AsV4Address, IntoSocketAddr};
     use errors::{Error, Result};
     use proto::NodeID;
     use stream::{run_forever, select_all};
@@ -166,7 +166,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_bootstrap() {
-        let addr = "0.0.0.0:23170".to_socket_addrs().unwrap().nth(0).unwrap();
+        let addr = "0.0.0.0:23170".into_addr();
         let (dht, dht_future) = Dht::start(addr).unwrap();
 
         let bootstrap_future = dht.bootstrap_routing_table(flatten_addrs(vec![
@@ -204,14 +204,8 @@ mod tests {
     #[ignore]
     fn test_traversal() -> Result<()> {
         let node_id = NodeID::random();
-        let bind_addr = "0.0.0.0:21130".to_socket_addrs().unwrap().nth(0).unwrap();
-        let bootstrap_addr = "router.bittorrent.com:6881"
-            .to_socket_addrs()
-            .unwrap()
-            .nth(0)
-            .unwrap()
-            .into_v4()
-            .unwrap();
+        let bind_addr = "0.0.0.0:21130".into_addr();
+        let bootstrap_addr = "router.bittorrent.com:6881".into_addr().into_v4().unwrap();
 
         let transport = RecvTransport::new(bind_addr)?;
         let (send_transport, request_stream) = transport.serve_read_only();

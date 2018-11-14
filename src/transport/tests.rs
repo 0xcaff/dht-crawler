@@ -1,3 +1,4 @@
+use addr::IntoSocketAddr;
 use stream::run_forever;
 use transport::messages::{Request, Response, TransactionId};
 use transport::RecvTransport;
@@ -7,7 +8,6 @@ use proto::{NodeID, Query};
 
 use byteorder::{NetworkEndian, WriteBytesExt};
 use std::net::SocketAddr;
-use std::net::ToSocketAddrs;
 use std::net::UdpSocket;
 use std::str::FromStr;
 
@@ -52,7 +52,7 @@ fn make_async_request(
     request: Request,
 ) -> Response {
     let local_addr = SocketAddr::from_str("0.0.0.0:0").unwrap();
-    let bootstrap_node_addr = remote_addr.to_socket_addrs().unwrap().next().unwrap();
+    let bootstrap_node_addr = remote_addr.into_addr();
 
     let mut runtime = Runtime::new().unwrap();
 
@@ -120,11 +120,7 @@ fn test_find_node() {
 #[test]
 fn simple_ping() {
     let bind = SocketAddr::from_str("0.0.0.0:0").unwrap();
-    let remote = "router.bittorrent.com:6881"
-        .to_socket_addrs()
-        .unwrap()
-        .next()
-        .unwrap();
+    let remote = "router.bittorrent.com:6881".into_addr();
 
     let id = NodeID::random();
     let mut rt = Runtime::new().unwrap();
