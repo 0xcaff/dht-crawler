@@ -12,17 +12,15 @@ use std::{
 };
 
 use futures::{stream, Future, Stream};
-use tokio::runtime::Runtime;
-use tokio::util::FutureExt;
+use tokio::{runtime::Runtime, util::FutureExt};
 
-use dht_crawler::addr::AsV4Address;
-use dht_crawler::addr::IntoSocketAddr;
-use dht_crawler::errors::Error as DhtError;
-use dht_crawler::proto::NodeID;
-use dht_crawler::stream::run_forever;
-use dht_crawler::stream::select_all;
-use dht_crawler::transport::RecvTransport;
-use dht_crawler::transport::SendTransport;
+use dht_crawler::{
+    addr::{AsV4Address, IntoSocketAddr},
+    errors::Error as DhtError,
+    proto::NodeID,
+    stream::{run_forever, select_all},
+    transport::{RecvTransport, SendTransport},
+};
 
 fn main() -> Result<(), Error> {
     let node_id = NodeID::random();

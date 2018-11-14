@@ -5,19 +5,24 @@ use proto::{Message, NodeID, Query};
 
 use rand;
 
-use std;
-use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
+use std::{
+    self,
+    net::SocketAddr,
+    sync::{Arc, Mutex},
+};
 
 use byteorder::NetworkEndian;
 use bytes::ByteOrder;
 
 use tokio::prelude::*;
 
-use transport::messages::{
-    FindNodeResponse, GetPeersResponse, NodeIDResponse, PortType, Request, Response, TransactionId,
+use transport::{
+    messages::{
+        FindNodeResponse, GetPeersResponse, NodeIDResponse, PortType, Request, Response,
+        TransactionId,
+    },
+    response::{ResponseFuture, TransactionMap},
 };
-use transport::response::{ResponseFuture, TransactionMap};
 
 pub struct SendTransport {
     socket: std::net::UdpSocket,
@@ -73,8 +78,9 @@ impl SendTransport {
 
     /// Synchronously sends a request to `address`.
     ///
-    /// The sending is done synchronously because doing it asynchronously was cumbersome and didn't
-    /// make anything faster. UDP sending rarely blocks.
+    /// The sending is done synchronously because doing it asynchronously was
+    /// cumbersome and didn't make anything faster. UDP sending rarely
+    /// blocks.
     pub fn send(&self, address: SocketAddr, message: Message) -> Result<()> {
         self.socket
             .send_to(&message.encode()?, &address)

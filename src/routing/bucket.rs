@@ -1,5 +1,4 @@
-use std::mem;
-use std::ops::Deref;
+use std::{mem, ops::Deref};
 
 use proto::NodeID;
 

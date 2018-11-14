@@ -1,20 +1,22 @@
 use errors::{Error, ErrorKind, Result};
 use failure::ResultExt;
 
-use std;
-use std::collections::HashMap;
-use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
+use std::{
+    self,
+    collections::HashMap,
+    net::SocketAddr,
+    sync::{Arc, Mutex},
+};
 
-use tokio;
-use tokio::prelude::*;
-use tokio::reactor::Handle;
+use tokio::{self, prelude::*, reactor::Handle};
 
 use proto::MessageType;
-use transport::inbound::InboundMessageStream;
-use transport::messages::Request;
-use transport::response::{ResponseFuture, TransactionMap};
-use transport::SendTransport;
+use transport::{
+    inbound::InboundMessageStream,
+    messages::Request,
+    response::{ResponseFuture, TransactionMap},
+    SendTransport,
+};
 
 pub struct RecvTransport {
     socket: std::net::UdpSocket,

@@ -1,21 +1,19 @@
-use serde::Serialize;
-use serde::Serializer;
-
-use serde::de;
-use serde::Deserialize;
-use serde::Deserializer;
+use serde::{
+    de::{self, Visitor},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use serde::de::Visitor;
 
-use std::fmt;
-use std::net::Ipv4Addr;
-use std::net::SocketAddrV4;
-use std::ops::Deref;
-use std::str::FromStr;
+use std::{
+    fmt,
+    net::{Ipv4Addr, SocketAddrV4},
+    ops::Deref,
+    str::FromStr,
+};
 
-/// Wrapper type handling compact serialization and de-serialization of ip address and port
-/// information. Defined in BEP5.
+/// Wrapper type handling compact serialization and de-serialization of ip
+/// address and port information. Defined in BEP5.
 #[derive(Eq, PartialEq, Debug)]
 pub struct Addr(SocketAddrV4);
 
@@ -119,8 +117,7 @@ mod tests {
 
     use self::serde_test::{assert_tokens, Token};
     use super::Addr;
-    use std::net::Ipv4Addr;
-    use std::net::SocketAddrV4;
+    use std::net::{Ipv4Addr, SocketAddrV4};
 
     #[test]
     fn serde() {

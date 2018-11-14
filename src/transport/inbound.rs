@@ -4,8 +4,7 @@ use errors::{Error, ErrorKind, Result};
 use failure::ResultExt;
 
 use std::net::SocketAddr;
-use tokio;
-use tokio::prelude::*;
+use tokio::{self, prelude::*};
 
 /// A future which handles receiving messages for the local peer.
 pub struct InboundMessageStream {

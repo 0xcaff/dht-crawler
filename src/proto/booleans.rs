@@ -1,6 +1,7 @@
-use serde::de;
-use serde::de::Visitor;
-use serde::Deserializer;
+use serde::{
+    de::{self, Visitor},
+    Deserializer,
+};
 use std::fmt;
 
 pub fn is_false(b: &bool) -> bool {

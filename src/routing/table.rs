@@ -1,12 +1,8 @@
-use crypto::digest::Digest;
-use crypto::sha1::Sha1;
-use rand;
-use std::cmp;
-use std::net::SocketAddrV4;
-
+use crypto::{digest::Digest, sha1::Sha1};
 use proto::{self, NodeID, NodeInfo};
-use routing::bucket::Bucket;
-use routing::node::Node;
+use rand;
+use routing::{bucket::Bucket, node::Node};
+use std::{cmp, net::SocketAddrV4};
 
 pub enum FindNodeResult {
     Node(NodeInfo),
@@ -15,12 +11,12 @@ pub enum FindNodeResult {
 
 #[derive(Debug)]
 pub struct RoutingTable {
-    /// Node identifier of the node which the table is based around. There will be more buckets
-    /// closer to this identifier.
+    /// Node identifier of the node which the table is based around. There will
+    /// be more buckets closer to this identifier.
     id: NodeID,
 
-    /// Ordered list of buckets covering the key space. The first bucket starts at key 0 and the
-    /// last bucket ends at key 2^160.
+    /// Ordered list of buckets covering the key space. The first bucket starts
+    /// at key 0 and the last bucket ends at key 2^160.
     buckets: Vec<Bucket>,
 
     /// Secret used when generating tokens for `get_peers` and `announce_peer`.
@@ -66,8 +62,9 @@ impl RoutingTable {
         &mut self.buckets[bucket_to_add_to_idx].add_node(node);
     }
 
-    /// Finds the node with `id`, or about the `k` nearest good nodes to the `id` if the exact node
-    /// couldn't be found. More or less than `k` nodes may be returned.
+    /// Finds the node with `id`, or about the `k` nearest good nodes to the
+    /// `id` if the exact node couldn't be found. More or less than `k`
+    /// nodes may be returned.
     pub fn find_node(&self, id: &NodeID) -> FindNodeResult {
         let bucket_idx = self.get_bucket_idx(id);
         let bucket = &self.buckets[bucket_idx];
@@ -128,8 +125,8 @@ impl RoutingTable {
         generate_token(addr, &self.token_secret)
     }
 
-    /// Updates `last_token` and `token` moving `token` to `last_token` and creating a new `token`.
-    /// Returns the new token.
+    /// Updates `last_token` and `token` moving `token` to `last_token` and
+    /// creating a new `token`. Returns the new token.
     pub fn update_token(&mut self) -> [u8; 4] {
         self.last_token_secret = self.token_secret;
         self.token_secret = rand::random();

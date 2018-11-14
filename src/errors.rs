@@ -1,12 +1,7 @@
-use failure::Backtrace;
-use failure::Context;
-use failure::Fail;
+use failure::{Backtrace, Context, Fail};
 
 use proto;
-use std;
-use std::fmt;
-use std::net::SocketAddr;
-use std::sync::PoisonError;
+use std::{self, fmt, net::SocketAddr, sync::PoisonError};
 
 use std::net::SocketAddrV6;
 use tokio::timer::timeout;
@@ -144,8 +139,8 @@ impl From<Context<ErrorKind>> for Error {
     }
 }
 
-/// Implementation allowing for converting to a `Fail` compatible error even when the lock isn't
-/// sync.
+/// Implementation allowing for converting to a `Fail` compatible error even
+/// when the lock isn't sync.
 impl<Guard> From<PoisonError<Guard>> for Error {
     fn from(_err: PoisonError<Guard>) -> Error {
         ErrorKind::LockPoisoned.into()

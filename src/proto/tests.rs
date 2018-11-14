@@ -1,12 +1,12 @@
 use proto::{Message, MessageType, NodeInfo, ProtocolError, Query, Response};
 
-use serde_bencode;
-
-use std::net::SocketAddrV4;
-use std::str;
-use std::str::FromStr;
+use std::{
+    net::SocketAddrV4,
+    str::{self, FromStr},
+};
 
 use failure::Error;
+use serde_bencode;
 
 fn test_serialize_deserialize(parsed: Message, raw: &[u8]) -> Result<(), Error> {
     let serialized = serde_bencode::ser::to_string(&parsed)?;

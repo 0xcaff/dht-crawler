@@ -1,11 +1,11 @@
 use rand;
 
-use serde::de;
-use serde::de::Visitor;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{
+    de::{self, Visitor},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 
-use std::fmt;
-use std::ops::Deref;
+use std::{fmt, ops::Deref};
 
 use bigint::BigUint;
 use hex;

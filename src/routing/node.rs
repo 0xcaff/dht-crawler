@@ -8,8 +8,8 @@ pub struct Node {
     pub id: NodeID,
     pub address: SocketAddrV4,
 
-    /// Last time a message was sent from ourselves to this node and a response was received
-    /// successfully.
+    /// Last time a message was sent from ourselves to this node and a response
+    /// was received successfully.
     last_request_to: Option<NaiveDateTime>,
 
     /// Last time a valid request was received from this node.
@@ -33,16 +33,17 @@ impl Into<NodeInfo> for Node {
 
 #[derive(Debug, PartialEq)]
 pub enum NodeState {
-    /// A good node is a node has responded to one of our queries within the last 15 minutes. A node
-    /// is also good if it has ever responded to one of our queries and has sent us a query within
-    /// the last 15 minutes.
+    /// A good node is a node has responded to one of our queries within the
+    /// last 15 minutes. A node is also good if it has ever responded to one
+    /// of our queries and has sent us a query within the last 15 minutes.
     Good,
 
     /// After 15 minutes of inactivity, a node becomes questionable.
     Questionable,
 
-    /// Nodes become bad when they fail to respond to multiple queries in a row. At this point, they
-    /// are not sent to other peers. They are replaced with new good nodes.
+    /// Nodes become bad when they fail to respond to multiple queries in a row.
+    /// At this point, they are not sent to other peers. They are replaced
+    /// with new good nodes.
     Bad,
 }
 
@@ -106,8 +107,7 @@ impl Node {
 mod tests {
     use super::{Node, NodeID, NodeState};
     use bigint::BigUint;
-    use chrono::prelude::*;
-    use chrono::Duration;
+    use chrono::{prelude::*, Duration};
     use failure::Error;
 
     #[test]

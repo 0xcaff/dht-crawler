@@ -1,10 +1,9 @@
-use serde::de;
-use serde::de::Visitor;
-use serde::Deserializer;
-use serde::Serializer;
+use serde::{
+    de::{self, Visitor},
+    Deserializer, Serializer,
+};
 
-use std::fmt;
-use std::net::SocketAddrV4;
+use std::{fmt, net::SocketAddrV4};
 
 use super::{addr, NodeID};
 
@@ -96,8 +95,7 @@ impl<'de> Visitor<'de> for NodeInfoVecVisitor {
 #[cfg(test)]
 mod tests {
     use proto::NodeInfo;
-    use std::net::SocketAddrV4;
-    use std::str::FromStr;
+    use std::{net::SocketAddrV4, str::FromStr};
 
     use failure::Error;
 

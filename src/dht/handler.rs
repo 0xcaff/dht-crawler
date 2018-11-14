@@ -6,8 +6,10 @@ use routing::{FindNodeResult, RoutingTable};
 use stream::run_forever;
 use transport::Request;
 
-use std::net::{SocketAddr, SocketAddrV4};
-use std::ops::DerefMut;
+use std::{
+    net::{SocketAddr, SocketAddrV4},
+    ops::DerefMut,
+};
 
 use tokio::prelude::*;
 

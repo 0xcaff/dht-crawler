@@ -1,8 +1,7 @@
 use errors::{ErrorKind, Result};
 use failure::ResultExt;
 
-use proto;
-use proto::{Addr, Message, MessageType, NodeID, NodeInfo, Query};
+use proto::{self, Addr, Message, MessageType, NodeID, NodeInfo, Query};
 
 use byteorder::{NetworkEndian, ReadBytesExt};
 use std::net::SocketAddrV4;

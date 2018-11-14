@@ -4,21 +4,22 @@ use transport::messages::TransactionId;
 use errors::{Error, ErrorKind, Result};
 use failure::ResultExt;
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use futures::task::Task;
 use tokio::prelude::*;
 
-use byteorder::NetworkEndian;
-use byteorder::ReadBytesExt;
+use byteorder::{NetworkEndian, ReadBytesExt};
 
 pub type TransactionMap = HashMap<TransactionId, TxState>;
 
 pub enum TxState {
     AwaitingResponse {
-        /// Task to awake when response is received. None if poll hasn't been called for this tx
-        /// yet.
+        /// Task to awake when response is received. None if poll hasn't been
+        /// called for this tx yet.
         task: Option<Task>,
     },
 
@@ -27,7 +28,8 @@ pub enum TxState {
     },
 }
 
-/// A future which resolves when the response for a transaction appears in a peer's transaction map.
+/// A future which resolves when the response for a transaction appears in a
+/// peer's transaction map.
 pub struct ResponseFuture {
     transaction_id: TransactionId,
 
@@ -146,8 +148,10 @@ mod tests {
     use super::{ResponseFuture, TxState};
     use errors::Error as DhtError;
     use failure::Error;
-    use std::collections::HashMap;
-    use std::sync::{Arc, Mutex};
+    use std::{
+        collections::HashMap,
+        sync::{Arc, Mutex},
+    };
 
     #[test]
     fn test_drop() -> Result<(), Error> {

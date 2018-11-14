@@ -5,8 +5,7 @@ use serde_bytes::{self, ByteBuf};
 
 use std::fmt;
 
-use super::{booleans, node_info};
-use super::{Addr, NodeID, NodeInfo};
+use super::{booleans, node_info, Addr, NodeID, NodeInfo};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Message {
@@ -115,7 +114,8 @@ pub enum Response {
     NextHop {
         id: NodeID,
 
-        /// Empty when the responder decides we are unfit to send AnnouncePeer messages by BEP42.
+        /// Empty when the responder decides we are unfit to send AnnouncePeer
+        /// messages by BEP42.
         token: Option<Vec<u8>>,
 
         #[serde(with = "node_info")]
@@ -124,7 +124,8 @@ pub enum Response {
     GetPeers {
         id: NodeID,
 
-        /// Empty when the responder decides we are unfit to send AnnouncePeer messages by BEP42.
+        /// Empty when the responder decides we are unfit to send AnnouncePeer
+        /// messages by BEP42.
         token: Option<Vec<u8>>,
 
         #[serde(rename = "values")]

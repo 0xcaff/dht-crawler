@@ -1,7 +1,8 @@
-use futures::stream::{FuturesUnordered, StreamFuture};
-use futures::{Async, Future, Poll, Stream};
-use std::fmt;
-use std::fmt::Debug;
+use futures::{
+    stream::{FuturesUnordered, StreamFuture},
+    Async, Future, Poll, Stream,
+};
+use std::fmt::{self, Debug};
 
 pub fn run_forever<S: Stream<Item = (), Error = ()>>(
     stream: S,

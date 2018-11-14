@@ -1,12 +1,13 @@
 use errors::{Error, Result};
-
 use proto::NodeID;
 use routing::{Node, RoutingTable};
 use transport::{PortType, RecvTransport, SendTransport};
 
-use std::collections::HashMap;
-use std::net::{SocketAddr, SocketAddrV4};
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    net::{SocketAddr, SocketAddrV4},
+    sync::{Arc, Mutex},
+};
 
 use std::time::Duration;
 use tokio::prelude::*;
@@ -23,8 +24,8 @@ pub struct Dht {
 }
 
 impl Dht {
-    /// Start handling inbound messages from other peers in the network. Continues to handle while
-    /// the future is polled.
+    /// Start handling inbound messages from other peers in the network.
+    /// Continues to handle while the future is polled.
     pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl Future<Item = (), Error = ()>)> {
         let transport = RecvTransport::new(bind_addr)?;
         let (send_transport, request_stream) = transport.serve();
@@ -43,8 +44,8 @@ impl Dht {
         Ok((dht.clone(), dht.handle_requests(request_stream)))
     }
 
-    /// Bootstraps the routing table by finding nodes near our node id and adding them to the
-    /// routing table.
+    /// Bootstraps the routing table by finding nodes near our node id and
+    /// adding them to the routing table.
     pub fn bootstrap_routing_table(
         &self,
         addrs: Vec<SocketAddrV4>,
@@ -132,15 +133,16 @@ impl Dht {
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
-    use std::net::SocketAddrV4;
-    use std::sync::Arc;
-    use std::time::{Duration, Instant};
+    use std::{
+        iter,
+        net::SocketAddrV4,
+        sync::Arc,
+        time::{Duration, Instant},
+    };
 
     use failure::Error;
     use futures::Stream;
-    use tokio::prelude::*;
-    use tokio::runtime::Runtime;
+    use tokio::{prelude::*, runtime::Runtime};
 
     use addr::{AsV4Address, IntoSocketAddr};
     use errors::Error as DhtError;

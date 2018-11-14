@@ -1,16 +1,18 @@
 use addr::IntoSocketAddr;
 use stream::run_forever;
-use transport::messages::{Request, Response, TransactionId};
-use transport::RecvTransport;
+use transport::{
+    messages::{Request, Response, TransactionId},
+    RecvTransport,
+};
 
-use proto;
-use proto::{NodeID, Query};
+use proto::{self, NodeID, Query};
 
 use byteorder::{NetworkEndian, WriteBytesExt};
 use failure::Error;
-use std::net::SocketAddr;
-use std::net::UdpSocket;
-use std::str::FromStr;
+use std::{
+    net::{SocketAddr, UdpSocket},
+    str::FromStr,
+};
 
 use tokio::runtime::Runtime;
 

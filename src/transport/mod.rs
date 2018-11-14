@@ -7,6 +7,8 @@ mod send;
 #[cfg(test)]
 mod tests;
 
-pub use transport::messages::{PortType, Request, Response};
-pub use transport::recv::RecvTransport;
-pub use transport::send::SendTransport;
+pub use transport::{
+    messages::{PortType, Request, Response},
+    recv::RecvTransport,
+    send::SendTransport,
+};
