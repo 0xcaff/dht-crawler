@@ -148,9 +148,8 @@ mod tests {
     use errors::Error as DhtError;
     use proto::NodeID;
     use stream::{run_forever, select_all};
-    use transport::SendTransport;
+    use transport::{SendTransport, RecvTransport};
     use Dht;
-    use RecvTransport;
 
     #[test]
     #[ignore]
