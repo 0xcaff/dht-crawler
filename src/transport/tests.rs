@@ -7,6 +7,7 @@ use proto;
 use proto::{NodeID, Query};
 
 use byteorder::{NetworkEndian, WriteBytesExt};
+use failure::Error;
 use std::net::SocketAddr;
 use std::net::UdpSocket;
 use std::str::FromStr;
@@ -16,10 +17,10 @@ use tokio::runtime::Runtime;
 use futures::Stream;
 
 #[test]
-fn test_ping() {
-    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
+fn test_ping() -> Result<(), Error> {
+    let socket = UdpSocket::bind("0.0.0.0:0")?;
     let bootstrap_node = "router.bittorrent.com:6881";
-    socket.connect(bootstrap_node).unwrap();
+    socket.connect(bootstrap_node)?;
 
     let transaction_id = 0x8aba;
     let mut req = Request {
@@ -32,31 +33,32 @@ fn test_ping() {
     };
 
     req.transaction_id
-        .write_u32::<NetworkEndian>(transaction_id)
-        .unwrap();
+        .write_u32::<NetworkEndian>(transaction_id)?;
 
-    let req_encoded = req.into().encode().unwrap();
-    socket.send(&req_encoded).unwrap();
+    let req_encoded = req.into().encode()?;
+    socket.send(&req_encoded)?;
 
     let mut recv_buffer = [0 as u8; 1024];
-    let size = socket.recv(&mut recv_buffer).unwrap();
+    let size = socket.recv(&mut recv_buffer)?;
 
-    let resp = Response::parse(&recv_buffer[0..size]).unwrap();
+    let resp = Response::parse(&recv_buffer[0..size])?;
 
     assert_eq!(resp.transaction_id, transaction_id);
+
+    Ok(())
 }
 
 fn make_async_request(
     remote_addr: &str,
     transaction_id: TransactionId,
     request: Request,
-) -> Response {
-    let local_addr = SocketAddr::from_str("0.0.0.0:0").unwrap();
+) -> Result<Response, Error> {
+    let local_addr = SocketAddr::from_str("0.0.0.0:0")?;
     let bootstrap_node_addr = remote_addr.into_addr();
 
-    let mut runtime = Runtime::new().unwrap();
+    let mut runtime = Runtime::new()?;
 
-    let recv_transport = RecvTransport::new(local_addr).unwrap();
+    let recv_transport = RecvTransport::new(local_addr)?;
     let (send_transport, request_stream) = recv_transport.serve();
 
     let responses_future = run_forever(
@@ -68,13 +70,13 @@ fn make_async_request(
     let request_future = send_transport.request(bootstrap_node_addr, transaction_id, request);
 
     runtime.spawn(responses_future);
-    let resp = runtime.block_on(request_future).unwrap();
+    let resp = runtime.block_on(request_future)?;
 
-    resp
+    Ok(resp)
 }
 
 #[test]
-fn test_ping_async() {
+fn test_ping_async() -> Result<(), Error> {
     let transaction_id = 0xafda;
 
     let req = Request {
@@ -86,13 +88,15 @@ fn test_ping_async() {
         read_only: false,
     };
 
-    let resp = make_async_request("router.bittorrent.com:6881", transaction_id, req);
+    let resp = make_async_request("router.bittorrent.com:6881", transaction_id, req)?;
 
-    assert_eq!(resp.transaction_id, transaction_id)
+    assert_eq!(resp.transaction_id, transaction_id);
+
+    Ok(())
 }
 
 #[test]
-fn test_find_node() {
+fn test_find_node() -> Result<(), Error> {
     let transaction_id = 0x21312;
 
     let id: NodeID = b"abcdefghij0123456780".into();
@@ -107,7 +111,7 @@ fn test_find_node() {
         read_only: false,
     };
 
-    let resp = make_async_request("router.bittorrent.com:6881", transaction_id, req);
+    let resp = make_async_request("router.bittorrent.com:6881", transaction_id, req)?;
 
     assert_eq!(resp.transaction_id, transaction_id);
 
@@ -115,16 +119,18 @@ fn test_find_node() {
         proto::Response::NextHop { nodes, .. } => assert!(!nodes.is_empty()),
         _ => assert!(false),
     };
+
+    Ok(())
 }
 
 #[test]
-fn simple_ping() {
-    let bind = SocketAddr::from_str("0.0.0.0:0").unwrap();
+fn simple_ping() -> Result<(), Error> {
+    let bind = SocketAddr::from_str("0.0.0.0:0")?;
     let remote = "router.bittorrent.com:6881".into_addr();
 
     let id = NodeID::random();
-    let mut rt = Runtime::new().unwrap();
-    let recv_transport = RecvTransport::new(bind).unwrap();
+    let mut rt = Runtime::new()?;
+    let recv_transport = RecvTransport::new(bind)?;
     let (send_transport, request_stream) = recv_transport.serve();
 
     rt.spawn(run_forever(
@@ -132,7 +138,9 @@ fn simple_ping() {
             .map(|_| ())
             .map_err(|err| println!("Error in Request Stream: {}", err)),
     ));
-    let response = rt.block_on(send_transport.ping(id, remote)).unwrap();
+    let response = rt.block_on(send_transport.ping(id, remote))?;
 
-    assert_ne!(response, b"0000000000000000000000000000000000000000".into())
+    assert_ne!(response, b"0000000000000000000000000000000000000000".into());
+
+    Ok(())
 }

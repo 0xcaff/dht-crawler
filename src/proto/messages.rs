@@ -60,20 +60,20 @@ pub enum MessageType {
     #[serde(rename = "e")]
     Error {
         #[serde(rename = "e")]
-        error: Error,
+        error: ProtocolError,
     },
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
-pub struct Error(u8, String);
+pub struct ProtocolError(u8, String);
 
-impl Error {
-    pub fn new(error_code: u8, message: &str) -> Error {
-        Error(error_code, message.to_string())
+impl ProtocolError {
+    pub fn new(error_code: u8, message: &str) -> ProtocolError {
+        ProtocolError(error_code, message.to_string())
     }
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for ProtocolError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }

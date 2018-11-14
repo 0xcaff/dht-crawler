@@ -1,4 +1,4 @@
-use proto::{Error, Message, MessageType, NodeInfo, Query, Response};
+use proto::{Message, MessageType, NodeInfo, ProtocolError, Query, Response};
 
 use serde_bencode;
 
@@ -6,16 +6,20 @@ use std::net::SocketAddrV4;
 use std::str;
 use std::str::FromStr;
 
-fn test_serialize_deserialize(parsed: Message, raw: &[u8]) {
-    let serialized = serde_bencode::ser::to_string(&parsed).unwrap();
-    let raw_string = str::from_utf8(raw).unwrap().to_string();
+use failure::Error;
+
+fn test_serialize_deserialize(parsed: Message, raw: &[u8]) -> Result<(), Error> {
+    let serialized = serde_bencode::ser::to_string(&parsed)?;
+    let raw_string = str::from_utf8(raw)?.to_string();
 
     assert_eq!(raw_string, serialized);
-    assert_eq!(parsed, serde_bencode::de::from_bytes(raw).unwrap());
+    assert_eq!(parsed, serde_bencode::de::from_bytes(raw)?);
+
+    Ok(())
 }
 
 #[test]
-fn ping_request() {
+fn ping_request() -> Result<(), Error> {
     let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
@@ -29,11 +33,11 @@ fn ping_request() {
     };
 
     let raw = b"d1:ad2:id20:abcdefghij0123456789e1:q4:ping1:t2:aa1:y1:qe";
-    test_serialize_deserialize(parsed, raw);
+    test_serialize_deserialize(parsed, raw)
 }
 
 #[test]
-fn ping_read_only() {
+fn ping_read_only() -> Result<(), Error> {
     let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
@@ -47,11 +51,11 @@ fn ping_read_only() {
     };
 
     let raw = b"d1:ad2:id20:abcdefghij0123456789e1:q4:ping2:roi1e1:t2:aa1:y1:qe";
-    test_serialize_deserialize(parsed, raw);
+    test_serialize_deserialize(parsed, raw)
 }
 
 #[test]
-fn ping_response() {
+fn ping_response() -> Result<(), Error> {
     let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
@@ -65,27 +69,27 @@ fn ping_response() {
     };
 
     let raw = b"d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re";
-    test_serialize_deserialize(parsed, raw);
+    test_serialize_deserialize(parsed, raw)
 }
 
 #[test]
-fn error() {
+fn error() -> Result<(), Error> {
     let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
         message_type: MessageType::Error {
-            error: Error::new(201, "A Generic Error Ocurred"),
+            error: ProtocolError::new(201, "A Generic Error Ocurred"),
         },
         read_only: false,
     };
 
     let raw = b"d1:eli201e23:A Generic Error Ocurrede1:t2:aa1:y1:ee";
-    test_serialize_deserialize(parsed, raw);
+    test_serialize_deserialize(parsed, raw)
 }
 
 #[test]
-fn announce_peer_request() {
+fn announce_peer_request() -> Result<(), Error> {
     let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
@@ -103,11 +107,11 @@ fn announce_peer_request() {
     };
 
     let raw = b"d1:ad2:id20:abcdefghij012345678912:implied_porti1e9:info_hash20:mnopqrstuvwxyz1234564:porti6881e5:token8:aoeusnthe1:q13:announce_peer1:t2:aa1:y1:qe";
-    test_serialize_deserialize(parsed, raw);
+    test_serialize_deserialize(parsed, raw)
 }
 
 #[test]
-fn get_nodes_response() {
+fn get_nodes_response() -> Result<(), Error> {
     let parsed = Message {
         ip: None,
         transaction_id: b"aa".to_vec(),
@@ -122,14 +126,16 @@ fn get_nodes_response() {
         read_only: false,
     };
 
-    let serialized = serde_bencode::ser::to_bytes(&parsed).unwrap();
-    let decoded = Message::decode(&serialized).unwrap();
+    let serialized = serde_bencode::ser::to_bytes(&parsed)?;
+    let decoded = Message::decode(&serialized)?;
 
     assert_eq!(parsed, decoded);
+
+    Ok(())
 }
 
 #[test]
-fn get_nodes_response_decode() {
+fn get_nodes_response_decode() -> Result<(), Error> {
     let encoded: &[u8] = &[
         100, 50, 58, 105, 112, 54, 58, 129, 21, 63, 170, 133, 190, 49, 58, 114, 100, 50, 58, 105,
         100, 50, 48, 58, 50, 245, 78, 105, 115, 81, 255, 74, 236, 41, 205, 186, 171, 242, 251, 227,
@@ -159,7 +165,7 @@ fn get_nodes_response_decode() {
     ];
 
     let expected = Message {
-        ip: Some("129.21.63.170:34238".parse().unwrap()),
+        ip: Some("129.21.63.170:34238".parse()?),
         transaction_id: vec![0x00, 0x00, 0xAF, 0xDA],
         version: None,
         message_type: MessageType::Response {
@@ -169,67 +175,67 @@ fn get_nodes_response_decode() {
                 nodes: vec![
                     NodeInfo::new(
                         b"30210b1743281b53c298bd53b8742ce06477e3ac".into(),
-                        "180.211.234.53:1416".parse().unwrap(),
+                        "180.211.234.53:1416".parse()?,
                     ),
                     NodeInfo::new(
                         b"f73704455d85399c681b00e71d9131acacaa3233".into(),
-                        "36.37.147.240:12664".parse().unwrap(),
+                        "36.37.147.240:12664".parse()?,
                     ),
                     NodeInfo::new(
                         b"cd09f99367ca2f9376f7380e6e17ba35aea5aaba".into(),
-                        "95.24.216.93:31751".parse().unwrap(),
+                        "95.24.216.93:31751".parse()?,
                     ),
                     NodeInfo::new(
                         b"c07077106a5c3a7089808a8d4f174518b70455a6".into(),
-                        "93.172.43.127:23157".parse().unwrap(),
+                        "93.172.43.127:23157".parse()?,
                     ),
                     NodeInfo::new(
                         b"0c812fdfc50a0fb7d56123f0ebed32fcf9c2e1db".into(),
-                        "70.124.69.205:50321".parse().unwrap(),
+                        "70.124.69.205:50321".parse()?,
                     ),
                     NodeInfo::new(
                         b"6664faa68068445b8cb636365a1502f1c88d1725".into(),
-                        "46.153.74.174:64403".parse().unwrap(),
+                        "46.153.74.174:64403".parse()?,
                     ),
                     NodeInfo::new(
                         b"a54f14554b7d4dce60192063e1e06755f392fab5".into(),
-                        "81.97.116.190:6881".parse().unwrap(),
+                        "81.97.116.190:6881".parse()?,
                     ),
                     NodeInfo::new(
                         b"de9deabf3871737ebc1b9553f09735e24af153e2".into(),
-                        "84.251.160.222:48299".parse().unwrap(),
+                        "84.251.160.222:48299".parse()?,
                     ),
                     NodeInfo::new(
                         b"5628a8ee8d12b8825326762d1c3628299ccad82e".into(),
-                        "98.13.2.205:6881".parse().unwrap(),
+                        "98.13.2.205:6881".parse()?,
                     ),
                     NodeInfo::new(
                         b"3f9c0cd713b443f3ba136ddd055098f723f3f838".into(),
-                        "42.98.51.123:9304".parse().unwrap(),
+                        "42.98.51.123:9304".parse()?,
                     ),
                     NodeInfo::new(
                         b"7465722ad0f14da49e1d48cef1347469bc6e6d75".into(),
-                        "79.114.47.76:64186".parse().unwrap(),
+                        "79.114.47.76:64186".parse()?,
                     ),
                     NodeInfo::new(
                         b"8b9292b2f75d127720ebcd8afe66bfa50c2adc7f".into(),
-                        "2.87.195.123:62705".parse().unwrap(),
+                        "2.87.195.123:62705".parse()?,
                     ),
                     NodeInfo::new(
                         b"d0fb8538dab41982305879bea3c6176b4a0cbbde".into(),
-                        "49.70.2.154:16001".parse().unwrap(),
+                        "49.70.2.154:16001".parse()?,
                     ),
                     NodeInfo::new(
                         b"7f4241a48797f052d0e6e7f9d180627be71cdaf5".into(),
-                        "70.55.32.213:17940".parse().unwrap(),
+                        "70.55.32.213:17940".parse()?,
                     ),
                     NodeInfo::new(
                         b"3426e6d3b38b4b2190decc6c83ccf36685344091".into(),
-                        "124.77.137.19:16001".parse().unwrap(),
+                        "124.77.137.19:16001".parse()?,
                     ),
                     NodeInfo::new(
                         b"0900ed1818270340e3f629cb13aaae62664221f5".into(),
-                        "119.237.152.161:6890".parse().unwrap(),
+                        "119.237.152.161:6890".parse()?,
                     ),
                 ],
             },
@@ -237,13 +243,15 @@ fn get_nodes_response_decode() {
         read_only: false,
     };
 
-    let message = Message::decode(encoded).unwrap();
+    let message = Message::decode(encoded)?;
 
     assert_eq!(message, expected);
+
+    Ok(())
 }
 
 #[test]
-fn with_version() {
+fn with_version() -> Result<(), Error> {
     let encoded: &[u8] = &[
         100, 50, 58, 105, 112, 54, 58, 129, 21, 60, 68, 133, 206, 49, 58, 114, 100, 50, 58, 105,
         100, 50, 48, 58, 189, 93, 60, 187, 233, 235, 179, 166, 219, 60, 135, 12, 62, 153, 36, 94,
@@ -252,7 +260,7 @@ fn with_version() {
     ];
 
     let expected = Message {
-        ip: Some(SocketAddrV4::from_str("129.21.60.68:34254").unwrap().into()),
+        ip: Some(SocketAddrV4::from_str("129.21.60.68:34254")?.into()),
         transaction_id: vec![0, 0, 138, 186],
         version: Some(vec![85, 84, 174, 88].into()),
         message_type: MessageType::Response {
@@ -263,7 +271,9 @@ fn with_version() {
         read_only: false,
     };
 
-    let message = Message::decode(encoded).unwrap();
+    let message = Message::decode(encoded)?;
 
     assert_eq!(message, expected);
+
+    Ok(())
 }

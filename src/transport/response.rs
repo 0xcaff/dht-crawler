@@ -144,18 +144,20 @@ impl Drop for ResponseFuture {
 #[cfg(test)]
 mod tests {
     use super::{ResponseFuture, TxState};
+    use errors::Error as DhtError;
+    use failure::Error;
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
 
     #[test]
-    fn test_drop() {
+    fn test_drop() -> Result<(), Error> {
         let transaction_id = 0xafu32;
         let transactions = Arc::new(Mutex::new(HashMap::new()));
 
         {
-            let _fut = ResponseFuture::wait_for_tx(transaction_id, transactions.clone()).unwrap();
+            let _fut = ResponseFuture::wait_for_tx(transaction_id, transactions.clone())?;
 
-            let transactions = transactions.lock().unwrap();
+            let transactions = transactions.lock().map_err(DhtError::from)?;
             let transaction = transactions.get(&transaction_id).unwrap();
 
             match transaction {
@@ -164,6 +166,14 @@ mod tests {
             };
         }
 
-        assert!(transactions.lock().unwrap().get(&transaction_id).is_none());
+        assert!(
+            transactions
+                .lock()
+                .map_err(DhtError::from)?
+                .get(&transaction_id)
+                .is_none()
+        );
+
+        Ok(())
     }
 }

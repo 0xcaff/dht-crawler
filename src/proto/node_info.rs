@@ -99,13 +99,17 @@ mod tests {
     use std::net::SocketAddrV4;
     use std::str::FromStr;
 
+    use failure::Error;
+
     #[test]
-    fn test_to_bytes() {
+    fn test_to_bytes() -> Result<(), Error> {
         let node = NodeInfo::new(
             b"abcdefghij0123456789".into(),
-            SocketAddrV4::from_str("129.21.60.68:3454").unwrap().into(),
+            SocketAddrV4::from_str("129.21.60.68:3454")?.into(),
         );
 
         let _bytes = node.to_bytes();
+
+        Ok(())
     }
 }

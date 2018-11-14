@@ -137,12 +137,13 @@ mod tests {
     use std::sync::Arc;
     use std::time::{Duration, Instant};
 
+    use failure::Error;
     use futures::Stream;
     use tokio::prelude::*;
     use tokio::runtime::Runtime;
 
     use addr::{AsV4Address, IntoSocketAddr};
-    use errors::{Error, Result};
+    use errors::Error as DhtError;
     use proto::NodeID;
     use stream::{run_forever, select_all};
     use transport::SendTransport;
@@ -151,22 +152,24 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_bootstrap() {
+    fn test_bootstrap() -> Result<(), Error> {
         let addr = "0.0.0.0:23170".into_addr();
-        let (dht, dht_future) = Dht::start(addr).unwrap();
+        let (dht, dht_future) = Dht::start(addr)?;
 
         let bootstrap_future = dht.bootstrap_routing_table(vec![
-            "router.utorrent.com:6881".into_addr().into_v4().unwrap(),
-            "router.bittorrent.com:6881".into_addr().into_v4().unwrap(),
+            "router.utorrent.com:6881".into_addr().into_v4()?,
+            "router.bittorrent.com:6881".into_addr().into_v4()?,
         ]);
 
-        let mut runtime = Runtime::new().unwrap();
+        let mut runtime = Runtime::new()?;
         runtime.spawn(dht_future);
-        runtime.block_on(bootstrap_future).unwrap();
+        runtime.block_on(bootstrap_future)?;
 
-        let routing_table = dht.routing_table.lock().unwrap();
+        let routing_table = dht.routing_table.lock().map_err(DhtError::from)?;
 
         assert!(routing_table.len() > 0);
+
+        Ok(())
     }
 
     #[derive(Debug)]
@@ -188,17 +191,17 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_traversal() -> Result<()> {
+    fn test_traversal() -> Result<(), Error> {
         let node_id = NodeID::random();
         let bind_addr = "0.0.0.0:21130".into_addr();
-        let bootstrap_addr = "router.bittorrent.com:6881".into_addr().into_v4().unwrap();
+        let bootstrap_addr = "router.bittorrent.com:6881".into_addr().into_v4()?;
 
         let transport = RecvTransport::new(bind_addr)?;
         let (send_transport, request_stream) = transport.serve_read_only();
 
         let send_transport_arc = Arc::new(send_transport);
 
-        let mut runtime = Runtime::new().unwrap();
+        let mut runtime = Runtime::new()?;
         runtime.spawn(run_forever(request_stream.map(|_| ()).or_else(|err| {
             eprintln!("Error While Handling Requests: {}", err);
 
@@ -213,7 +216,7 @@ mod tests {
                         eprintln!("Error While Traversing: {}", e);
                         Ok(())
                     }),
-            )).unwrap();
+            )).ok();
 
         Ok(())
     }
@@ -222,16 +225,16 @@ mod tests {
         self_id: NodeID,
         addr: SocketAddrV4,
         send_transport: Arc<SendTransport>,
-    ) -> Box<Stream<Item = Node, Error = Error> + Send> {
+    ) -> Box<Stream<Item = Node, Error = DhtError> + Send> {
         Box::new(
             send_transport
                 .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
                 .timeout(Duration::from_secs(5))
-                .map_err(Error::from)
+                .map_err(DhtError::from)
                 .map(move |response| {
                     let node = Node::new(response.id, addr);
                     let result_stream = Box::new(stream::once(Ok(node)))
-                        as Box<dyn Stream<Item = Node, Error = Error> + Send>;
+                        as Box<dyn Stream<Item = Node, Error = DhtError> + Send>;
 
                     select_all(
                         iter::once(result_stream).chain(response.nodes.into_iter().map(|node| {

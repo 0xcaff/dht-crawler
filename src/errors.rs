@@ -25,7 +25,7 @@ pub enum ErrorKind {
         display = "Received an error message from node {}",
         error_message
     )]
-    ProtocolError { error_message: proto::Error },
+    ProtocolError { error_message: proto::ProtocolError },
 
     #[fail(display = "Failed to parse inbound message from {}", from)]
     InvalidInboundMessage { from: SocketAddr, message: Vec<u8> },
@@ -112,7 +112,7 @@ impl Fail for Error {
 }
 
 impl Error {
-    pub fn as_request_error(&self) -> proto::Error {
+    pub fn as_request_error(&self) -> proto::ProtocolError {
         let (code, message) = match self.inner.get_context() {
             ErrorKind::UnimplementedRequestType => (204, "Unimplemented"),
             ErrorKind::InvalidToken => (203, "Invalid Token"),
@@ -120,7 +120,7 @@ impl Error {
             _ => (202, "Server Error"),
         };
 
-        proto::Error::new(code, message)
+        proto::ProtocolError::new(code, message)
     }
 }
 

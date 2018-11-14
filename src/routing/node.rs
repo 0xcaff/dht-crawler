@@ -108,6 +108,7 @@ mod tests {
     use bigint::BigUint;
     use chrono::prelude::*;
     use chrono::Duration;
+    use failure::Error;
 
     #[test]
     fn starting_state() {
@@ -143,17 +144,19 @@ mod tests {
     }
 
     #[test]
-    fn request_response_good() {
+    fn request_response_good() -> Result<(), Error> {
         let epoch = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 980);
 
         let node = Node {
             id: NodeID::new(BigUint::from(10u8)),
-            address: "127.0.0.1:3000".parse().unwrap(),
+            address: "127.0.0.1:3000".parse()?,
             last_request_to: Some(epoch),
             last_request_from: Some(Utc::now().naive_utc() - Duration::minutes(10)),
             failed_requests: 0,
         };
 
         assert_eq!(node.state(), NodeState::Good);
+
+        Ok(())
     }
 }
