@@ -54,6 +54,12 @@ impl Deref for NodeID {
 
 impl fmt::Debug for NodeID {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        <Self as fmt::Display>::fmt(self, f)
+    }
+}
+
+impl fmt::Display for NodeID {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", hex::encode(self.as_bytes()))
     }
 }
