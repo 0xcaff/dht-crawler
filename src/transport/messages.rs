@@ -20,7 +20,22 @@ use byteorder::{
 };
 use std::net::SocketAddrV4;
 
+/// Transaction identifier used for requests originating from this client.
+/// Requests originating from other clients use a [Vec<u8>] to represent the
+/// transaction id.
 pub type TransactionId = u32;
+
+/// Extracts a [TransactionId] from a response to a request originating from
+/// this client. If the transaction id is malformed, returns an error.
+pub fn parse_originating_transaction_id(mut bytes: &[u8]) -> Result<TransactionId> {
+    if bytes.len() != 4 {
+        Err(ErrorKind::InvalidResponseTransactionId)?;
+    }
+
+    Ok(bytes
+        .read_u32::<NetworkEndian>()
+        .context(ErrorKind::InvalidResponseTransactionId)?)
+}
 
 pub enum PortType {
     Implied,
@@ -81,9 +96,7 @@ impl Response {
         };
 
         Ok(Response {
-            transaction_id: (&envelope.transaction_id[..])
-                .read_u32::<NetworkEndian>()
-                .context(ErrorKind::InvalidResponseTransactionId)?,
+            transaction_id: parse_originating_transaction_id(&envelope.transaction_id[..])?,
             version: envelope.version.map(|e| e.into()),
             response,
         })

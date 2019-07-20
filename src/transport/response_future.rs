@@ -5,13 +5,11 @@ use crate::{
         Result,
     },
     proto::Message,
-    transport::messages::TransactionId,
+    transport::messages::{
+        parse_originating_transaction_id,
+        TransactionId,
+    },
 };
-use byteorder::{
-    NetworkEndian,
-    ReadBytesExt,
-};
-use failure::ResultExt;
 use futures::task::Task;
 use std::{
     collections::HashMap,
@@ -46,10 +44,7 @@ impl ResponseFuture {
         message: Message,
         transactions: Arc<Mutex<TransactionMap>>,
     ) -> Result<()> {
-        let transaction_id = (&message.transaction_id[..])
-            .read_u32::<NetworkEndian>()
-            .context(ErrorKind::InvalidResponseTransactionId)?;
-
+        let transaction_id = parse_originating_transaction_id(&message.transaction_id[..])?;
         let mut map = transactions.lock()?;
 
         let tx_state = map
