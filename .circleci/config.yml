@@ -14,7 +14,7 @@ aliases:
 jobs:
   test:
     docker:
-    - image: rust:1.29
+    - image: rustlang/rust:nightly
 
     steps:
     - checkout
