@@ -20,7 +20,7 @@ use crate::{
     proto::MessageType,
     transport::{
         active_transactions::ActiveTransactions,
-        inbound::InboundMessageStream,
+        inbound_message_stream::InboundMessageStream,
         messages::Request,
         SendTransport,
     },

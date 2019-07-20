@@ -1,9 +1,9 @@
 mod active_transactions;
-mod inbound;
+mod inbound_message_stream;
 mod messages;
-mod recv;
+mod recv_transport;
 mod response_future;
-mod send;
+mod send_transport;
 
 #[cfg(test)]
 mod tests;
@@ -14,6 +14,6 @@ pub use self::{
         Request,
         Response,
     },
-    recv::RecvTransport,
-    send::SendTransport,
+    recv_transport::RecvTransport,
+    send_transport::SendTransport,
 };
