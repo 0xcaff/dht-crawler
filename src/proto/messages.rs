@@ -1,11 +1,25 @@
-use errors::{ErrorKind, Result};
+use super::{
+    booleans,
+    node_info,
+    Addr,
+    NodeID,
+    NodeInfo,
+};
+use crate::errors::{
+    ErrorKind,
+    Result,
+};
 use failure::ResultExt;
 use serde_bencode;
-use serde_bytes::{self, ByteBuf};
-
+use serde_bytes::{
+    self,
+    ByteBuf,
+};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use std::fmt;
-
-use super::{booleans, node_info, Addr, NodeID, NodeInfo};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Message {
@@ -73,7 +87,7 @@ impl ProtocolError {
 }
 
 impl fmt::Display for ProtocolError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self)
     }
 }

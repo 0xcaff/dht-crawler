@@ -1,9 +1,23 @@
-use errors::{ErrorKind, Result};
+use crate::errors::{
+    ErrorKind,
+    Result,
+};
 use failure::ResultExt;
 
-use proto::{self, Addr, Message, MessageType, NodeID, NodeInfo, Query};
+use crate::proto::{
+    self,
+    Addr,
+    Message,
+    MessageType,
+    NodeID,
+    NodeInfo,
+    Query,
+};
 
-use byteorder::{NetworkEndian, ReadBytesExt};
+use byteorder::{
+    NetworkEndian,
+    ReadBytesExt,
+};
 use std::net::SocketAddrV4;
 
 pub type TransactionId = u32;

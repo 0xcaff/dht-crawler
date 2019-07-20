@@ -1,16 +1,33 @@
-use addr::AsV4Address;
-use dht::Dht;
-use errors::{Error, ErrorKind, Result};
-use proto::{Addr, Message, MessageType, NodeID, Query, Response};
-use routing::{FindNodeResult, RoutingTable};
-use stream::run_forever;
-use transport::Request;
-
+use crate::{
+    addr::AsV4Address,
+    dht::Dht,
+    errors::{
+        Error,
+        ErrorKind,
+        Result,
+    },
+    proto::{
+        Addr,
+        Message,
+        MessageType,
+        NodeID,
+        Query,
+        Response,
+    },
+    routing::{
+        FindNodeResult,
+        RoutingTable,
+    },
+    stream::run_forever,
+    transport::Request,
+};
 use std::{
-    net::{SocketAddr, SocketAddrV4},
+    net::{
+        SocketAddr,
+        SocketAddrV4,
+    },
     ops::DerefMut,
 };
-
 use tokio::prelude::*;
 
 impl Dht {
@@ -23,7 +40,8 @@ impl Dht {
                 .and_then(move |(request, from)| {
                     let response = self.handle_request(request, from.into_v4()?);
                     self.send_transport.send(from, response)
-                }).or_else(|err| {
+                })
+                .or_else(|err| {
                     eprintln!("Error While Handling Requests: {}", err);
 
                     Ok(())

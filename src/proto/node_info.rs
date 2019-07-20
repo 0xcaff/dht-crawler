@@ -1,11 +1,19 @@
-use serde::{
-    de::{self, Visitor},
-    Deserializer, Serializer,
+use super::{
+    addr,
+    NodeID,
 };
-
-use std::{fmt, net::SocketAddrV4};
-
-use super::{addr, NodeID};
+use serde::{
+    de::{
+        self,
+        Visitor,
+    },
+    Deserializer,
+    Serializer,
+};
+use std::{
+    fmt,
+    net::SocketAddrV4,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct NodeInfo {
@@ -61,7 +69,7 @@ struct NodeInfoVecVisitor;
 impl<'de> Visitor<'de> for NodeInfoVecVisitor {
     type Value = Vec<NodeInfo>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a byte array with a size which is a multiple of 26")
     }
 
@@ -94,10 +102,12 @@ impl<'de> Visitor<'de> for NodeInfoVecVisitor {
 
 #[cfg(test)]
 mod tests {
-    use proto::NodeInfo;
-    use std::{net::SocketAddrV4, str::FromStr};
-
+    use crate::proto::NodeInfo;
     use failure::Error;
+    use std::{
+        net::SocketAddrV4,
+        str::FromStr,
+    };
 
     #[test]
     fn test_to_bytes() -> Result<(), Error> {

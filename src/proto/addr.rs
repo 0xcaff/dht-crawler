@@ -1,13 +1,24 @@
-use serde::{
-    de::{self, Visitor},
-    Deserialize, Deserializer, Serialize, Serializer,
+use byteorder::{
+    NetworkEndian,
+    ReadBytesExt,
+    WriteBytesExt,
 };
-
-use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-
+use serde::{
+    de::{
+        self,
+        Visitor,
+    },
+    Deserialize,
+    Deserializer,
+    Serialize,
+    Serializer,
+};
 use std::{
     fmt,
-    net::{Ipv4Addr, SocketAddrV4},
+    net::{
+        Ipv4Addr,
+        SocketAddrV4,
+    },
     ops::Deref,
     str::FromStr,
 };
@@ -94,7 +105,7 @@ struct NodeInfoVisitor;
 impl<'de> Visitor<'de> for NodeInfoVisitor {
     type Value = Addr;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a byte array of size 6")
     }
 
@@ -113,11 +124,15 @@ impl<'de> Visitor<'de> for NodeInfoVisitor {
 
 #[cfg(test)]
 mod tests {
-    extern crate serde_test;
-
-    use self::serde_test::{assert_tokens, Token};
     use super::Addr;
-    use std::net::{Ipv4Addr, SocketAddrV4};
+    use serde_test::{
+        assert_tokens,
+        Token,
+    };
+    use std::net::{
+        Ipv4Addr,
+        SocketAddrV4,
+    };
 
     #[test]
     fn serde() {

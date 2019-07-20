@@ -1,8 +1,17 @@
 use futures::{
-    stream::{FuturesUnordered, StreamFuture},
-    Async, Future, Poll, Stream,
+    stream::{
+        FuturesUnordered,
+        StreamFuture,
+    },
+    Async,
+    Future,
+    Poll,
+    Stream,
 };
-use std::fmt::{self, Debug};
+use std::fmt::{
+    self,
+    Debug,
+};
 
 pub fn run_forever<S: Stream<Item = (), Error = ()>>(
     stream: S,
@@ -31,7 +40,7 @@ pub struct SelectAll<S> {
 }
 
 impl<T: Debug> Debug for SelectAll<T> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(fmt, "SelectAll {{ ... }}")
     }
 }

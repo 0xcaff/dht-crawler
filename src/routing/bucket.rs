@@ -1,9 +1,15 @@
-use std::{mem, ops::Deref};
-
-use proto::NodeID;
-
-use bigint::BigUint;
-use routing::node::{Node, NodeState};
+use crate::{
+    proto::NodeID,
+    routing::node::{
+        Node,
+        NodeState,
+    },
+};
+use num_bigint::BigUint;
+use std::{
+    mem,
+    ops::Deref,
+};
 
 const MAX_BUCKET_SIZE: usize = 8;
 
@@ -111,9 +117,13 @@ impl Bucket {
 
 #[cfg(test)]
 mod tests {
-    use super::{BigUint, Bucket, NodeID};
-    use num;
-    use routing::node::Node;
+    use super::{
+        BigUint,
+        Bucket,
+        NodeID,
+    };
+    use crate::routing::node::Node;
+    use num_traits as num;
 
     #[test]
     fn lower_bound_initial_bucket() {

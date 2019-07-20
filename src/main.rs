@@ -1,30 +1,44 @@
-extern crate chrono;
-extern crate dht_crawler;
-extern crate failure;
-extern crate futures;
-extern crate serde;
-extern crate serde_json;
-extern crate tokio;
-
-#[macro_use]
-extern crate serde_derive;
-
-use failure::Error;
-use std::{iter, net::SocketAddrV4, sync::Arc, time::Duration};
-
-use chrono::{DateTime, Utc};
-use futures::{stream, Future, Stream};
-use tokio::{runtime::Runtime, util::FutureExt};
-
+use chrono::{
+    DateTime,
+    Utc,
+};
 use dht_crawler::{
-    addr::{AsV4Address, IntoSocketAddr},
+    addr::{
+        AsV4Address,
+        IntoSocketAddr,
+    },
     errors::Error as DhtError,
     proto::NodeID,
-    stream::{run_forever, select_all},
-    transport::{RecvTransport, SendTransport},
+    stream::{
+        run_forever,
+        select_all,
+    },
+    transport::{
+        RecvTransport,
+        SendTransport,
+    },
 };
-use serde::Serialize;
-use serde::Serializer;
+use failure::Error;
+use futures::{
+    stream,
+    Future,
+    Stream,
+};
+use serde::{
+    Serialize,
+    Serializer,
+};
+use serde_derive::Serialize;
+use std::{
+    iter,
+    net::SocketAddrV4,
+    sync::Arc,
+    time::Duration,
+};
+use tokio::{
+    runtime::Runtime,
+    util::FutureExt,
+};
 
 fn main() -> Result<(), Error> {
     let bind_addr = "0.0.0.0:21130".into_addr();
@@ -49,7 +63,8 @@ fn main() -> Result<(), Error> {
                     eprintln!("Error While Traversing: {}", e);
                     Ok(())
                 }),
-        )).ok();
+        ))
+        .ok();
 
     Ok(())
 }
@@ -59,7 +74,7 @@ fn traverse(
     addr: SocketAddrV4,
     from: Option<NodeID>,
     send_transport: Arc<SendTransport>,
-) -> Box<Stream<Item = Node, Error = DhtError> + Send> {
+) -> Box<dyn Stream<Item = Node, Error = DhtError> + Send> {
     Box::new(
         send_transport
             .find_node(search_id.clone(), addr.clone().into(), search_id.clone())
@@ -81,7 +96,8 @@ fn traverse(
                         )
                     })),
                 )
-            }).into_stream()
+            })
+            .into_stream()
             .flatten(),
     )
 }
@@ -116,7 +132,10 @@ impl Serialize for NodeIDWrapper {
 }
 
 mod ts_milliseconds {
-    use chrono::{DateTime, Utc};
+    use chrono::{
+        DateTime,
+        Utc,
+    };
     use serde::ser;
 
     pub fn serialize<S>(time: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>

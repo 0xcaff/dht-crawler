@@ -1,15 +1,31 @@
-use errors::{Error, Result};
-use proto::NodeID;
-use routing::{Node, RoutingTable};
-use transport::{PortType, RecvTransport, SendTransport};
-
+use crate::{
+    errors::{
+        Error,
+        Result,
+    },
+    proto::NodeID,
+    routing::{
+        Node,
+        RoutingTable,
+    },
+    transport::{
+        PortType,
+        RecvTransport,
+        SendTransport,
+    },
+};
 use std::{
     collections::HashMap,
-    net::{SocketAddr, SocketAddrV4},
-    sync::{Arc, Mutex},
+    net::{
+        SocketAddr,
+        SocketAddrV4,
+    },
+    sync::{
+        Arc,
+        Mutex,
+    },
+    time::Duration,
 };
-
-use std::time::Duration;
 use tokio::prelude::*;
 
 mod handler;
@@ -73,7 +89,7 @@ impl Dht {
         self_id: NodeID,
         send_transport: Arc<SendTransport>,
         routing_table_arc: Arc<Mutex<RoutingTable>>,
-    ) -> Box<Future<Item = (), Error = Error> + Send> {
+    ) -> Box<dyn Future<Item = (), Error = Error> + Send> {
         let cloned_routing_table = routing_table_arc.clone();
 
         let fut = send_transport
@@ -88,7 +104,8 @@ impl Dht {
                 routing_table.add_node(node);
 
                 Ok(response.nodes)
-            }).and_then(move |nodes| {
+            })
+            .and_then(move |nodes| {
                 let cloned_send_transport = send_transport.clone();
                 let cloned_self_id = self_id;
 
@@ -98,11 +115,13 @@ impl Dht {
                         cloned_self_id.clone(),
                         cloned_send_transport.clone(),
                         cloned_routing_table.clone(),
-                    ).or_else(|e| {
+                    )
+                    .or_else(|e| {
                         eprintln!("Error While Bootstrapping {}", e);
                         Ok(())
                     })
-                })).map(|_| ())
+                }))
+                .map(|_| ())
             });
 
         Box::new(fut)
@@ -111,7 +130,7 @@ impl Dht {
     /// Gets a list of peers seeding `info_hash`.
     pub fn get_peers(
         &self,
-        info_hash: NodeID,
+        _info_hash: NodeID,
     ) -> impl Future<Item = Vec<SocketAddrV4>, Error = Error> {
         // TODO:
         // * Return From torrents Table if Exists
@@ -122,8 +141,8 @@ impl Dht {
     /// Announces that we have information about an info_hash on `port`.
     pub fn announce(
         &self,
-        info_hash: NodeID,
-        port: PortType,
+        _info_hash: NodeID,
+        _port: PortType,
     ) -> impl Future<Item = (), Error = Error> {
         // TODO:
         // * Send Announce to all Peers With Tokens
@@ -133,23 +152,38 @@ impl Dht {
 
 #[cfg(test)]
 mod tests {
+    use crate::{
+        addr::{
+            AsV4Address,
+            IntoSocketAddr,
+        },
+        errors::Error as DhtError,
+        proto::NodeID,
+        stream::{
+            run_forever,
+            select_all,
+        },
+        transport::{
+            RecvTransport,
+            SendTransport,
+        },
+        Dht,
+    };
+    use failure::Error;
+    use futures::Stream;
     use std::{
         iter,
         net::SocketAddrV4,
         sync::Arc,
-        time::{Duration, Instant},
+        time::{
+            Duration,
+            Instant,
+        },
     };
-
-    use failure::Error;
-    use futures::Stream;
-    use tokio::{prelude::*, runtime::Runtime};
-
-    use addr::{AsV4Address, IntoSocketAddr};
-    use errors::Error as DhtError;
-    use proto::NodeID;
-    use stream::{run_forever, select_all};
-    use transport::{RecvTransport, SendTransport};
-    use Dht;
+    use tokio::{
+        prelude::*,
+        runtime::Runtime,
+    };
 
     #[test]
     #[ignore]
@@ -217,7 +251,8 @@ mod tests {
                         eprintln!("Error While Traversing: {}", e);
                         Ok(())
                     }),
-            )).ok();
+            ))
+            .ok();
 
         Ok(())
     }
@@ -226,7 +261,7 @@ mod tests {
         self_id: NodeID,
         addr: SocketAddrV4,
         send_transport: Arc<SendTransport>,
-    ) -> Box<Stream<Item = Node, Error = DhtError> + Send> {
+    ) -> Box<dyn Stream<Item = Node, Error = DhtError> + Send> {
         Box::new(
             send_transport
                 .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
@@ -242,7 +277,8 @@ mod tests {
                             traverse(self_id.clone(), node.address, send_transport.clone())
                         })),
                     )
-                }).into_stream()
+                })
+                .into_stream()
                 .flatten(),
         )
     }

@@ -1,28 +1,43 @@
-use errors::{Error, ErrorKind, Result};
+use crate::{
+    errors::{
+        Error,
+        ErrorKind,
+        Result,
+    },
+    proto::{
+        Message,
+        NodeID,
+        Query,
+    },
+    transport::{
+        messages::{
+            FindNodeResponse,
+            GetPeersResponse,
+            NodeIDResponse,
+            PortType,
+            Request,
+            Response,
+            TransactionId,
+        },
+        response::{
+            ResponseFuture,
+            TransactionMap,
+        },
+    },
+};
+use byteorder::NetworkEndian;
+use bytes::ByteOrder;
 use failure::ResultExt;
-
-use proto::{Message, NodeID, Query};
-
 use rand;
-
 use std::{
     self,
     net::SocketAddr,
-    sync::{Arc, Mutex},
-};
-
-use byteorder::NetworkEndian;
-use bytes::ByteOrder;
-
-use tokio::prelude::*;
-
-use transport::{
-    messages::{
-        FindNodeResponse, GetPeersResponse, NodeIDResponse, PortType, Request, Response,
-        TransactionId,
+    sync::{
+        Arc,
+        Mutex,
     },
-    response::{ResponseFuture, TransactionMap},
 };
+use tokio::prelude::*;
 
 pub struct SendTransport {
     socket: std::net::UdpSocket,
@@ -111,7 +126,8 @@ impl SendTransport {
             address,
             Self::get_transaction_id(),
             self.build_request(Query::Ping { id }),
-        ).and_then(NodeIDResponse::from_response)
+        )
+        .and_then(NodeIDResponse::from_response)
     }
 
     pub fn find_node(
@@ -124,7 +140,8 @@ impl SendTransport {
             address,
             Self::get_transaction_id(),
             self.build_request(Query::FindNode { id, target }),
-        ).and_then(FindNodeResponse::from_response)
+        )
+        .and_then(FindNodeResponse::from_response)
     }
 
     pub fn get_peers(
@@ -137,7 +154,8 @@ impl SendTransport {
             address,
             Self::get_transaction_id(),
             self.build_request(Query::GetPeers { id, info_hash }),
-        ).and_then(GetPeersResponse::from_response)
+        )
+        .and_then(GetPeersResponse::from_response)
     }
 
     pub fn announce_peer(
@@ -163,6 +181,7 @@ impl SendTransport {
                 port,
                 implied_port,
             }),
-        ).and_then(NodeIDResponse::from_response)
+        )
+        .and_then(NodeIDResponse::from_response)
     }
 }

@@ -1,22 +1,34 @@
-use addr::IntoSocketAddr;
-use stream::run_forever;
-use transport::{
-    messages::{Request, Response, TransactionId},
-    RecvTransport,
+use crate::{
+    addr::IntoSocketAddr,
+    proto::{
+        self,
+        NodeID,
+        Query,
+    },
+    stream::run_forever,
+    transport::{
+        messages::{
+            Request,
+            Response,
+            TransactionId,
+        },
+        RecvTransport,
+    },
 };
-
-use proto::{self, NodeID, Query};
-
-use byteorder::{NetworkEndian, WriteBytesExt};
+use byteorder::{
+    NetworkEndian,
+    WriteBytesExt,
+};
 use failure::Error;
+use futures::Stream;
 use std::{
-    net::{SocketAddr, UdpSocket},
+    net::{
+        SocketAddr,
+        UdpSocket,
+    },
     str::FromStr,
 };
-
 use tokio::runtime::Runtime;
-
-use futures::Stream;
 
 #[test]
 fn test_ping() -> Result<(), Error> {

@@ -1,5 +1,8 @@
 use serde::{
-    de::{self, Visitor},
+    de::{
+        self,
+        Visitor,
+    },
     Deserializer,
 };
 use std::fmt;
@@ -20,7 +23,7 @@ struct BooleanVisitor;
 impl<'de> Visitor<'de> for BooleanVisitor {
     type Value = bool;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a number")
     }
 

@@ -1,8 +1,23 @@
-use crypto::{digest::Digest, sha1::Sha1};
-use proto::{self, NodeID, NodeInfo};
+use crate::{
+    proto::{
+        self,
+        NodeID,
+        NodeInfo,
+    },
+    routing::{
+        bucket::Bucket,
+        node::Node,
+    },
+};
+use crypto::{
+    digest::Digest,
+    sha1::Sha1,
+};
 use rand;
-use routing::{bucket::Bucket, node::Node};
-use std::{cmp, net::SocketAddrV4};
+use std::{
+    cmp,
+    net::SocketAddrV4,
+};
 
 pub enum FindNodeResult {
     Node(NodeInfo),
@@ -100,13 +115,14 @@ impl RoutingTable {
                 } else {
                     bucket.start.cmp(id)
                 }
-            }).expect("No bucket was found for NodeID.")
+            })
+            .expect("No bucket was found for NodeID.")
     }
 
     /// Splits the bucket at `idx` into two buckets.
     fn split_bucket(&mut self, idx: usize) -> (usize, usize) {
         let next_bucket = {
-            let mut bucket = &mut self.buckets[idx];
+            let bucket = &mut self.buckets[idx];
             bucket.split()
         };
 

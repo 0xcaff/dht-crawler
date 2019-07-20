@@ -1,10 +1,18 @@
-use proto::Message;
-
-use errors::{Error, ErrorKind, Result};
+use crate::{
+    errors::{
+        Error,
+        ErrorKind,
+        Result,
+    },
+    proto::Message,
+};
 use failure::ResultExt;
-
+use futures::try_ready;
 use std::net::SocketAddr;
-use tokio::{self, prelude::*};
+use tokio::{
+    self,
+    prelude::*,
+};
 
 /// A future which handles receiving messages for the local peer.
 pub struct InboundMessageStream {
@@ -25,11 +33,10 @@ impl Stream for InboundMessageStream {
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>> {
         let mut recv_buffer = [0 as u8; 1024];
 
-        let (size, from_addr) = try_ready!(
-            self.recv_socket
-                .poll_recv_from(&mut recv_buffer)
-                .context(ErrorKind::BindError)
-        );
+        let (size, from_addr) = try_ready!(self
+            .recv_socket
+            .poll_recv_from(&mut recv_buffer)
+            .context(ErrorKind::BindError));
 
         let envelope = Message::decode(&recv_buffer[..size]).with_context(|_| {
             ErrorKind::InvalidInboundMessage {

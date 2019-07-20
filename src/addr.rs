@@ -1,5 +1,12 @@
-use errors::{ErrorKind, Result};
-use std::net::{SocketAddr, SocketAddrV4, ToSocketAddrs};
+use crate::errors::{
+    ErrorKind,
+    Result,
+};
+use std::net::{
+    SocketAddr,
+    SocketAddrV4,
+    ToSocketAddrs,
+};
 
 pub trait AsV4Address {
     fn into_v4(self) -> Result<SocketAddrV4>;

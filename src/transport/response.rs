@@ -1,18 +1,26 @@
-use proto::Message;
-use transport::messages::TransactionId;
-
-use errors::{Error, ErrorKind, Result};
+use crate::{
+    errors::{
+        Error,
+        ErrorKind,
+        Result,
+    },
+    proto::Message,
+    transport::messages::TransactionId,
+};
+use byteorder::{
+    NetworkEndian,
+    ReadBytesExt,
+};
 use failure::ResultExt;
-
+use futures::task::Task;
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc,
+        Mutex,
+    },
 };
-
-use futures::task::Task;
 use tokio::prelude::*;
-
-use byteorder::{NetworkEndian, ReadBytesExt};
 
 pub type TransactionMap = HashMap<TransactionId, TxState>;
 
@@ -136,21 +144,27 @@ impl Future for ResponseFuture {
 
 impl Drop for ResponseFuture {
     fn drop(&mut self) {
-        self.transactions
+        let _ = self
+            .transactions
             .lock()
-            .map(|mut map| map.remove(&self.transaction_id))
-            .is_ok();
+            .map(|mut map| map.remove(&self.transaction_id));
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{ResponseFuture, TxState};
-    use errors::Error as DhtError;
+    use super::{
+        ResponseFuture,
+        TxState,
+    };
+    use crate::errors::Error as DhtError;
     use failure::Error;
     use std::{
         collections::HashMap,
-        sync::{Arc, Mutex},
+        sync::{
+            Arc,
+            Mutex,
+        },
     };
 
     #[test]
@@ -170,13 +184,11 @@ mod tests {
             };
         }
 
-        assert!(
-            transactions
-                .lock()
-                .map_err(DhtError::from)?
-                .get(&transaction_id)
-                .is_none()
-        );
+        assert!(transactions
+            .lock()
+            .map_err(DhtError::from)?
+            .get(&transaction_id)
+            .is_none());
 
         Ok(())
     }

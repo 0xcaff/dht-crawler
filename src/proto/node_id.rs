@@ -1,14 +1,20 @@
-use rand;
-
-use serde::{
-    de::{self, Visitor},
-    Deserialize, Deserializer, Serialize, Serializer,
-};
-
-use std::{fmt, ops::Deref};
-
-use bigint::BigUint;
 use hex;
+use num_bigint::BigUint;
+use rand;
+use serde::{
+    de::{
+        self,
+        Visitor,
+    },
+    Deserialize,
+    Deserializer,
+    Serialize,
+    Serializer,
+};
+use std::{
+    fmt,
+    ops::Deref,
+};
 
 /// A 20 byte value representing keys in the DHT.
 #[derive(PartialEq, Eq, Clone, Hash)]
@@ -53,13 +59,13 @@ impl Deref for NodeID {
 }
 
 impl fmt::Debug for NodeID {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         <Self as fmt::Display>::fmt(self, f)
     }
 }
 
 impl fmt::Display for NodeID {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", hex::encode(self.as_bytes()))
     }
 }
@@ -87,7 +93,7 @@ struct NodeIDVisitor;
 impl<'de> Visitor<'de> for NodeIDVisitor {
     type Value = NodeID;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a byte array of size 20")
     }
 
@@ -132,7 +138,7 @@ impl From<[u8; 20]> for NodeID {
 #[cfg(test)]
 mod tests {
     use super::NodeID;
-    use bigint::BigUint;
+    use num_bigint::BigUint;
 
     #[test]
     fn as_bytes() {

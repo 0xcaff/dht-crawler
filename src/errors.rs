@@ -1,9 +1,18 @@
-use failure::{Backtrace, Context, Fail};
-
-use proto;
-use std::{self, fmt, net::SocketAddr, sync::PoisonError};
-
-use std::net::SocketAddrV6;
+use crate::proto;
+use failure::{
+    Backtrace,
+    Context,
+    Fail,
+};
+use std::{
+    self,
+    fmt,
+    net::{
+        SocketAddr,
+        SocketAddrV6,
+    },
+    sync::PoisonError,
+};
 use tokio::timer::timeout;
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -16,10 +25,7 @@ pub struct Error {
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
     //// Originating Errors
-    #[fail(
-        display = "Received an error message from node {}",
-        error_message
-    )]
+    #[fail(display = "Received an error message from node {}", error_message)]
     ProtocolError { error_message: proto::ProtocolError },
 
     #[fail(display = "Failed to parse inbound message from {}", from)]
@@ -43,21 +49,13 @@ pub enum ErrorKind {
     #[fail(display = "Received IPv6 Address where an IPv4 address was expected")]
     UnsupportedAddressTypeError { addr: SocketAddrV6 },
 
-    #[fail(
-        display = "Invalid message type, expected {} got {:?}",
-        expected,
-        got
-    )]
+    #[fail(display = "Invalid message type, expected {} got {:?}", expected, got)]
     InvalidMessageType {
         expected: &'static str,
         got: proto::MessageType,
     },
 
-    #[fail(
-        display = "Invalid response type, expected {} got {:?}",
-        expected,
-        got
-    )]
+    #[fail(display = "Invalid response type, expected {} got {:?}", expected, got)]
     InvalidResponseType {
         expected: &'static str,
         got: proto::Response,
@@ -97,7 +95,7 @@ pub enum ErrorKind {
 }
 
 impl Fail for Error {
-    fn cause(&self) -> Option<&Fail> {
+    fn cause(&self) -> Option<&dyn Fail> {
         self.inner.cause()
     }
 
@@ -120,7 +118,7 @@ impl Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.inner, f)
     }
 }

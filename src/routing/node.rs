@@ -1,7 +1,12 @@
+use crate::proto::{
+    NodeID,
+    NodeInfo,
+};
+use chrono::{
+    NaiveDateTime,
+    Utc,
+};
 use std::net::SocketAddrV4;
-
-use chrono::{NaiveDateTime, Utc};
-use proto::{NodeID, NodeInfo};
 
 #[derive(Debug, PartialEq)]
 pub struct Node {
@@ -95,7 +100,7 @@ impl Node {
 
     #[cfg(test)]
     pub fn new_with_id(id: u8) -> Node {
-        use bigint::BigUint;
+        use num_bigint::BigUint;
 
         let addr: SocketAddrV4 = "127.0.0.1:3000".parse().unwrap();
 
@@ -105,10 +110,17 @@ impl Node {
 
 #[cfg(test)]
 mod tests {
-    use super::{Node, NodeID, NodeState};
-    use bigint::BigUint;
-    use chrono::{prelude::*, Duration};
+    use super::{
+        Node,
+        NodeID,
+        NodeState,
+    };
+    use chrono::{
+        prelude::*,
+        Duration,
+    };
     use failure::Error;
+    use num_bigint::BigUint;
 
     #[test]
     fn starting_state() {

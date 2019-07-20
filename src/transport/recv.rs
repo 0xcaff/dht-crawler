@@ -1,21 +1,37 @@
-use errors::{Error, ErrorKind, Result};
+use crate::errors::{
+    Error,
+    ErrorKind,
+    Result,
+};
 use failure::ResultExt;
 
 use std::{
     self,
     collections::HashMap,
     net::SocketAddr,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc,
+        Mutex,
+    },
 };
 
-use tokio::{self, prelude::*, reactor::Handle};
+use tokio::{
+    self,
+    prelude::*,
+    reactor::Handle,
+};
 
-use proto::MessageType;
-use transport::{
-    inbound::InboundMessageStream,
-    messages::Request,
-    response::{ResponseFuture, TransactionMap},
-    SendTransport,
+use crate::{
+    proto::MessageType,
+    transport::{
+        inbound::InboundMessageStream,
+        messages::Request,
+        response::{
+            ResponseFuture,
+            TransactionMap,
+        },
+        SendTransport,
+    },
 };
 
 pub struct RecvTransport {
@@ -87,7 +103,8 @@ impl RecvTransport {
                     Request::new(envelope.transaction_id, query, envelope.read_only),
                     from_addr,
                 ))),
-            }).and_then(|r| r.into_future())
+            })
+            .and_then(|r| r.into_future())
             .filter_map(|m| m);
 
         (

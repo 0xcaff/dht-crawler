@@ -4,5 +4,8 @@ mod table;
 
 pub use self::{
     node::Node,
-    table::{FindNodeResult, RoutingTable},
+    table::{
+        FindNodeResult,
+        RoutingTable,
+    },
 };
