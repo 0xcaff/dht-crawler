@@ -1,22 +1,9 @@
-use crate::errors::{
-    Error,
-    ErrorKind,
-    Result,
-};
-use failure::ResultExt;
-
-use std::{
-    self,
-    net::SocketAddr,
-};
-
-use tokio::{
-    self,
-    prelude::*,
-    reactor::Handle,
-};
-
 use crate::{
+    errors::{
+        Error,
+        ErrorKind,
+        Result,
+    },
     proto::MessageType,
     transport::{
         active_transactions::ActiveTransactions,
@@ -24,6 +11,16 @@ use crate::{
         messages::Request,
         SendTransport,
     },
+};
+use failure::ResultExt;
+use std::{
+    self,
+    net::SocketAddr,
+};
+use tokio::{
+    self,
+    prelude::*,
+    reactor::Handle,
 };
 
 pub struct RecvTransport {
