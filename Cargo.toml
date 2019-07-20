@@ -14,6 +14,8 @@ failure_derive = "0.1.2"
 failure = "0.1.2"
 tokio = "0.1.8"
 futures = "0.1.24"
+futuresx = { package = "futures-preview", version = "0.3.0-alpha.17", features = ["compat"] }
+futuresx-util = { package = "futures-util-preview", version = "0.3.0-alpha.17", features = ["compat"] }
 hex = "0.3.2"
 bytes = "0.4.10"
 chrono = { version = "0.4.6", features = ["serde"] }

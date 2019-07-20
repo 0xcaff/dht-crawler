@@ -129,9 +129,4 @@ impl ActiveTransactions {
             }
         })
     }
-
-    #[cfg(test)]
-    pub(super) fn contains_transaction(&self, transaction_id: TransactionId) -> Result<bool> {
-        Ok(self.transactions.lock()?.contains_key(&transaction_id))
-    }
 }

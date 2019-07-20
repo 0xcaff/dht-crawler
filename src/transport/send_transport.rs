@@ -26,6 +26,10 @@ use crate::{
 use byteorder::NetworkEndian;
 use bytes::ByteOrder;
 use failure::ResultExt;
+use futuresx_util::{
+    future::FutureExt,
+    try_future::TryFutureExt,
+};
 use rand;
 use std::{
     self,
@@ -59,12 +63,13 @@ impl SendTransport {
         request: Request,
     ) -> impl Future<Item = Response, Error = Error> {
         let transaction_future_result =
-            ResponseFuture::wait_for_tx(transaction_id, self.transactions.clone());
+            ResponseFuture::wait_for_tx(transaction_id, self.transactions.clone())
+                .boxed()
+                .compat();
 
         self.send_request(address, transaction_id, request)
             .into_future()
             .and_then(move |_| transaction_future_result)
-            .and_then(|fut| fut)
             .and_then(|envelope| Response::from(envelope))
     }
 

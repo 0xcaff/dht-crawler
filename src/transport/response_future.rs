@@ -3,13 +3,13 @@ use crate::{
         Error,
         Result,
     },
-    proto::Message,
+    proto,
     transport::{
         active_transactions::ActiveTransactions,
         messages::TransactionId,
     },
 };
-
+use futuresx::compat::Future01CompatExt;
 use tokio::prelude::*;
 
 /// A future which resolves when the response for a transaction appears in a
@@ -20,14 +20,17 @@ pub struct ResponseFuture {
 }
 
 impl ResponseFuture {
-    pub fn wait_for_tx(
+    pub async fn wait_for_tx(
         transaction_id: TransactionId,
         transactions: ActiveTransactions,
-    ) -> Result<ResponseFuture> {
+    ) -> Result<proto::Message> {
         transactions.add_transaction(transaction_id)?;
-        let fut = ResponseFuture::new(transaction_id, transactions);
 
-        Ok(fut)
+        let message = ResponseFuture::new(transaction_id, transactions)
+            .compat()
+            .await?;
+
+        Ok(message)
     }
 
     fn new(transaction_id: TransactionId, transactions: ActiveTransactions) -> ResponseFuture {
@@ -39,7 +42,7 @@ impl ResponseFuture {
 }
 
 impl Future for ResponseFuture {
-    type Item = Message;
+    type Item = proto::Message;
     type Error = Error;
 
     fn poll(&mut self) -> Result<Async<Self::Item>> {
@@ -52,31 +55,5 @@ impl Drop for ResponseFuture {
         self.transactions
             .drop_transaction(self.transaction_id)
             .unwrap();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::{
-        errors::Result,
-        transport::{
-            active_transactions::ActiveTransactions,
-            response_future::ResponseFuture,
-        },
-    };
-
-    #[test]
-    fn test_drop() -> Result<()> {
-        let transaction_id = 0xafu32;
-        let transactions = ActiveTransactions::new();
-
-        {
-            let _fut = ResponseFuture::wait_for_tx(transaction_id, transactions.clone())?;
-            assert!(transactions.contains_transaction(transaction_id)?);
-        }
-
-        assert!(!transactions.contains_transaction(transaction_id)?);
-
-        Ok(())
     }
 }

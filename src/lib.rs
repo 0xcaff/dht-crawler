@@ -1,3 +1,5 @@
+#![feature(async_await)]
+
 pub mod addr;
 pub mod dht;
 pub mod errors;
