@@ -22,20 +22,6 @@ use std::{
 };
 use tokio::prelude::*;
 
-pub type TransactionMap = HashMap<TransactionId, TxState>;
-
-pub enum TxState {
-    AwaitingResponse {
-        /// Task to awake when response is received. None if poll hasn't been
-        /// called for this tx yet.
-        task: Option<Task>,
-    },
-
-    GotResponse {
-        response: Message,
-    },
-}
-
 /// A future which resolves when the response for a transaction appears in a
 /// peer's transaction map.
 pub struct ResponseFuture {
@@ -149,6 +135,20 @@ impl Drop for ResponseFuture {
             .lock()
             .map(|mut map| map.remove(&self.transaction_id));
     }
+}
+
+pub type TransactionMap = HashMap<TransactionId, TxState>;
+
+pub enum TxState {
+    AwaitingResponse {
+        /// Task to awake when response is received. None if poll hasn't been
+        /// called for this tx yet.
+        task: Option<Task>,
+    },
+
+    GotResponse {
+        response: Message,
+    },
 }
 
 #[cfg(test)]

@@ -19,7 +19,7 @@ use crate::{
             Response,
             TransactionId,
         },
-        response::{
+        response_future::{
             ResponseFuture,
             TransactionMap,
         },

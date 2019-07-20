@@ -26,7 +26,7 @@ use crate::{
     transport::{
         inbound::InboundMessageStream,
         messages::Request,
-        response::{
+        response_future::{
             ResponseFuture,
             TransactionMap,
         },
