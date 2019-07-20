@@ -7,12 +7,7 @@ use failure::ResultExt;
 
 use std::{
     self,
-    collections::HashMap,
     net::SocketAddr,
-    sync::{
-        Arc,
-        Mutex,
-    },
 };
 
 use tokio::{
@@ -24,27 +19,22 @@ use tokio::{
 use crate::{
     proto::MessageType,
     transport::{
+        active_transactions::ActiveTransactions,
         inbound::InboundMessageStream,
         messages::Request,
-        response_future::{
-            ResponseFuture,
-            TransactionMap,
-        },
         SendTransport,
     },
 };
 
 pub struct RecvTransport {
     socket: std::net::UdpSocket,
-
-    /// Collection of in-flight transactions awaiting a response
-    transactions: Arc<Mutex<TransactionMap>>,
+    transactions: ActiveTransactions,
 }
 
 impl RecvTransport {
     pub fn new(bind_address: SocketAddr) -> Result<RecvTransport> {
         let socket = std::net::UdpSocket::bind(&bind_address).context(ErrorKind::BindError)?;
-        let transactions = Arc::new(Mutex::new(HashMap::new()));
+        let transactions = ActiveTransactions::new();
 
         Ok(RecvTransport {
             socket,
@@ -95,7 +85,7 @@ impl RecvTransport {
             .flatten()
             .map(move |(envelope, from_addr)| match envelope.message_type {
                 MessageType::Response { .. } | MessageType::Error { .. } => {
-                    ResponseFuture::handle_response(envelope, transactions.clone())?;
+                    transactions.handle_response(envelope)?;
 
                     Ok(None)
                 }

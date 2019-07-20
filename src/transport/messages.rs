@@ -96,7 +96,7 @@ impl Response {
         };
 
         Ok(Response {
-            transaction_id: parse_originating_transaction_id(&envelope.transaction_id[..])?,
+            transaction_id: parse_originating_transaction_id(&envelope.transaction_id)?,
             version: envelope.version.map(|e| e.into()),
             response,
         })

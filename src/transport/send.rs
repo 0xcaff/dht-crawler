@@ -10,6 +10,7 @@ use crate::{
         Query,
     },
     transport::{
+        active_transactions::ActiveTransactions,
         messages::{
             FindNodeResponse,
             GetPeersResponse,
@@ -19,10 +20,7 @@ use crate::{
             Response,
             TransactionId,
         },
-        response_future::{
-            ResponseFuture,
-            TransactionMap,
-        },
+        response_future::ResponseFuture,
     },
 };
 use byteorder::NetworkEndian;
@@ -32,26 +30,19 @@ use rand;
 use std::{
     self,
     net::SocketAddr,
-    sync::{
-        Arc,
-        Mutex,
-    },
 };
 use tokio::prelude::*;
 
 pub struct SendTransport {
     socket: std::net::UdpSocket,
-
-    /// Collection of in-flight transactions awaiting a response
-    transactions: Arc<Mutex<TransactionMap>>,
-
+    transactions: ActiveTransactions,
     read_only: bool,
 }
 
 impl SendTransport {
     pub fn new(
         socket: std::net::UdpSocket,
-        transactions: Arc<Mutex<TransactionMap>>,
+        transactions: ActiveTransactions,
         read_only: bool,
     ) -> SendTransport {
         SendTransport {
