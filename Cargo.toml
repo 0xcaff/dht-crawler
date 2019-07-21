@@ -18,12 +18,11 @@ futuresx = { package = "futures-preview", version = "0.3.0-alpha.17", features =
 futuresx-util = { package = "futures-util-preview", version = "0.3.0-alpha.17", features = ["compat"] }
 hex = "0.3.2"
 bytes = "0.4.10"
-chrono = { version = "0.4.6", features = ["serde"] }
+chrono = "0.4.6"
 rand = "0.5.5"
 num-bigint = "0.2.0"
 num-traits = "0.2.6"
 rust-crypto = "0.2"
-serde_json = "1.0.33"
 
 [dev-dependencies]
 serde_test = "1.0.79"
