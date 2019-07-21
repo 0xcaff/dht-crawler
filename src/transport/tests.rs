@@ -21,6 +21,10 @@ use byteorder::{
 };
 use failure::Error;
 use futures::Stream;
+use futuresx_util::{
+    future::FutureExt,
+    try_future::TryFutureExt,
+};
 use std::{
     net::{
         SocketAddr,
@@ -28,7 +32,7 @@ use std::{
     },
     str::FromStr,
 };
-use tokio::runtime::Runtime;
+use tokio::runtime::current_thread::Runtime;
 
 #[test]
 fn test_ping() -> Result<(), Error> {
@@ -81,7 +85,10 @@ fn make_async_request(
             .map_err(|e| println!("Error In Request Stream: {}", e)),
     );
 
-    let request_future = send_transport.request(bootstrap_node_addr, transaction_id, request);
+    let request_future = send_transport
+        .request(bootstrap_node_addr, transaction_id, request)
+        .boxed()
+        .compat();
 
     runtime.spawn(responses_future);
     let resp = runtime.block_on(request_future)?;
@@ -152,7 +159,8 @@ fn simple_ping() -> Result<(), Error> {
             .map(|_| ())
             .map_err(|err| println!("Error in Request Stream: {}", err)),
     ));
-    let response = rt.block_on(send_transport.ping(id, remote))?;
+
+    let response = rt.block_on(send_transport.ping(id, remote).boxed().compat())?;
 
     assert_ne!(response, b"0000000000000000000000000000000000000000".into());
 

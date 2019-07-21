@@ -3,7 +3,10 @@ use crate::{
         Error,
         Result,
     },
-    proto::NodeID,
+    proto::{
+        NodeID,
+        NodeInfo,
+    },
     routing::{
         Node,
         RoutingTable,
@@ -14,17 +17,18 @@ use crate::{
         SendTransport,
     },
 };
+use futuresx::future as futurex;
 use std::{
     collections::HashMap,
     net::{
         SocketAddr,
         SocketAddrV4,
     },
+    pin::Pin,
     sync::{
         Arc,
         Mutex,
     },
-    time::Duration,
 };
 use tokio::prelude::*;
 
@@ -42,7 +46,7 @@ pub struct Dht {
 impl Dht {
     /// Start handling inbound messages from other peers in the network.
     /// Continues to handle while the future is polled.
-    pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl Future<Item = (), Error = ()>)> {
+    pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl futurex::Future<Output = ()>)> {
         let transport = RecvTransport::new(bind_addr)?;
         let (send_transport, request_stream) = transport.serve();
 
@@ -62,69 +66,66 @@ impl Dht {
 
     /// Bootstraps the routing table by finding nodes near our node id and
     /// adding them to the routing table.
-    pub fn bootstrap_routing_table(
-        &self,
-        addrs: Vec<SocketAddrV4>,
-    ) -> impl Future<Item = (), Error = Error> {
+    pub async fn bootstrap_routing_table(&self, addrs: Vec<SocketAddrV4>) -> Result<()> {
         let send_transport = self.send_transport.clone();
         let routing_table_arc = self.routing_table.clone();
         let id = self.id.clone();
 
-        let bootstrap_futures = addrs.into_iter().map(move |addr| {
+        futurex::join_all(addrs.into_iter().map(move |addr| {
             Self::discover_nodes_of(
                 addr,
                 id.clone(),
                 send_transport.clone(),
                 routing_table_arc.clone(),
             )
-        });
+        }))
+        .await;
 
-        let bootstrap_future = future::join_all(bootstrap_futures).map(|_| ());
-
-        bootstrap_future
+        Ok(())
     }
 
-    fn discover_nodes_of(
+    async fn discover_nodes_of(
         addr: SocketAddrV4,
         self_id: NodeID,
         send_transport: Arc<SendTransport>,
         routing_table_arc: Arc<Mutex<RoutingTable>>,
-    ) -> Box<dyn Future<Item = (), Error = Error> + Send> {
-        let cloned_routing_table = routing_table_arc.clone();
-
-        let fut = send_transport
+    ) -> Result<()> {
+        let response = send_transport
             .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
-            .timeout(Duration::from_secs(5))
-            .map_err(Error::from)
-            .and_then(move |response| {
-                let mut node = Node::new(response.id, addr.into());
-                node.mark_successful_request();
+            .await?;
 
-                let mut routing_table = routing_table_arc.lock()?;
-                routing_table.add_node(node);
+        let mut node = Node::new(response.id, addr.into());
+        node.mark_successful_request();
 
-                Ok(response.nodes)
-            })
-            .and_then(move |nodes| {
-                let cloned_send_transport = send_transport.clone();
-                let cloned_self_id = self_id;
+        {
+            let mut routing_table = routing_table_arc.lock()?;
+            routing_table.add_node(node);
+        }
 
-                future::join_all(nodes.into_iter().map(move |node| {
-                    Self::discover_nodes_of(
-                        node.address,
-                        cloned_self_id.clone(),
-                        cloned_send_transport.clone(),
-                        cloned_routing_table.clone(),
-                    )
-                    .or_else(|e| {
-                        eprintln!("Error While Bootstrapping {}", e);
-                        Ok(())
-                    })
-                }))
-                .map(|_| ())
-            });
+        let f: Pin<Box<dyn futurex::Future<Output = _>>> =
+            Box::pin(futurex::join_all(response.nodes.into_iter().map(|node| {
+                Self::discover_neighbors_of(
+                    node,
+                    self_id.clone(),
+                    send_transport.clone(),
+                    routing_table_arc.clone(),
+                )
+            })));
 
-        Box::new(fut)
+        f.await;
+
+        Ok(())
+    }
+
+    async fn discover_neighbors_of(
+        node: NodeInfo,
+        self_id: NodeID,
+        send_transport: Arc<SendTransport>,
+        routing_table_arc: Arc<Mutex<RoutingTable>>,
+    ) {
+        Self::discover_nodes_of(node.address, self_id, send_transport, routing_table_arc)
+            .await
+            .unwrap_or_else(|e| eprintln!("Error While Bootstrapping {}", e));
     }
 
     /// Gets a list of peers seeding `info_hash`.
@@ -158,32 +159,14 @@ mod tests {
             IntoSocketAddr,
         },
         errors::Error as DhtError,
-        proto::NodeID,
-        stream::{
-            run_forever,
-            select_all,
-        },
-        transport::{
-            RecvTransport,
-            SendTransport,
-        },
         Dht,
     };
     use failure::Error;
-    use futures::Stream;
-    use std::{
-        iter,
-        net::SocketAddrV4,
-        sync::Arc,
-        time::{
-            Duration,
-            Instant,
-        },
+    use futuresx_util::{
+        future::FutureExt as FutureXExt,
+        try_future::TryFutureExt,
     };
-    use tokio::{
-        prelude::*,
-        runtime::Runtime,
-    };
+    use tokio::runtime::current_thread::Runtime;
 
     #[test]
     #[ignore]
@@ -197,8 +180,8 @@ mod tests {
         ]);
 
         let mut runtime = Runtime::new()?;
-        runtime.spawn(dht_future);
-        runtime.block_on(bootstrap_future)?;
+        runtime.spawn(dht_future.unit_error().boxed().compat());
+        runtime.block_on(bootstrap_future.boxed_local().compat())?;
 
         let routing_table = dht.routing_table.lock().map_err(DhtError::from)?;
 
@@ -207,6 +190,7 @@ mod tests {
         Ok(())
     }
 
+    /*
     #[derive(Debug)]
     struct Node {
         id: NodeID,
@@ -282,4 +266,5 @@ mod tests {
                 .flatten(),
         )
     }
+    */
 }

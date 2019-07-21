@@ -1,3 +1,4 @@
+/*
 use chrono::{
     DateTime,
     Utc,
@@ -161,4 +162,9 @@ impl Node {
             time_discovered: Utc::now(),
         }
     }
+}
+*/
+
+fn main() {
+    println!("hello world")
 }

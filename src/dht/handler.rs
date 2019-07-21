@@ -18,9 +18,10 @@ use crate::{
         FindNodeResult,
         RoutingTable,
     },
-    stream::run_forever,
     transport::Request,
 };
+use futuresx::compat::Stream01CompatExt;
+use futuresx_util::stream::StreamExt;
 use std::{
     net::{
         SocketAddr,
@@ -31,22 +32,31 @@ use std::{
 use tokio::prelude::*;
 
 impl Dht {
-    pub fn handle_requests<S: Stream<Item = (Request, SocketAddr), Error = Error>>(
+    pub async fn handle_requests<S: Stream<Item = (Request, SocketAddr), Error = Error>>(
         self,
         stream: S,
-    ) -> impl Future<Item = (), Error = ()> {
-        run_forever(
-            stream
-                .and_then(move |(request, from)| {
-                    let response = self.handle_request(request, from.into_v4()?);
-                    self.send_transport.send(from, response)
-                })
-                .or_else(|err| {
-                    eprintln!("Error While Handling Requests: {}", err);
+    ) {
+        let mut stream = stream.compat();
 
-                    Ok(())
-                }),
-        )
+        loop {
+            let (head, tail) = stream.into_future().await;
+            if let Some(result) = head {
+                result
+                    .and_then(|(request, from)| self.process_request(request, from))
+                    .unwrap_or_else(|err| eprintln!("Error While Handling Requests: {}", err));
+            } else {
+                return;
+            }
+
+            stream = tail
+        }
+    }
+
+    fn process_request(&self, request: Request, from: SocketAddr) -> Result<()> {
+        let response = self.handle_request(request, from.into_v4()?);
+        self.send_transport.send(from, response)?;
+
+        Ok(())
     }
 
     fn handle_request(&self, request: Request, from: SocketAddrV4) -> Message {

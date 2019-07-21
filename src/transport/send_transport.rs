@@ -1,6 +1,5 @@
 use crate::{
     errors::{
-        Error,
         ErrorKind,
         Result,
     },
@@ -26,16 +25,11 @@ use crate::{
 use byteorder::NetworkEndian;
 use bytes::ByteOrder;
 use failure::ResultExt;
-use futuresx_util::{
-    future::FutureExt,
-    try_future::TryFutureExt,
-};
 use rand;
 use std::{
     self,
     net::SocketAddr,
 };
-use tokio::prelude::*;
 
 pub struct SendTransport {
     socket: std::net::UdpSocket,
@@ -56,21 +50,18 @@ impl SendTransport {
         }
     }
 
-    pub fn request(
+    pub async fn request(
         &self,
         address: SocketAddr,
         transaction_id: TransactionId,
         request: Request,
-    ) -> impl Future<Item = Response, Error = Error> {
-        let transaction_future_result =
-            ResponseFuture::wait_for_tx(transaction_id, self.transactions.clone())
-                .boxed()
-                .compat();
+    ) -> Result<Response> {
+        self.send_request(address, transaction_id, request)?;
 
-        self.send_request(address, transaction_id, request)
-            .into_future()
-            .and_then(move |_| transaction_future_result)
-            .and_then(|envelope| Response::from(envelope))
+        let message =
+            ResponseFuture::wait_for_tx(transaction_id, self.transactions.clone()).await?;
+
+        Ok(Response::from(message)?)
     }
 
     /// Adds `transaction_id` to the request and sends it.
@@ -113,71 +104,79 @@ impl SendTransport {
         }
     }
 
-    pub fn ping(
-        &self,
-        id: NodeID,
-        address: SocketAddr,
-    ) -> impl Future<Item = NodeID, Error = Error> {
-        self.request(
-            address,
-            Self::get_transaction_id(),
-            self.build_request(Query::Ping { id }),
-        )
-        .and_then(NodeIDResponse::from_response)
+    pub async fn ping(&self, id: NodeID, address: SocketAddr) -> Result<NodeID> {
+        let response = self
+            .request(
+                address,
+                Self::get_transaction_id(),
+                self.build_request(Query::Ping { id }),
+            )
+            .await?;
+
+        Ok(NodeIDResponse::from_response(response)?)
     }
 
-    pub fn find_node(
+    pub async fn find_node(
         &self,
         id: NodeID,
         address: SocketAddr,
         target: NodeID,
-    ) -> impl Future<Item = FindNodeResponse, Error = Error> {
-        self.request(
-            address,
-            Self::get_transaction_id(),
-            self.build_request(Query::FindNode { id, target }),
-        )
-        .and_then(FindNodeResponse::from_response)
+    ) -> Result<FindNodeResponse> {
+        let response = self
+            .request(
+                address,
+                Self::get_transaction_id(),
+                self.build_request(Query::FindNode { id, target }),
+            )
+            .await?;
+
+        Ok(FindNodeResponse::from_response(response)?)
     }
 
-    pub fn get_peers(
+    pub async fn get_peers(
         &self,
         id: NodeID,
         address: SocketAddr,
         info_hash: NodeID,
-    ) -> impl Future<Item = GetPeersResponse, Error = Error> {
-        self.request(
-            address,
-            Self::get_transaction_id(),
-            self.build_request(Query::GetPeers { id, info_hash }),
-        )
-        .and_then(GetPeersResponse::from_response)
+    ) -> Result<GetPeersResponse> {
+        let response = self
+            .request(
+                address,
+                Self::get_transaction_id(),
+                self.build_request(Query::GetPeers { id, info_hash }),
+            )
+            .await?;
+
+        Ok(GetPeersResponse::from_response(response)?)
     }
 
-    pub fn announce_peer(
+    pub async fn announce_peer(
         &self,
         id: NodeID,
         token: Vec<u8>,
         address: SocketAddr,
         info_hash: NodeID,
         port_type: PortType,
-    ) -> impl Future<Item = NodeID, Error = Error> {
+    ) -> Result<NodeID> {
         let (port, implied_port) = match port_type {
             PortType::Implied => (None, true),
             PortType::Port(port) => (Some(port), false),
         };
 
-        self.request(
-            address,
-            Self::get_transaction_id(),
-            self.build_request(Query::AnnouncePeer {
-                id,
-                token,
-                info_hash,
-                port,
-                implied_port,
-            }),
-        )
-        .and_then(NodeIDResponse::from_response)
+        let response = self
+            .request(
+                address,
+                Self::get_transaction_id(),
+                self.build_request(Query::AnnouncePeer {
+                    id,
+                    token,
+                    info_hash,
+                    port,
+                    implied_port,
+                }),
+            )
+            .await?;
+
+        Ok(NodeIDResponse::from_response(response)?)
     }
 }
