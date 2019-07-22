@@ -7,40 +7,44 @@ use crate::{
     proto::Message,
 };
 use failure::ResultExt;
-use futures::try_ready;
+use futuresx::{
+    ready,
+    TryStream,
+};
 use std::{
     net::SocketAddr,
-    sync::Arc,
+    pin::Pin,
 };
 use tokio::{
     self,
-    prelude::*,
+    net::udp::split::UdpSocketRecvHalf,
+    prelude::{
+        task::Context,
+        *,
+    },
 };
-use tokio_udp::UdpSocket;
 
 /// A future which handles receiving messages for the local peer.
 pub struct InboundMessageStream {
     /// Socket for receiving messages from other peers
-    recv_socket: Arc<UdpSocket>,
+    recv_socket: UdpSocketRecvHalf,
 }
 
 impl InboundMessageStream {
-    pub fn new(recv_socket: Arc<UdpSocket>) -> InboundMessageStream {
+    pub fn new(recv_socket: UdpSocketRecvHalf) -> InboundMessageStream {
         InboundMessageStream { recv_socket }
     }
 }
 
-impl Stream for InboundMessageStream {
-    type Item = (Message, SocketAddr);
+impl TryStream for InboundMessageStream {
+    type Ok = (Message, SocketAddr);
     type Error = Error;
 
-    fn poll(&mut self) -> Result<Async<Option<Self::Item>>> {
+    fn try_poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Result<Self::Ok>>> {
         let mut recv_buffer = [0 as u8; 1024];
 
-        let (size, from_addr) = try_ready!(self
-            .recv_socket
-            .poll_recv_from_unsafe(&mut recv_buffer)
-            .context(ErrorKind::BindError));
+        let (size, from_addr) = ready!(self.recv_socket.poll_recv_from(cx, &mut recv_buffer))
+            .context(ErrorKind::BindError)?;
 
         let envelope = Message::decode(&recv_buffer[..size]).with_context(|_| {
             ErrorKind::InvalidInboundMessage {
@@ -49,6 +53,6 @@ impl Stream for InboundMessageStream {
             }
         })?;
 
-        Ok(Async::Ready(Some((envelope, from_addr))))
+        Poll::Ready(Some(Ok((envelope, from_addr))))
     }
 }

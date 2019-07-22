@@ -19,10 +19,10 @@ use byteorder::{
     WriteBytesExt,
 };
 use failure::Error;
-use futures::Stream;
-use futuresx_util::{
-    future::FutureExt,
-    try_future::TryFutureExt,
+use futuresx::{
+    future as futurex,
+    StreamExt,
+    TryStreamExt,
 };
 use std::{
     net::{
@@ -76,16 +76,13 @@ fn make_async_request(
     let mut runtime = Runtime::new()?;
 
     let recv_transport = RecvTransport::new(local_addr)?;
-    let (send_transport, request_stream) = recv_transport.serve();
+    let (mut send_transport, request_stream) = recv_transport.serve();
 
     let responses_future = request_stream
         .map_err(|e| println!("Error In Request Stream: {}", e))
-        .for_each(|_| Ok(()));
+        .for_each(|_| futurex::ready(()));
 
-    let request_future = send_transport
-        .request(bootstrap_node_addr, transaction_id, request)
-        .boxed()
-        .compat();
+    let request_future = send_transport.request(bootstrap_node_addr, transaction_id, request);
 
     runtime.spawn(responses_future);
     let resp = runtime.block_on(request_future)?;
@@ -149,15 +146,15 @@ fn simple_ping() -> Result<(), Error> {
     let id = NodeID::random();
     let mut rt = Runtime::new()?;
     let recv_transport = RecvTransport::new(bind)?;
-    let (send_transport, request_stream) = recv_transport.serve();
+    let (mut send_transport, request_stream) = recv_transport.serve();
 
     rt.spawn(
         request_stream
             .map_err(|err| println!("Error in Request Stream: {}", err))
-            .for_each(|_| Ok(())),
+            .for_each(|_| futurex::ready(())),
     );
 
-    let response = rt.block_on(send_transport.ping(id, remote).boxed().compat())?;
+    let response = rt.block_on(send_transport.ping(id, remote))?;
 
     assert_ne!(response, b"0000000000000000000000000000000000000000".into());
 

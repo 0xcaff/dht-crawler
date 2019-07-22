@@ -145,20 +145,8 @@ impl<Guard> From<PoisonError<Guard>> for Error {
     }
 }
 
-impl From<timeout::Error<Error>> for Error {
-    fn from(err: timeout::Error<Error>) -> Self {
-        if err.is_inner() {
-            return err.into_inner().unwrap();
-        }
-
-        if err.is_timer() {
-            return err
-                .into_timer()
-                .unwrap()
-                .context(ErrorKind::TimerError)
-                .into();
-        }
-
+impl From<timeout::Elapsed> for Error {
+    fn from(_err: timeout::Elapsed) -> Self {
         ErrorKind::Timeout.into()
     }
 }

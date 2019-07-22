@@ -9,8 +9,15 @@ use crate::{
         messages::TransactionId,
     },
 };
-use futuresx::compat::Future01CompatExt;
-use tokio::prelude::*;
+use futuresx::{
+    TryFuture,
+    TryFutureExt,
+};
+use std::pin::Pin;
+use tokio::prelude::{
+    task::Context,
+    *,
+};
 
 /// A future which resolves when the response for a transaction appears in a
 /// peer's transaction map.
@@ -25,12 +32,9 @@ impl ResponseFuture {
         transactions: ActiveTransactions,
     ) -> Result<proto::Message> {
         transactions.add_transaction(transaction_id)?;
-
-        let message = ResponseFuture::new(transaction_id, transactions)
-            .compat()
-            .await?;
-
-        Ok(message)
+        ResponseFuture::new(transaction_id, transactions)
+            .into_future()
+            .await
     }
 
     fn new(transaction_id: TransactionId, transactions: ActiveTransactions) -> ResponseFuture {
@@ -41,12 +45,13 @@ impl ResponseFuture {
     }
 }
 
-impl Future for ResponseFuture {
-    type Item = proto::Message;
+impl TryFuture for ResponseFuture {
+    type Ok = proto::Message;
     type Error = Error;
 
-    fn poll(&mut self) -> Result<Async<Self::Item>> {
-        self.transactions.poll_response(self.transaction_id)
+    fn try_poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Self::Ok>> {
+        self.transactions
+            .poll_response(self.transaction_id, cx.waker())
     }
 }
 
