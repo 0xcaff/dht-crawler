@@ -5,7 +5,6 @@ use crate::{
         NodeID,
         Query,
     },
-    stream::run_forever,
     transport::{
         messages::{
             Request,
@@ -79,11 +78,9 @@ fn make_async_request(
     let recv_transport = RecvTransport::new(local_addr)?;
     let (send_transport, request_stream) = recv_transport.serve();
 
-    let responses_future = run_forever(
-        request_stream
-            .map(|_| ())
-            .map_err(|e| println!("Error In Request Stream: {}", e)),
-    );
+    let responses_future = request_stream
+        .map_err(|e| println!("Error In Request Stream: {}", e))
+        .for_each(|_| Ok(()));
 
     let request_future = send_transport
         .request(bootstrap_node_addr, transaction_id, request)
@@ -154,11 +151,11 @@ fn simple_ping() -> Result<(), Error> {
     let recv_transport = RecvTransport::new(bind)?;
     let (send_transport, request_stream) = recv_transport.serve();
 
-    rt.spawn(run_forever(
+    rt.spawn(
         request_stream
-            .map(|_| ())
-            .map_err(|err| println!("Error in Request Stream: {}", err)),
-    ));
+            .map_err(|err| println!("Error in Request Stream: {}", err))
+            .for_each(|_| Ok(())),
+    );
 
     let response = rt.block_on(send_transport.ping(id, remote).boxed().compat())?;
 
