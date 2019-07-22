@@ -32,7 +32,7 @@ use std::{
 use tokio::prelude::*;
 
 impl Dht {
-    pub async fn handle_requests<S: Stream<Item = (Request, SocketAddr), Error = Error>>(
+    pub(super) async fn handle_requests<S: Stream<Item = (Request, SocketAddr), Error = Error>>(
         self,
         stream: S,
     ) {
