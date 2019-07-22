@@ -42,6 +42,7 @@ impl Dht {
             let (head, tail) = stream.into_future().await;
             if let Some(result) = head {
                 self.process_request(result)
+                    .await
                     .unwrap_or_else(|err| eprintln!("Error While Handling Requests: {}", err));
             } else {
                 return;
@@ -51,10 +52,10 @@ impl Dht {
         }
     }
 
-    fn process_request(&self, result: Result<(Request, SocketAddr)>) -> Result<()> {
+    async fn process_request(&self, result: Result<(Request, SocketAddr)>) -> Result<()> {
         let (request, from) = result?;
         let response = self.handle_request(request, from.into_v4()?);
-        self.send_transport.send(from, response)?;
+        self.send_transport.send(from, response).await?;
 
         Ok(())
     }

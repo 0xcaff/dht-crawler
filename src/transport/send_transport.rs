@@ -20,26 +20,30 @@ use crate::{
             TransactionId,
         },
         response_future::ResponseFuture,
+        udp_socket_ext::UdpSocketExt,
     },
 };
 use byteorder::NetworkEndian;
 use bytes::ByteOrder;
 use failure::ResultExt;
+use futuresx_util::compat::Future01CompatExt;
 use rand;
 use std::{
     self,
     net::SocketAddr,
+    sync::Arc,
 };
+use tokio_udp::UdpSocket;
 
 pub struct SendTransport {
-    socket: std::net::UdpSocket,
+    socket: Arc<UdpSocket>,
     transactions: ActiveTransactions,
     read_only: bool,
 }
 
 impl SendTransport {
     pub fn new(
-        socket: std::net::UdpSocket,
+        socket: Arc<UdpSocket>,
         transactions: ActiveTransactions,
         read_only: bool,
     ) -> SendTransport {
@@ -56,7 +60,7 @@ impl SendTransport {
         transaction_id: TransactionId,
         request: Request,
     ) -> Result<Response> {
-        self.send_request(address, transaction_id, request)?;
+        self.send_request(address, transaction_id, request).await?;
 
         let message =
             ResponseFuture::wait_for_tx(transaction_id, self.transactions.clone()).await?;
@@ -65,7 +69,7 @@ impl SendTransport {
     }
 
     /// Adds `transaction_id` to the request and sends it.
-    fn send_request(
+    async fn send_request(
         &self,
         address: SocketAddr,
         transaction_id: TransactionId,
@@ -75,7 +79,7 @@ impl SendTransport {
         NetworkEndian::write_u32(&mut buf, transaction_id);
         request.transaction_id.extend_from_slice(&buf);
 
-        Ok(self.send(address, request.into())?)
+        Ok(self.send(address, request.into()).await?)
     }
 
     /// Synchronously sends a request to `address`.
@@ -83,9 +87,13 @@ impl SendTransport {
     /// The sending is done synchronously because doing it asynchronously was
     /// cumbersome and didn't make anything faster. UDP sending rarely
     /// blocks.
-    pub fn send(&self, address: SocketAddr, message: Message) -> Result<()> {
+    pub async fn send(&self, address: SocketAddr, message: Message) -> Result<()> {
+        let encoded = message.encode()?;
+
         self.socket
-            .send_to(&message.encode()?, &address)
+            .send_to(&encoded, &address)
+            .compat()
+            .await
             .with_context(|_| ErrorKind::SendError { to: address })?;
 
         Ok(())

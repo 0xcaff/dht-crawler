@@ -16,35 +16,28 @@ use failure::ResultExt;
 use std::{
     self,
     net::SocketAddr,
+    sync::Arc,
 };
 use tokio::{
     self,
     prelude::*,
-    reactor::Handle,
 };
+use tokio_udp::UdpSocket;
 
 pub struct RecvTransport {
-    socket: std::net::UdpSocket,
+    socket: Arc<UdpSocket>,
     transactions: ActiveTransactions,
 }
 
 impl RecvTransport {
     pub fn new(bind_address: SocketAddr) -> Result<RecvTransport> {
-        let socket = std::net::UdpSocket::bind(&bind_address).context(ErrorKind::BindError)?;
+        let socket = Arc::new(UdpSocket::bind(&bind_address).context(ErrorKind::BindError)?);
         let transactions = ActiveTransactions::new();
 
         Ok(RecvTransport {
             socket,
             transactions,
         })
-    }
-
-    fn make_tokio_socket(&self) -> Result<tokio::net::UdpSocket> {
-        let cloned_socket = self.socket.try_clone().context(ErrorKind::BindError)?;
-        let tokio_socket = tokio::net::UdpSocket::from_std(cloned_socket, &Handle::default())
-            .context(ErrorKind::BindError)?;
-
-        Ok(tokio_socket)
     }
 
     pub fn serve_read_only(
@@ -74,12 +67,7 @@ impl RecvTransport {
     ) {
         let transactions = self.transactions.clone();
 
-        let query_stream = self
-            .make_tokio_socket()
-            .into_future()
-            .into_stream()
-            .map(InboundMessageStream::new)
-            .flatten()
+        let query_stream = InboundMessageStream::new(self.socket.clone())
             .map(move |(envelope, from_addr)| match envelope.message_type {
                 MessageType::Response { .. } | MessageType::Error { .. } => {
                     transactions.handle_response(envelope)?;

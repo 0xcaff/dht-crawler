@@ -4,6 +4,7 @@ mod messages;
 mod recv_transport;
 mod response_future;
 mod send_transport;
+mod udp_socket_ext;
 
 #[cfg(test)]
 mod tests;

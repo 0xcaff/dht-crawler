@@ -8,20 +8,24 @@ use crate::{
 };
 use failure::ResultExt;
 use futures::try_ready;
-use std::net::SocketAddr;
+use std::{
+    net::SocketAddr,
+    sync::Arc,
+};
 use tokio::{
     self,
     prelude::*,
 };
+use tokio_udp::UdpSocket;
 
 /// A future which handles receiving messages for the local peer.
 pub struct InboundMessageStream {
     /// Socket for receiving messages from other peers
-    recv_socket: tokio::net::UdpSocket,
+    recv_socket: Arc<UdpSocket>,
 }
 
 impl InboundMessageStream {
-    pub fn new(recv_socket: tokio::net::UdpSocket) -> InboundMessageStream {
+    pub fn new(recv_socket: Arc<UdpSocket>) -> InboundMessageStream {
         InboundMessageStream { recv_socket }
     }
 }
@@ -35,7 +39,7 @@ impl Stream for InboundMessageStream {
 
         let (size, from_addr) = try_ready!(self
             .recv_socket
-            .poll_recv_from(&mut recv_buffer)
+            .poll_recv_from_unsafe(&mut recv_buffer)
             .context(ErrorKind::BindError));
 
         let envelope = Message::decode(&recv_buffer[..size]).with_context(|_| {
