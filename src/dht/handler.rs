@@ -20,8 +20,11 @@ use crate::{
     },
     transport::Request,
 };
-use futuresx::compat::Stream01CompatExt;
-use futuresx_util::stream::StreamExt;
+use futures::{
+    TryStream,
+    TryStreamExt,
+};
+use futures_util::stream::StreamExt;
 use std::{
     net::{
         SocketAddr,
@@ -29,14 +32,13 @@ use std::{
     },
     ops::DerefMut,
 };
-use tokio::prelude::*;
 
 impl Dht {
-    pub(super) async fn handle_requests<S: Stream<Item = (Request, SocketAddr), Error = Error>>(
+    pub(super) async fn handle_requests<S: TryStream<Ok = (Request, SocketAddr), Error = Error>>(
         self,
         stream: S,
     ) {
-        let mut stream = stream.compat();
+        let mut stream = stream.into_stream().boxed();
 
         loop {
             let (head, tail) = stream.into_future().await;

@@ -20,35 +20,33 @@ use crate::{
             TransactionId,
         },
         response_future::ResponseFuture,
-        udp_socket_ext::UdpSocketExt,
     },
 };
 use byteorder::NetworkEndian;
 use bytes::ByteOrder;
 use failure::ResultExt;
-use futuresx_util::compat::Future01CompatExt;
+use futures::lock::Mutex;
 use rand;
 use std::{
     self,
     net::SocketAddr,
-    sync::Arc,
 };
-use tokio_udp::UdpSocket;
+use tokio::net::udp::split::UdpSocketSendHalf;
 
 pub struct SendTransport {
-    socket: Arc<UdpSocket>,
+    socket: Mutex<UdpSocketSendHalf>,
     transactions: ActiveTransactions,
     read_only: bool,
 }
 
 impl SendTransport {
     pub fn new(
-        socket: Arc<UdpSocket>,
+        socket: UdpSocketSendHalf,
         transactions: ActiveTransactions,
         read_only: bool,
     ) -> SendTransport {
         SendTransport {
-            socket,
+            socket: Mutex::new(socket),
             transactions,
             read_only,
         }
@@ -90,9 +88,10 @@ impl SendTransport {
     pub async fn send(&self, address: SocketAddr, message: Message) -> Result<()> {
         let encoded = message.encode()?;
 
-        self.socket
+        let mut socket = self.socket.lock().await;
+
+        socket
             .send_to(&encoded, &address)
-            .compat()
             .await
             .with_context(|_| ErrorKind::SendError { to: address })?;
 

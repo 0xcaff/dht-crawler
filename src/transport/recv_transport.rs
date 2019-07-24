@@ -13,29 +13,41 @@ use crate::{
     },
 };
 use failure::ResultExt;
+use futures::{
+    future,
+    TryStream,
+    TryStreamExt,
+};
 use std::{
     self,
     net::SocketAddr,
-    sync::Arc,
 };
 use tokio::{
     self,
-    prelude::*,
+    net::udp::{
+        split::{
+            UdpSocketRecvHalf,
+            UdpSocketSendHalf,
+        },
+        UdpSocket,
+    },
 };
-use tokio_udp::UdpSocket;
 
 pub struct RecvTransport {
-    socket: Arc<UdpSocket>,
+    send_half: UdpSocketSendHalf,
+    recv_half: UdpSocketRecvHalf,
     transactions: ActiveTransactions,
 }
 
 impl RecvTransport {
     pub fn new(bind_address: SocketAddr) -> Result<RecvTransport> {
-        let socket = Arc::new(UdpSocket::bind(&bind_address).context(ErrorKind::BindError)?);
+        let socket = UdpSocket::bind(&bind_address).context(ErrorKind::BindError)?;
+        let (recv_half, send_half) = socket.split();
         let transactions = ActiveTransactions::new();
 
         Ok(RecvTransport {
-            socket,
+            send_half,
+            recv_half,
             transactions,
         })
     }
@@ -44,7 +56,7 @@ impl RecvTransport {
         self,
     ) -> (
         SendTransport,
-        impl Stream<Item = (Request, SocketAddr), Error = Error>,
+        impl TryStream<Ok = (Request, SocketAddr), Error = Error>,
     ) {
         self.serve_impl(true)
     }
@@ -53,7 +65,7 @@ impl RecvTransport {
         self,
     ) -> (
         SendTransport,
-        impl Stream<Item = (Request, SocketAddr), Error = Error>,
+        impl TryStream<Ok = (Request, SocketAddr), Error = Error>,
     ) {
         self.serve_impl(false)
     }
@@ -63,12 +75,12 @@ impl RecvTransport {
         read_only: bool,
     ) -> (
         SendTransport,
-        impl Stream<Item = (Request, SocketAddr), Error = Error>,
+        impl TryStream<Ok = (Request, SocketAddr), Error = Error>,
     ) {
         let transactions = self.transactions.clone();
 
-        let query_stream = InboundMessageStream::new(self.socket.clone())
-            .map(move |(envelope, from_addr)| match envelope.message_type {
+        let query_stream = InboundMessageStream::new(self.recv_half)
+            .map_ok(move |(envelope, from_addr)| match envelope.message_type {
                 MessageType::Response { .. } | MessageType::Error { .. } => {
                     transactions.handle_response(envelope)?;
 
@@ -79,11 +91,10 @@ impl RecvTransport {
                     from_addr,
                 ))),
             })
-            .and_then(|r| r.into_future())
-            .filter_map(|m| m);
+            .try_filter_map(|result| future::ready(result));
 
         (
-            SendTransport::new(self.socket, self.transactions, read_only),
+            SendTransport::new(self.send_half, self.transactions, read_only),
             query_stream,
         )
     }

@@ -19,10 +19,10 @@ use byteorder::{
     WriteBytesExt,
 };
 use failure::Error;
-use futures::Stream;
-use futuresx_util::{
-    future::FutureExt,
-    try_future::TryFutureExt,
+use futures::{
+    future,
+    StreamExt,
+    TryStreamExt,
 };
 use std::{
     net::{
@@ -80,12 +80,9 @@ fn make_async_request(
 
     let responses_future = request_stream
         .map_err(|e| println!("Error In Request Stream: {}", e))
-        .for_each(|_| Ok(()));
+        .for_each(|_| future::ready(()));
 
-    let request_future = send_transport
-        .request(bootstrap_node_addr, transaction_id, request)
-        .boxed()
-        .compat();
+    let request_future = send_transport.request(bootstrap_node_addr, transaction_id, request);
 
     runtime.spawn(responses_future);
     let resp = runtime.block_on(request_future)?;
@@ -154,10 +151,10 @@ fn simple_ping() -> Result<(), Error> {
     rt.spawn(
         request_stream
             .map_err(|err| println!("Error in Request Stream: {}", err))
-            .for_each(|_| Ok(())),
+            .for_each(|_| future::ready(())),
     );
 
-    let response = rt.block_on(send_transport.ping(id, remote).boxed().compat())?;
+    let response = rt.block_on(send_transport.ping(id, remote))?;
 
     assert_ne!(response, b"0000000000000000000000000000000000000000".into());
 

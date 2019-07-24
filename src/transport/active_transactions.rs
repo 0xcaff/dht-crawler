@@ -9,19 +9,16 @@ use crate::{
         TransactionId,
     },
 };
-use futures::{
-    task::{
-        self,
-        Task,
-    },
-    Async,
-};
 use std::{
     collections::HashMap,
     sync::{
         Arc,
         Mutex,
     },
+};
+use tokio::prelude::{
+    task::Waker,
+    Poll,
 };
 
 /// A thread-safe container for information about active transactions. Shared
@@ -36,9 +33,9 @@ enum TxState {
         response: proto::Message,
     },
     AwaitingResponse {
-        /// Task to awake when response is received. None if poll hasn't been
+        /// Waker used when response is received. None if poll hasn't been
         /// called for this tx yet.
-        task: Option<Task>,
+        waker: Option<Waker>,
     },
 }
 
@@ -52,7 +49,7 @@ impl ActiveTransactions {
     /// Adds an un-polled pending transaction to the set of active transactions.
     pub(super) fn add_transaction(&self, transaction_id: TransactionId) -> Result<()> {
         let mut map = self.transactions.lock()?;
-        map.insert(transaction_id, TxState::AwaitingResponse { task: None });
+        map.insert(transaction_id, TxState::AwaitingResponse { waker: None });
         Ok(())
     }
 
@@ -84,9 +81,9 @@ impl ActiveTransactions {
                 // Multiple responses received for a single transaction. This shouldn't happen.
                 map.insert(transaction_id, current_tx_state);
             }
-            TxState::AwaitingResponse { task } => {
+            TxState::AwaitingResponse { waker } => {
                 map.insert(transaction_id, TxState::GotResponse { response: message });
-                task.map(|task| task.notify());
+                waker.map(|waker| waker.wake());
             }
         };
 
@@ -103,30 +100,31 @@ impl ActiveTransactions {
     pub(super) fn poll_response(
         &self,
         transaction_id: TransactionId,
-    ) -> Result<Async<proto::Message>> {
+        waker: &Waker,
+    ) -> Poll<Result<proto::Message>> {
         let mut map = self.transactions.lock()?;
 
         let tx_state = map
             .remove(&transaction_id)
             .ok_or_else(|| ErrorKind::MissingTransactionState { transaction_id })?;
 
-        Ok(match tx_state {
-            TxState::GotResponse { response } => Async::Ready(response),
-            TxState::AwaitingResponse { task: Some(..) } => {
+        match tx_state {
+            TxState::GotResponse { response } => Poll::Ready(Ok(response)),
+            TxState::AwaitingResponse { waker: Some(..) } => {
                 map.insert(transaction_id, tx_state);
 
-                Async::NotReady
+                Poll::Pending
             }
-            TxState::AwaitingResponse { task: None } => {
-                let task = task::current();
-
+            TxState::AwaitingResponse { waker: None } => {
                 map.insert(
                     transaction_id,
-                    TxState::AwaitingResponse { task: Some(task) },
+                    TxState::AwaitingResponse {
+                        waker: Some(waker.clone()),
+                    },
                 );
 
-                Async::NotReady
+                Poll::Pending
             }
-        })
+        }
     }
 }

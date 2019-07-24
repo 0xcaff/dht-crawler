@@ -1,8 +1,5 @@
 use crate::{
-    errors::{
-        Error,
-        Result,
-    },
+    errors::Result,
     proto::{
         NodeID,
         NodeInfo,
@@ -17,7 +14,7 @@ use crate::{
         SendTransport,
     },
 };
-use futuresx::future as futurex;
+use futures::future;
 use std::{
     collections::HashMap,
     net::{
@@ -29,8 +26,9 @@ use std::{
         Arc,
         Mutex,
     },
+    time::Duration,
 };
-use tokio::prelude::*;
+use tokio::prelude::FutureExt;
 
 mod handler;
 
@@ -46,19 +44,19 @@ pub struct Dht {
 impl Dht {
     /// Start handling inbound messages from other peers in the network.
     /// Continues to handle while the future is polled.
-    pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl futurex::Future<Output = ()>)> {
+    pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl future::Future<Output = ()>)> {
         let transport = RecvTransport::new(bind_addr)?;
         let (send_transport, request_stream) = transport.serve();
 
         let id = NodeID::random();
-        let torrents = Arc::new(Mutex::new(HashMap::new()));
-        let routing_table = Arc::new(Mutex::new(RoutingTable::new(id.clone())));
+        let torrents = HashMap::new();
+        let routing_table = RoutingTable::new(id.clone());
 
         let dht = Dht {
             id,
-            torrents,
+            torrents: Arc::new(Mutex::new(torrents)),
             send_transport: Arc::new(send_transport),
-            routing_table,
+            routing_table: Arc::new(Mutex::new(routing_table)),
         };
 
         Ok((dht.clone(), dht.handle_requests(request_stream)))
@@ -71,7 +69,7 @@ impl Dht {
         let routing_table_arc = self.routing_table.clone();
         let id = self.id.clone();
 
-        futurex::join_all(addrs.into_iter().map(move |addr| {
+        future::join_all(addrs.into_iter().map(move |addr| {
             Self::discover_nodes_of(
                 addr,
                 id.clone(),
@@ -92,7 +90,8 @@ impl Dht {
     ) -> Result<()> {
         let response = send_transport
             .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
-            .await?;
+            .timeout(Duration::from_secs(3))
+            .await??;
 
         let mut node = Node::new(response.id, addr.into());
         node.mark_successful_request();
@@ -102,8 +101,8 @@ impl Dht {
             routing_table.add_node(node);
         }
 
-        let f: Pin<Box<dyn futurex::Future<Output = _>>> =
-            Box::pin(futurex::join_all(response.nodes.into_iter().map(|node| {
+        let f: Pin<Box<dyn future::Future<Output = _>>> =
+            Box::pin(future::join_all(response.nodes.into_iter().map(|node| {
                 Self::discover_neighbors_of(
                     node,
                     self_id.clone(),
@@ -129,25 +128,18 @@ impl Dht {
     }
 
     /// Gets a list of peers seeding `info_hash`.
-    pub fn get_peers(
-        &self,
-        _info_hash: NodeID,
-    ) -> impl Future<Item = Vec<SocketAddrV4>, Error = Error> {
+    pub async fn get_peers(&self, _info_hash: NodeID) -> Result<Vec<SocketAddrV4>> {
         // TODO:
         // * Return From torrents Table if Exists
         // * Fetch By Calling get_nodes otherwise
-        future::ok(Vec::new())
+        unimplemented!()
     }
 
     /// Announces that we have information about an info_hash on `port`.
-    pub fn announce(
-        &self,
-        _info_hash: NodeID,
-        _port: PortType,
-    ) -> impl Future<Item = (), Error = Error> {
+    pub async fn announce(&self, _info_hash: NodeID, _port: PortType) -> Result<()> {
         // TODO:
         // * Send Announce to all Peers With Tokens
-        future::ok(())
+        unimplemented!()
     }
 }
 
@@ -162,10 +154,6 @@ mod tests {
         Dht,
     };
     use failure::Error;
-    use futuresx_util::{
-        future::FutureExt as FutureXExt,
-        try_future::TryFutureExt,
-    };
     use tokio::runtime::current_thread::Runtime;
 
     #[test]
@@ -180,8 +168,8 @@ mod tests {
         ]);
 
         let mut runtime = Runtime::new()?;
-        runtime.spawn(dht_future.unit_error().boxed().compat());
-        runtime.block_on(bootstrap_future.boxed_local().compat())?;
+        runtime.spawn(dht_future);
+        runtime.block_on(bootstrap_future)?;
 
         let routing_table = dht.routing_table.lock().map_err(DhtError::from)?;
 
