@@ -26,7 +26,9 @@ use std::{
         Arc,
         Mutex,
     },
+    time::Duration,
 };
+use tokio::prelude::FutureExt;
 
 mod handler;
 
@@ -88,7 +90,8 @@ impl Dht {
     ) -> Result<()> {
         let response = send_transport
             .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
-            .await?;
+            .timeout(Duration::from_secs(3))
+            .await??;
 
         let mut node = Node::new(response.id, addr.into());
         node.mark_successful_request();
