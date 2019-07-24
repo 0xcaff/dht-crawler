@@ -20,11 +20,11 @@ use crate::{
     },
     transport::Request,
 };
-use futuresx::{
+use futures::{
     TryStream,
     TryStreamExt,
 };
-use futuresx_util::stream::StreamExt;
+use futures_util::stream::StreamExt;
 use std::{
     net::{
         SocketAddr,

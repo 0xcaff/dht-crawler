@@ -7,7 +7,7 @@ use crate::{
     proto::Message,
 };
 use failure::ResultExt;
-use futuresx::{
+use futures::{
     ready,
     TryStream,
 };

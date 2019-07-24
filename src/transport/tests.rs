@@ -19,8 +19,8 @@ use byteorder::{
     WriteBytesExt,
 };
 use failure::Error;
-use futuresx::{
-    future as futurex,
+use futures::{
+    future,
     StreamExt,
     TryStreamExt,
 };
@@ -80,7 +80,7 @@ fn make_async_request(
 
     let responses_future = request_stream
         .map_err(|e| println!("Error In Request Stream: {}", e))
-        .for_each(|_| futurex::ready(()));
+        .for_each(|_| future::ready(()));
 
     let request_future = send_transport.request(bootstrap_node_addr, transaction_id, request);
 
@@ -151,7 +151,7 @@ fn simple_ping() -> Result<(), Error> {
     rt.spawn(
         request_stream
             .map_err(|err| println!("Error in Request Stream: {}", err))
-            .for_each(|_| futurex::ready(())),
+            .for_each(|_| future::ready(())),
     );
 
     let response = rt.block_on(send_transport.ping(id, remote))?;

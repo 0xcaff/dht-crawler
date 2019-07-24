@@ -25,7 +25,7 @@ use crate::{
 use byteorder::NetworkEndian;
 use bytes::ByteOrder;
 use failure::ResultExt;
-use futuresx::lock::Mutex;
+use futures::lock::Mutex;
 use rand;
 use std::{
     self,

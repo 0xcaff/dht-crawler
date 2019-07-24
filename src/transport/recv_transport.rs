@@ -13,8 +13,8 @@ use crate::{
     },
 };
 use failure::ResultExt;
-use futuresx::{
-    future as futurex,
+use futures::{
+    future,
     TryStream,
     TryStreamExt,
 };
@@ -91,7 +91,7 @@ impl RecvTransport {
                     from_addr,
                 ))),
             })
-            .try_filter_map(|result| futurex::ready(result));
+            .try_filter_map(|result| future::ready(result));
 
         (
             SendTransport::new(self.send_half, self.transactions, read_only),

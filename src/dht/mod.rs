@@ -14,7 +14,7 @@ use crate::{
         SendTransport,
     },
 };
-use futuresx::future as futurex;
+use futures::future;
 use std::{
     collections::HashMap,
     net::{
@@ -44,7 +44,7 @@ pub struct Dht {
 impl Dht {
     /// Start handling inbound messages from other peers in the network.
     /// Continues to handle while the future is polled.
-    pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl futurex::Future<Output = ()>)> {
+    pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl future::Future<Output = ()>)> {
         let transport = RecvTransport::new(bind_addr)?;
         let (send_transport, request_stream) = transport.serve();
 
@@ -69,7 +69,7 @@ impl Dht {
         let routing_table_arc = self.routing_table.clone();
         let id = self.id.clone();
 
-        futurex::join_all(addrs.into_iter().map(move |addr| {
+        future::join_all(addrs.into_iter().map(move |addr| {
             Self::discover_nodes_of(
                 addr,
                 id.clone(),
@@ -101,8 +101,8 @@ impl Dht {
             routing_table.add_node(node);
         }
 
-        let f: Pin<Box<dyn futurex::Future<Output = _>>> =
-            Box::pin(futurex::join_all(response.nodes.into_iter().map(|node| {
+        let f: Pin<Box<dyn future::Future<Output = _>>> =
+            Box::pin(future::join_all(response.nodes.into_iter().map(|node| {
                 Self::discover_neighbors_of(
                     node,
                     self_id.clone(),

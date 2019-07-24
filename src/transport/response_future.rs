@@ -9,7 +9,7 @@ use crate::{
         messages::TransactionId,
     },
 };
-use futuresx::{
+use futures::{
     TryFuture,
     TryFutureExt,
 };
