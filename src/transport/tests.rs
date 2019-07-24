@@ -76,7 +76,7 @@ fn make_async_request(
     let mut runtime = Runtime::new()?;
 
     let recv_transport = RecvTransport::new(local_addr)?;
-    let (mut send_transport, request_stream) = recv_transport.serve();
+    let (send_transport, request_stream) = recv_transport.serve();
 
     let responses_future = request_stream
         .map_err(|e| println!("Error In Request Stream: {}", e))
@@ -146,7 +146,7 @@ fn simple_ping() -> Result<(), Error> {
     let id = NodeID::random();
     let mut rt = Runtime::new()?;
     let recv_transport = RecvTransport::new(bind)?;
-    let (mut send_transport, request_stream) = recv_transport.serve();
+    let (send_transport, request_stream) = recv_transport.serve();
 
     rt.spawn(
         request_stream

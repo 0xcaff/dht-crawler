@@ -25,6 +25,7 @@ use crate::{
 use byteorder::NetworkEndian;
 use bytes::ByteOrder;
 use failure::ResultExt;
+use futuresx::lock::Mutex;
 use rand;
 use std::{
     self,
@@ -33,7 +34,7 @@ use std::{
 use tokio::net::udp::split::UdpSocketSendHalf;
 
 pub struct SendTransport {
-    socket: UdpSocketSendHalf,
+    socket: Mutex<UdpSocketSendHalf>,
     transactions: ActiveTransactions,
     read_only: bool,
 }
@@ -45,14 +46,14 @@ impl SendTransport {
         read_only: bool,
     ) -> SendTransport {
         SendTransport {
-            socket,
+            socket: Mutex::new(socket),
             transactions,
             read_only,
         }
     }
 
     pub async fn request(
-        &mut self,
+        &self,
         address: SocketAddr,
         transaction_id: TransactionId,
         request: Request,
@@ -67,7 +68,7 @@ impl SendTransport {
 
     /// Adds `transaction_id` to the request and sends it.
     async fn send_request(
-        &mut self,
+        &self,
         address: SocketAddr,
         transaction_id: TransactionId,
         mut request: Request,
@@ -84,10 +85,12 @@ impl SendTransport {
     /// The sending is done synchronously because doing it asynchronously was
     /// cumbersome and didn't make anything faster. UDP sending rarely
     /// blocks.
-    pub async fn send(&mut self, address: SocketAddr, message: Message) -> Result<()> {
+    pub async fn send(&self, address: SocketAddr, message: Message) -> Result<()> {
         let encoded = message.encode()?;
 
-        self.socket
+        let mut socket = self.socket.lock().await;
+
+        socket
             .send_to(&encoded, &address)
             .await
             .with_context(|_| ErrorKind::SendError { to: address })?;
@@ -108,7 +111,7 @@ impl SendTransport {
         }
     }
 
-    pub async fn ping(&mut self, id: NodeID, address: SocketAddr) -> Result<NodeID> {
+    pub async fn ping(&self, id: NodeID, address: SocketAddr) -> Result<NodeID> {
         let response = self
             .request(
                 address,
@@ -121,7 +124,7 @@ impl SendTransport {
     }
 
     pub async fn find_node(
-        &mut self,
+        &self,
         id: NodeID,
         address: SocketAddr,
         target: NodeID,
@@ -138,7 +141,7 @@ impl SendTransport {
     }
 
     pub async fn get_peers(
-        &mut self,
+        &self,
         id: NodeID,
         address: SocketAddr,
         info_hash: NodeID,
@@ -155,7 +158,7 @@ impl SendTransport {
     }
 
     pub async fn announce_peer(
-        &mut self,
+        &self,
         id: NodeID,
         token: Vec<u8>,
         address: SocketAddr,

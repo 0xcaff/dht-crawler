@@ -35,7 +35,7 @@ use std::{
 
 impl Dht {
     pub(super) async fn handle_requests<S: TryStream<Ok = (Request, SocketAddr), Error = Error>>(
-        mut self,
+        self,
         stream: S,
     ) {
         let mut stream = stream.into_stream().boxed();
@@ -54,12 +54,10 @@ impl Dht {
         }
     }
 
-    async fn process_request(&mut self, result: Result<(Request, SocketAddr)>) -> Result<()> {
+    async fn process_request(&self, result: Result<(Request, SocketAddr)>) -> Result<()> {
         let (request, from) = result?;
         let response = self.handle_request(request, from.into_v4()?);
-        let mut send_transport = self.send_transport.lock().await;
-
-        send_transport.send(from, response).await?;
+        self.send_transport.send(from, response).await?;
 
         Ok(())
     }

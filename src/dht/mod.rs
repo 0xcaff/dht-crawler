@@ -15,7 +15,6 @@ use crate::{
     },
 };
 use futuresx::future as futurex;
-use futuresx_util::lock::Mutex as AsyncMutex;
 use std::{
     collections::HashMap,
     net::{
@@ -23,7 +22,10 @@ use std::{
         SocketAddrV4,
     },
     pin::Pin,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc,
+        Mutex,
+    },
 };
 
 mod handler;
@@ -33,7 +35,7 @@ mod handler;
 pub struct Dht {
     id: NodeID,
     torrents: Arc<Mutex<HashMap<NodeID, Vec<SocketAddrV4>>>>,
-    send_transport: Arc<AsyncMutex<SendTransport>>,
+    send_transport: Arc<SendTransport>,
     routing_table: Arc<Mutex<RoutingTable>>,
 }
 
@@ -51,7 +53,7 @@ impl Dht {
         let dht = Dht {
             id,
             torrents: Arc::new(Mutex::new(torrents)),
-            send_transport: Arc::new(AsyncMutex::new(send_transport)),
+            send_transport: Arc::new(send_transport),
             routing_table: Arc::new(Mutex::new(routing_table)),
         };
 
@@ -81,16 +83,12 @@ impl Dht {
     async fn discover_nodes_of(
         addr: SocketAddrV4,
         self_id: NodeID,
-        send_transport_arc: Arc<AsyncMutex<SendTransport>>,
+        send_transport: Arc<SendTransport>,
         routing_table_arc: Arc<Mutex<RoutingTable>>,
     ) -> Result<()> {
-        let response = {
-            let mut send_transport = send_transport_arc.lock().await;
-
-            send_transport
-                .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
-                .await?
-        };
+        let response = send_transport
+            .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
+            .await?;
 
         let mut node = Node::new(response.id, addr.into());
         node.mark_successful_request();
@@ -105,7 +103,7 @@ impl Dht {
                 Self::discover_neighbors_of(
                     node,
                     self_id.clone(),
-                    send_transport_arc.clone(),
+                    send_transport.clone(),
                     routing_table_arc.clone(),
                 )
             })));
@@ -118,7 +116,7 @@ impl Dht {
     async fn discover_neighbors_of(
         node: NodeInfo,
         self_id: NodeID,
-        send_transport: Arc<AsyncMutex<SendTransport>>,
+        send_transport: Arc<SendTransport>,
         routing_table_arc: Arc<Mutex<RoutingTable>>,
     ) {
         Self::discover_nodes_of(node.address, self_id, send_transport, routing_table_arc)
