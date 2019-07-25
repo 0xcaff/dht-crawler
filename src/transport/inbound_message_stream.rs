@@ -8,51 +8,52 @@ use crate::{
 };
 use failure::ResultExt;
 use futures::{
-    ready,
+    stream,
     TryStream,
 };
-use std::{
-    net::SocketAddr,
-    pin::Pin,
-};
+use std::net::SocketAddr;
 use tokio::{
     self,
     net::udp::split::UdpSocketRecvHalf,
-    prelude::{
-        task::Context,
-        *,
-    },
 };
 
-/// A future which handles receiving messages for the local peer.
-pub struct InboundMessageStream {
-    /// Socket for receiving messages from other peers
+pub fn receive_inbound_messages(
     recv_socket: UdpSocketRecvHalf,
+) -> impl TryStream<Ok = (Message, SocketAddr), Error = Error> {
+    let recv_buffer = [0 as u8; 1024];
+
+    stream::unfold((recv_socket, recv_buffer), |(recv_socket, recv_buffer)| {
+        receive_inbound_message_wrapper(recv_socket, recv_buffer)
+    })
 }
 
-impl InboundMessageStream {
-    pub fn new(recv_socket: UdpSocketRecvHalf) -> InboundMessageStream {
-        InboundMessageStream { recv_socket }
-    }
+async fn receive_inbound_message_wrapper(
+    mut recv_socket: UdpSocketRecvHalf,
+    mut recv_buffer: [u8; 1024],
+) -> Option<(
+    Result<(Message, SocketAddr)>,
+    (UdpSocketRecvHalf, [u8; 1024]),
+)> {
+    let result = receive_inbound_message(&mut recv_socket, &mut recv_buffer).await;
+
+    Some((result, (recv_socket, recv_buffer)))
 }
 
-impl TryStream for InboundMessageStream {
-    type Ok = (Message, SocketAddr);
-    type Error = Error;
+async fn receive_inbound_message<'a>(
+    recv_socket: &'a mut UdpSocketRecvHalf,
+    recv_buffer: &'a mut [u8; 1024],
+) -> Result<(Message, SocketAddr)> {
+    let (size, from_addr) = recv_socket
+        .recv_from(recv_buffer)
+        .await
+        .context(ErrorKind::BindError)?;
 
-    fn try_poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Result<Self::Ok>>> {
-        let mut recv_buffer = [0 as u8; 1024];
+    let envelope = Message::decode(&recv_buffer[..size]).with_context(|_| {
+        ErrorKind::InvalidInboundMessage {
+            from: from_addr,
+            message: recv_buffer[..size].to_vec(),
+        }
+    })?;
 
-        let (size, from_addr) = ready!(self.recv_socket.poll_recv_from(cx, &mut recv_buffer))
-            .context(ErrorKind::BindError)?;
-
-        let envelope = Message::decode(&recv_buffer[..size]).with_context(|_| {
-            ErrorKind::InvalidInboundMessage {
-                from: from_addr,
-                message: recv_buffer[..size].to_vec(),
-            }
-        })?;
-
-        Poll::Ready(Some(Ok((envelope, from_addr))))
-    }
+    Ok((envelope, from_addr))
 }

@@ -169,7 +169,7 @@ dependencies = [
  "serde_bytes 0.10.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_test 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]
@@ -673,53 +673,53 @@ dependencies = [
 [[package]]
 name = "tokio"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "memchr 2.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-codec 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-current-thread 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-executor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-fs 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-io 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-macros 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-reactor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-sync 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-tcp 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-threadpool 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-timer 0.3.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-udp 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-uds 0.3.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio-codec 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-current-thread 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-executor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-fs 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-io 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-macros 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-reactor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-sync 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-tcp 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-threadpool 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-timer 0.3.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-udp 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-uds 0.3.0 (git+https://github.com/tokio-rs/tokio.git)",
  "tracing-core 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "tokio-codec"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-sink-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-io 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio-io 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]
 name = "tokio-current-thread"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-executor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio-executor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]
 name = "tokio-executor"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "crossbeam-utils 0.6.5 (git+https://github.com/stjepang/crossbeam?branch=raw-parker)",
 ]
@@ -727,17 +727,17 @@ dependencies = [
 [[package]]
 name = "tokio-fs"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-io 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-threadpool 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio-io 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-threadpool 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]
 name = "tokio-io"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -747,7 +747,7 @@ dependencies = [
 [[package]]
 name = "tokio-macros"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -757,7 +757,7 @@ dependencies = [
 [[package]]
 name = "tokio-reactor"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -767,15 +767,15 @@ dependencies = [
  "num_cpus 1.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "slab 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-executor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-io 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-sync 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio-executor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-io 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-sync 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]
 name = "tokio-sync"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "async-util 0.1.0 (git+https://github.com/tokio-rs/async)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -786,21 +786,21 @@ dependencies = [
 [[package]]
 name = "tokio-tcp"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "async-util 0.1.0 (git+https://github.com/tokio-rs/async)",
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "iovec 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "mio 0.6.19 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-io 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-reactor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio-io 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-reactor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]
 name = "tokio-threadpool"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "arc-waker 0.1.0 (git+https://github.com/tokio-rs/async)",
  "crossbeam-deque 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -811,38 +811,38 @@ dependencies = [
  "log 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "slab 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-executor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-sync 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio-executor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-sync 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]
 name = "tokio-timer"
 version = "0.3.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "async-util 0.1.0 (git+https://github.com/tokio-rs/async)",
  "crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "slab 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-executor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-sync 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio-executor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-sync 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]
 name = "tokio-udp"
 version = "0.2.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "mio 0.6.19 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-reactor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio-reactor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]
 name = "tokio-uds"
 version = "0.3.0"
-source = "git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll#e8feb5c1cdbb34e2e7d56756a16d13494cbb66e4"
+source = "git+https://github.com/tokio-rs/tokio.git#79b017c773e194e2d7a69c07f8fcd93e28eef625"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -851,9 +851,9 @@ dependencies = [
  "log 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "mio 0.6.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "mio-uds 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-codec 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-io 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
- "tokio-reactor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)",
+ "tokio-codec 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-io 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio-reactor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]
@@ -989,20 +989,20 @@ dependencies = [
 "checksum syn 0.15.39 (registry+https://github.com/rust-lang/crates.io-index)" = "b4d960b829a55e56db167e861ddb43602c003c7be0bee1d345021703fac2fb7c"
 "checksum synstructure 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)" = "02353edf96d6e4dc81aea2d8490a7e9db177bf8acb0e951c24940bf866cb313f"
 "checksum time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)" = "db8dcfca086c1143c9270ac42a2bbd8a7ee477b78ac8e45b19abfb0cbede4b6f"
-"checksum tokio 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-codec 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-current-thread 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-executor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-fs 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-io 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-macros 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-reactor 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-sync 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-tcp 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-threadpool 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-timer 0.3.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-udp 0.2.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
-"checksum tokio-uds 0.3.0 (git+https://github.com/0xcaff/tokio.git?branch=feature/udp-split-poll)" = "<none>"
+"checksum tokio 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-codec 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-current-thread 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-executor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-fs 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-io 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-macros 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-reactor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-sync 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-tcp 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-threadpool 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-timer 0.3.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-udp 0.2.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
+"checksum tokio-uds 0.3.0 (git+https://github.com/tokio-rs/tokio.git)" = "<none>"
 "checksum tracing-core 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "b15b1e1f124b19a23d87d54613077bf5249e5f13a5cd39e2f2a50afef938ca05"
 "checksum unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "fc72304796d0818e357ead4e000d19c9c174ab23dc11093ac919054d20a6a7fc"
 "checksum winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "167dc9d6949a9b857f3451275e911c3f44255842c1f7a76f33c55103a909087a"
