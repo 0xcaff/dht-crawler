@@ -7,7 +7,7 @@ use crate::{
     proto::MessageType,
     transport::{
         active_transactions::ActiveTransactions,
-        inbound_message_stream::InboundMessageStream,
+        inbound_message_stream::receive_inbound_messages,
         messages::Request,
         SendTransport,
     },
@@ -79,7 +79,7 @@ impl RecvTransport {
     ) {
         let transactions = self.transactions.clone();
 
-        let query_stream = InboundMessageStream::new(self.recv_half)
+        let query_stream = receive_inbound_messages(self.recv_half)
             .map_ok(move |(envelope, from_addr)| match envelope.message_type {
                 MessageType::Response { .. } | MessageType::Error { .. } => {
                     transactions.handle_response(envelope)?;
