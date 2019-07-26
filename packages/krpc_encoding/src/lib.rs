@@ -1,5 +1,4 @@
 // TODO: Add Code Sample
-// TODO: Include Something About Nodes vs Peers
 
 //! Library for serializing and de-serializing krpc messages defined in
 //! [BEP-0005].
