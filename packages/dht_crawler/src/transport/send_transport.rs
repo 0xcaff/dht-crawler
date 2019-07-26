@@ -3,11 +3,6 @@ use crate::{
         ErrorKind,
         Result,
     },
-    proto::{
-        Message,
-        NodeID,
-        Query,
-    },
     transport::{
         active_transactions::ActiveTransactions,
         messages::{
@@ -26,6 +21,11 @@ use byteorder::NetworkEndian;
 use bytes::ByteOrder;
 use failure::ResultExt;
 use futures::lock::Mutex;
+use krpc_protocol::{
+    Message,
+    NodeID,
+    Query,
+};
 use rand;
 use std::{
     self,
@@ -86,7 +86,9 @@ impl SendTransport {
     /// cumbersome and didn't make anything faster. UDP sending rarely
     /// blocks.
     pub async fn send(&self, address: SocketAddr, message: Message) -> Result<()> {
-        let encoded = message.encode()?;
+        let encoded = message
+            .encode()
+            .map_err(|cause| ErrorKind::SendEncodingError { cause })?;
 
         let mut socket = self.socket.lock().await;
 

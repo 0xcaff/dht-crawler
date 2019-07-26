@@ -1,5 +1,6 @@
 [workspace]
 
 members = [
-    "packages/dht_crawler"
+    "packages/dht_crawler",
+    "packages/krpc_protocol"
 ]

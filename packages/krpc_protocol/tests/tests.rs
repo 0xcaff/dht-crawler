@@ -1,4 +1,5 @@
-use crate::proto::{
+use failure::Error;
+use krpc_protocol::{
     Message,
     MessageType,
     NodeInfo,
@@ -6,7 +7,6 @@ use crate::proto::{
     Query,
     Response,
 };
-use failure::Error;
 use serde_bencode;
 use std::{
     net::SocketAddrV4,

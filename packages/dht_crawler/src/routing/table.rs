@@ -1,17 +1,15 @@
-use crate::{
-    proto::{
-        self,
-        NodeID,
-        NodeInfo,
-    },
-    routing::{
-        bucket::Bucket,
-        node::Node,
-    },
+use crate::routing::{
+    bucket::Bucket,
+    node::Node,
 };
 use crypto::{
     digest::Digest,
     sha1::Sha1,
+};
+use krpc_protocol::{
+    self as proto,
+    NodeID,
+    NodeInfo,
 };
 use rand;
 use std::{

@@ -9,7 +9,6 @@ use crate::errors::{
     ErrorKind,
     Result,
 };
-use failure::ResultExt;
 use serde_bencode;
 use serde_bytes::{
     self,
@@ -47,11 +46,12 @@ pub struct Message {
 
 impl Message {
     pub fn decode(bytes: &[u8]) -> Result<Message> {
-        Ok(serde_bencode::de::from_bytes(bytes).context(ErrorKind::DecodeError)?)
+        Ok(serde_bencode::de::from_bytes(bytes)
+            .map_err(|cause| ErrorKind::DecodeError { cause })?)
     }
 
     pub fn encode(&self) -> Result<Vec<u8>> {
-        Ok(serde_bencode::ser::to_bytes(self).context(ErrorKind::EncodeError)?)
+        Ok(serde_bencode::ser::to_bytes(self).map_err(|cause| ErrorKind::EncodeError { cause })?)
     }
 }
 

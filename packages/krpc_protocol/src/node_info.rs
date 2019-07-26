@@ -102,7 +102,7 @@ impl<'de> Visitor<'de> for NodeInfoVecVisitor {
 
 #[cfg(test)]
 mod tests {
-    use crate::proto::NodeInfo;
+    use super::NodeInfo;
     use failure::Error;
     use std::{
         net::SocketAddrV4,

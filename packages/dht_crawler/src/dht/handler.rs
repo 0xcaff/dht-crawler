@@ -6,14 +6,6 @@ use crate::{
         ErrorKind,
         Result,
     },
-    proto::{
-        Addr,
-        Message,
-        MessageType,
-        NodeID,
-        Query,
-        Response,
-    },
     routing::{
         FindNodeResult,
         RoutingTable,
@@ -25,6 +17,14 @@ use futures::{
     TryStreamExt,
 };
 use futures_util::stream::StreamExt;
+use krpc_protocol::{
+    Addr,
+    Message,
+    MessageType,
+    NodeID,
+    Query,
+    Response,
+};
 use std::{
     net::{
         SocketAddr,

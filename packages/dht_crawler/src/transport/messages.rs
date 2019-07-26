@@ -4,8 +4,8 @@ use crate::errors::{
 };
 use failure::ResultExt;
 
-use crate::proto::{
-    self,
+use krpc_protocol::{
+    self as proto,
     Addr,
     Message,
     MessageType,
@@ -103,7 +103,8 @@ impl Response {
     }
 
     pub fn parse(src: &[u8]) -> Result<Response> {
-        let envelope: Message = Message::decode(&src)?;
+        let envelope: Message =
+            Message::decode(&src).map_err(|cause| ErrorKind::ParseInboundMessageError { cause })?;
         Ok(Response::from(envelope)?)
     }
 }

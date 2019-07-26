@@ -1,10 +1,10 @@
-use crate::proto::{
-    NodeID,
-    NodeInfo,
-};
 use chrono::{
     NaiveDateTime,
     Utc,
+};
+use krpc_protocol::{
+    NodeID,
+    NodeInfo,
 };
 use std::net::SocketAddrV4;
 

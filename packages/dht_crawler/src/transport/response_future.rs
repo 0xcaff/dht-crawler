@@ -3,7 +3,6 @@ use crate::{
         Error,
         Result,
     },
-    proto,
     transport::{
         active_transactions::ActiveTransactions,
         messages::TransactionId,
@@ -13,6 +12,7 @@ use futures::{
     TryFuture,
     TryFutureExt,
 };
+use krpc_protocol as proto;
 use std::pin::Pin;
 use tokio::prelude::{
     task::Context,

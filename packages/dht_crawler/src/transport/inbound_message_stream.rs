@@ -1,16 +1,14 @@
-use crate::{
-    errors::{
-        Error,
-        ErrorKind,
-        Result,
-    },
-    proto::Message,
+use crate::errors::{
+    Error,
+    ErrorKind,
+    Result,
 };
 use failure::ResultExt;
 use futures::{
     stream,
     TryStream,
 };
+use krpc_protocol::Message;
 use std::net::SocketAddr;
 use tokio::{
     self,

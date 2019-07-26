@@ -1,9 +1,5 @@
 use crate::{
     errors::Result,
-    proto::{
-        NodeID,
-        NodeInfo,
-    },
     routing::{
         Node,
         RoutingTable,
@@ -15,6 +11,10 @@ use crate::{
     },
 };
 use futures::future;
+use krpc_protocol::{
+    NodeID,
+    NodeInfo,
+};
 use std::{
     collections::HashMap,
     net::{

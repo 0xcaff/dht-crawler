@@ -1,9 +1,9 @@
-use crate::proto;
 use failure::{
     Backtrace,
     Context,
     Fail,
 };
+use krpc_protocol as proto;
 use std::{
     self,
     fmt,
@@ -81,17 +81,23 @@ pub enum ErrorKind {
     #[fail(display = "Lock poisoned")]
     LockPoisoned,
 
-    #[fail(display = "Error while encoding message")]
-    EncodeError,
-
-    #[fail(display = "Error while decoding message")]
-    DecodeError,
-
     #[fail(display = "Timer error")]
     TimerError,
 
     #[fail(display = "Timeout")]
     Timeout,
+
+    #[fail(display = "Failed to encode message for sending")]
+    SendEncodingError {
+        #[fail(cause)]
+        cause: proto::Error,
+    },
+
+    #[fail(display = "Failed to parse inbound message")]
+    ParseInboundMessageError {
+        #[fail(cause)]
+        cause: proto::Error,
+    },
 }
 
 impl Fail for Error {

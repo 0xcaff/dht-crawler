@@ -1,10 +1,5 @@
 use crate::{
     addr::IntoSocketAddr,
-    proto::{
-        self,
-        NodeID,
-        Query,
-    },
     transport::{
         messages::{
             Request,
@@ -23,6 +18,11 @@ use futures::{
     future,
     StreamExt,
     TryStreamExt,
+};
+use krpc_protocol::{
+    self as proto,
+    NodeID,
+    Query,
 };
 use std::{
     net::{

@@ -3,12 +3,12 @@ use crate::{
         ErrorKind,
         Result,
     },
-    proto,
     transport::messages::{
         parse_originating_transaction_id,
         TransactionId,
     },
 };
+use krpc_protocol as proto;
 use std::{
     collections::HashMap,
     sync::{

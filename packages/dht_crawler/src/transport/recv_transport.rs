@@ -4,7 +4,6 @@ use crate::{
         ErrorKind,
         Result,
     },
-    proto::MessageType,
     transport::{
         active_transactions::ActiveTransactions,
         inbound_message_stream::receive_inbound_messages,
@@ -18,6 +17,7 @@ use futures::{
     TryStream,
     TryStreamExt,
 };
+use krpc_protocol::MessageType;
 use std::{
     self,
     net::SocketAddr,
