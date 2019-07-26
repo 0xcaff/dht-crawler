@@ -20,9 +20,9 @@ pub use self::{
         Addr,
     },
     messages::{
+        KRPCError,
         Message,
         MessageType,
-        ProtocolError,
         Query,
         Response,
     },

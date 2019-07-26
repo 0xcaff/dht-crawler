@@ -26,7 +26,7 @@ pub struct Error {
 pub enum ErrorKind {
     //// Originating Errors
     #[fail(display = "Received an error message from node {}", error_message)]
-    ProtocolError { error_message: proto::ProtocolError },
+    ReceivedKRPCError { error_message: proto::KRPCError },
 
     #[fail(display = "Failed to parse inbound message from {}", from)]
     InvalidInboundMessage { from: SocketAddr, message: Vec<u8> },
@@ -111,7 +111,7 @@ impl Fail for Error {
 }
 
 impl Error {
-    pub fn as_request_error(&self) -> proto::ProtocolError {
+    pub fn as_request_error(&self) -> proto::KRPCError {
         let (code, message) = match self.inner.get_context() {
             ErrorKind::UnimplementedRequestType => (204, "Unimplemented"),
             ErrorKind::InvalidToken => (203, "Invalid Token"),
@@ -119,7 +119,7 @@ impl Error {
             _ => (202, "Server Error"),
         };
 
-        proto::ProtocolError::new(code, message)
+        proto::KRPCError::new(code, message)
     }
 }
 

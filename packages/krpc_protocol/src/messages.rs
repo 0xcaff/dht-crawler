@@ -87,23 +87,21 @@ pub enum MessageType {
     #[serde(rename = "e")]
     Error {
         #[serde(rename = "e")]
-        error: ProtocolError,
+        error: KRPCError,
     },
 }
 
-// TODO: Rename to KRPCError
-
 /// Error sent when a query cannot be fulfilled
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
-pub struct ProtocolError(u8, String);
+pub struct KRPCError(u8, String);
 
-impl ProtocolError {
-    pub fn new(error_code: u8, message: &str) -> ProtocolError {
-        ProtocolError(error_code, message.to_string())
+impl KRPCError {
+    pub fn new(error_code: u8, message: &str) -> KRPCError {
+        KRPCError(error_code, message.to_string())
     }
 }
 
-impl fmt::Display for ProtocolError {
+impl fmt::Display for KRPCError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self)
     }

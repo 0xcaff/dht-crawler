@@ -1,9 +1,9 @@
 use failure::Error;
 use krpc_protocol::{
+    KRPCError,
     Message,
     MessageType,
     NodeInfo,
-    ProtocolError,
     Query,
     Response,
 };
@@ -87,7 +87,7 @@ fn error() -> Result<(), Error> {
         transaction_id: b"aa".to_vec(),
         version: None,
         message_type: MessageType::Error {
-            error: ProtocolError::new(201, "A Generic Error Ocurred"),
+            error: KRPCError::new(201, "A Generic Error Ocurred"),
         },
         read_only: false,
     };
