@@ -7,21 +7,17 @@ use krpc_encoding::{
     Query,
     Response,
 };
-use serde_bencode;
 use std::{
     net::SocketAddrV4,
-    str::{
-        self,
-        FromStr,
-    },
+    str::FromStr,
 };
 
 fn test_serialize_deserialize(parsed: Envelope, raw: &[u8]) -> Result<(), Error> {
-    let serialized = serde_bencode::ser::to_string(&parsed)?;
-    let raw_string = str::from_utf8(raw)?.to_string();
+    let parsed_encoded = parsed.encode()?;
+    assert_eq!(raw, &parsed_encoded[..]);
 
-    assert_eq!(raw_string, serialized);
-    assert_eq!(parsed, serde_bencode::de::from_bytes(raw)?);
+    let raw_decoded = Envelope::decode(raw)?;
+    assert_eq!(parsed, raw_decoded);
 
     Ok(())
 }
@@ -134,7 +130,7 @@ fn get_nodes_response() -> Result<(), Error> {
         read_only: false,
     };
 
-    let serialized = serde_bencode::ser::to_bytes(&parsed)?;
+    let serialized = parsed.encode()?;
     let decoded = Envelope::decode(&serialized)?;
 
     assert_eq!(parsed, decoded);
