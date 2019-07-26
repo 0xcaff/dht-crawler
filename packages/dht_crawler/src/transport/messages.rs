@@ -7,8 +7,8 @@ use failure::ResultExt;
 use krpc_protocol::{
     self as proto,
     Addr,
+    Envelope,
     Message,
-    MessageType,
     NodeID,
     NodeInfo,
     Query,
@@ -60,12 +60,12 @@ impl Request {
         }
     }
 
-    pub fn into(self) -> Message {
-        Message {
+    pub fn into(self) -> Envelope {
+        Envelope {
             ip: None,
             transaction_id: self.transaction_id,
             version: self.version.map(|version| version.into()),
-            message_type: MessageType::Query { query: self.query },
+            message_type: Message::Query { query: self.query },
             read_only: self.read_only,
         }
     }
@@ -79,20 +79,20 @@ pub struct Response {
 }
 
 impl Response {
-    pub fn from(envelope: Message) -> Result<Response> {
+    pub fn from(envelope: Envelope) -> Result<Response> {
         let response = match envelope.message_type {
-            MessageType::Error { error } => {
+            Message::Error { error } => {
                 return Err(ErrorKind::ReceivedKRPCError {
                     error_message: error,
                 })?;
             }
-            MessageType::Query { .. } => {
+            Message::Query { .. } => {
                 return Err(ErrorKind::InvalidMessageType {
                     expected: "Response or Error",
                     got: envelope.message_type,
                 })?
             }
-            MessageType::Response { response } => response,
+            Message::Response { response } => response,
         };
 
         Ok(Response {
@@ -103,8 +103,8 @@ impl Response {
     }
 
     pub fn parse(src: &[u8]) -> Result<Response> {
-        let envelope: Message =
-            Message::decode(&src).map_err(|cause| ErrorKind::ParseInboundMessageError { cause })?;
+        let envelope: Envelope = Envelope::decode(&src)
+            .map_err(|cause| ErrorKind::ParseInboundMessageError { cause })?;
         Ok(Response::from(envelope)?)
     }
 }

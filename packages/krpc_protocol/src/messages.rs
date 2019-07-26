@@ -20,11 +20,9 @@ use serde_derive::{
 };
 use std::fmt;
 
-// TODO: Rename to Envelope
-
 /// Envelope holding information common to requests and responses
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-pub struct Message {
+pub struct Envelope {
     /// Public IP address of the requester. Only sent by peers supporting
     /// [BEP-0042].
     ///
@@ -41,7 +39,7 @@ pub struct Message {
     pub version: Option<ByteBuf>,
 
     #[serde(flatten)]
-    pub message_type: MessageType,
+    pub message_type: Message,
 
     /// Sent by read-only DHT nodes defined in [BEP-0043]
     ///
@@ -55,8 +53,8 @@ pub struct Message {
     pub read_only: bool,
 }
 
-impl Message {
-    pub fn decode(bytes: &[u8]) -> Result<Message> {
+impl Envelope {
+    pub fn decode(bytes: &[u8]) -> Result<Envelope> {
         Ok(serde_bencode::de::from_bytes(bytes)
             .map_err(|cause| ErrorKind::DecodeError { cause })?)
     }
@@ -66,12 +64,10 @@ impl Message {
     }
 }
 
-// TODO: Rename to Message
-
 /// Messages sent and received by nodes
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 #[serde(tag = "y")]
-pub enum MessageType {
+pub enum Message {
     #[serde(rename = "q")]
     Query {
         #[serde(flatten)]

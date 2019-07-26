@@ -30,7 +30,7 @@ pub struct ActiveTransactions {
 
 enum TxState {
     GotResponse {
-        response: proto::Message,
+        response: proto::Envelope,
     },
     AwaitingResponse {
         /// Waker used when response is received. None if poll hasn't been
@@ -68,7 +68,7 @@ impl ActiveTransactions {
     ///
     /// If the transaction id associated with `message` isn't known, returns
     /// failure.
-    pub(super) fn handle_response(&self, message: proto::Message) -> Result<()> {
+    pub(super) fn handle_response(&self, message: proto::Envelope) -> Result<()> {
         let transaction_id = parse_originating_transaction_id(&message.transaction_id)?;
         let mut map = self.transactions.lock()?;
 
@@ -101,7 +101,7 @@ impl ActiveTransactions {
         &self,
         transaction_id: TransactionId,
         waker: &Waker,
-    ) -> Poll<Result<proto::Message>> {
+    ) -> Poll<Result<proto::Envelope>> {
         let mut map = self.transactions.lock()?;
 
         let tx_state = map

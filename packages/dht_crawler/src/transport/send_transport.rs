@@ -22,7 +22,7 @@ use bytes::ByteOrder;
 use failure::ResultExt;
 use futures::lock::Mutex;
 use krpc_protocol::{
-    Message,
+    Envelope,
     NodeID,
     Query,
 };
@@ -85,7 +85,7 @@ impl SendTransport {
     /// The sending is done synchronously because doing it asynchronously was
     /// cumbersome and didn't make anything faster. UDP sending rarely
     /// blocks.
-    pub async fn send(&self, address: SocketAddr, message: Message) -> Result<()> {
+    pub async fn send(&self, address: SocketAddr, message: Envelope) -> Result<()> {
         let encoded = message
             .encode()
             .map_err(|cause| ErrorKind::SendEncodingError { cause })?;

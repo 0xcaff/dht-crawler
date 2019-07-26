@@ -30,7 +30,7 @@ impl ResponseFuture {
     pub async fn wait_for_tx(
         transaction_id: TransactionId,
         transactions: ActiveTransactions,
-    ) -> Result<proto::Message> {
+    ) -> Result<proto::Envelope> {
         transactions.add_transaction(transaction_id)?;
         ResponseFuture::new(transaction_id, transactions)
             .into_future()
@@ -46,7 +46,7 @@ impl ResponseFuture {
 }
 
 impl TryFuture for ResponseFuture {
-    type Ok = proto::Message;
+    type Ok = proto::Envelope;
     type Error = Error;
 
     fn try_poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Self::Ok>> {

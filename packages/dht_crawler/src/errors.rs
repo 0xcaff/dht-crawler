@@ -52,7 +52,7 @@ pub enum ErrorKind {
     #[fail(display = "Invalid message type, expected {} got {:?}", expected, got)]
     InvalidMessageType {
         expected: &'static str,
-        got: proto::MessageType,
+        got: proto::Message,
     },
 
     #[fail(display = "Invalid response type, expected {} got {:?}", expected, got)]

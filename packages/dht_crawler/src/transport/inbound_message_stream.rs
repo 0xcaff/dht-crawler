@@ -8,7 +8,7 @@ use futures::{
     stream,
     TryStream,
 };
-use krpc_protocol::Message;
+use krpc_protocol::Envelope;
 use std::net::SocketAddr;
 use tokio::{
     self,
@@ -17,7 +17,7 @@ use tokio::{
 
 pub fn receive_inbound_messages(
     recv_socket: UdpSocketRecvHalf,
-) -> impl TryStream<Ok = (Message, SocketAddr), Error = Error> {
+) -> impl TryStream<Ok = (Envelope, SocketAddr), Error = Error> {
     let recv_buffer = [0 as u8; 1024];
 
     stream::unfold((recv_socket, recv_buffer), |(recv_socket, recv_buffer)| {
@@ -29,7 +29,7 @@ async fn receive_inbound_message_wrapper(
     mut recv_socket: UdpSocketRecvHalf,
     mut recv_buffer: [u8; 1024],
 ) -> Option<(
-    Result<(Message, SocketAddr)>,
+    Result<(Envelope, SocketAddr)>,
     (UdpSocketRecvHalf, [u8; 1024]),
 )> {
     let result = receive_inbound_message(&mut recv_socket, &mut recv_buffer).await;
@@ -40,13 +40,13 @@ async fn receive_inbound_message_wrapper(
 async fn receive_inbound_message<'a>(
     recv_socket: &'a mut UdpSocketRecvHalf,
     recv_buffer: &'a mut [u8; 1024],
-) -> Result<(Message, SocketAddr)> {
+) -> Result<(Envelope, SocketAddr)> {
     let (size, from_addr) = recv_socket
         .recv_from(recv_buffer)
         .await
         .context(ErrorKind::BindError)?;
 
-    let envelope = Message::decode(&recv_buffer[..size]).with_context(|_| {
+    let envelope = Envelope::decode(&recv_buffer[..size]).with_context(|_| {
         ErrorKind::InvalidInboundMessage {
             from: from_addr,
             message: recv_buffer[..size].to_vec(),

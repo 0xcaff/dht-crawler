@@ -1,8 +1,8 @@
 use failure::Error;
 use krpc_protocol::{
+    Envelope,
     KRPCError,
     Message,
-    MessageType,
     NodeInfo,
     Query,
     Response,
@@ -16,7 +16,7 @@ use std::{
     },
 };
 
-fn test_serialize_deserialize(parsed: Message, raw: &[u8]) -> Result<(), Error> {
+fn test_serialize_deserialize(parsed: Envelope, raw: &[u8]) -> Result<(), Error> {
     let serialized = serde_bencode::ser::to_string(&parsed)?;
     let raw_string = str::from_utf8(raw)?.to_string();
 
@@ -28,11 +28,11 @@ fn test_serialize_deserialize(parsed: Message, raw: &[u8]) -> Result<(), Error> 
 
 #[test]
 fn ping_request() -> Result<(), Error> {
-    let parsed = Message {
+    let parsed = Envelope {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
-        message_type: MessageType::Query {
+        message_type: Message::Query {
             query: Query::Ping {
                 id: b"abcdefghij0123456789".into(),
             },
@@ -46,11 +46,11 @@ fn ping_request() -> Result<(), Error> {
 
 #[test]
 fn ping_read_only() -> Result<(), Error> {
-    let parsed = Message {
+    let parsed = Envelope {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
-        message_type: MessageType::Query {
+        message_type: Message::Query {
             query: Query::Ping {
                 id: b"abcdefghij0123456789".into(),
             },
@@ -64,11 +64,11 @@ fn ping_read_only() -> Result<(), Error> {
 
 #[test]
 fn ping_response() -> Result<(), Error> {
-    let parsed = Message {
+    let parsed = Envelope {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
-        message_type: MessageType::Response {
+        message_type: Message::Response {
             response: Response::OnlyID {
                 id: b"mnopqrstuvwxyz123456".into(),
             },
@@ -82,11 +82,11 @@ fn ping_response() -> Result<(), Error> {
 
 #[test]
 fn error() -> Result<(), Error> {
-    let parsed = Message {
+    let parsed = Envelope {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
-        message_type: MessageType::Error {
+        message_type: Message::Error {
             error: KRPCError::new(201, "A Generic Error Ocurred"),
         },
         read_only: false,
@@ -98,11 +98,11 @@ fn error() -> Result<(), Error> {
 
 #[test]
 fn announce_peer_request() -> Result<(), Error> {
-    let parsed = Message {
+    let parsed = Envelope {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
-        message_type: MessageType::Query {
+        message_type: Message::Query {
             query: Query::AnnouncePeer {
                 id: b"abcdefghij0123456789".into(),
                 implied_port: true,
@@ -120,11 +120,11 @@ fn announce_peer_request() -> Result<(), Error> {
 
 #[test]
 fn get_nodes_response() -> Result<(), Error> {
-    let parsed = Message {
+    let parsed = Envelope {
         ip: None,
         transaction_id: b"aa".to_vec(),
         version: None,
-        message_type: MessageType::Response {
+        message_type: Message::Response {
             response: Response::NextHop {
                 id: b"abcdefghij0123456789".into(),
                 token: None,
@@ -135,7 +135,7 @@ fn get_nodes_response() -> Result<(), Error> {
     };
 
     let serialized = serde_bencode::ser::to_bytes(&parsed)?;
-    let decoded = Message::decode(&serialized)?;
+    let decoded = Envelope::decode(&serialized)?;
 
     assert_eq!(parsed, decoded);
 
@@ -172,11 +172,11 @@ fn get_nodes_response_decode() -> Result<(), Error> {
         52, 58, 0, 0, 175, 218, 49, 58, 121, 49, 58, 114, 101,
     ];
 
-    let expected = Message {
+    let expected = Envelope {
         ip: Some("129.21.63.170:34238".parse()?),
         transaction_id: vec![0x00, 0x00, 0xAF, 0xDA],
         version: None,
-        message_type: MessageType::Response {
+        message_type: Message::Response {
             response: Response::NextHop {
                 id: b"32f54e697351ff4aec29cdbaabf2fbe3467cc267".into(),
                 token: None,
@@ -251,7 +251,7 @@ fn get_nodes_response_decode() -> Result<(), Error> {
         read_only: false,
     };
 
-    let message = Message::decode(encoded)?;
+    let message = Envelope::decode(encoded)?;
 
     assert_eq!(message, expected);
 
@@ -267,11 +267,11 @@ fn with_version() -> Result<(), Error> {
         88, 49, 58, 121, 49, 58, 114, 101,
     ];
 
-    let expected = Message {
+    let expected = Envelope {
         ip: Some(SocketAddrV4::from_str("129.21.60.68:34254")?.into()),
         transaction_id: vec![0, 0, 138, 186],
         version: Some(vec![85, 84, 174, 88].into()),
-        message_type: MessageType::Response {
+        message_type: Message::Response {
             response: Response::OnlyID {
                 id: b"bd5d3cbbe9ebb3a6db3c870c3e99245e0d1c06f1".into(),
             },
@@ -279,7 +279,7 @@ fn with_version() -> Result<(), Error> {
         read_only: false,
     };
 
-    let message = Message::decode(encoded)?;
+    let message = Envelope::decode(encoded)?;
 
     assert_eq!(message, expected);
 

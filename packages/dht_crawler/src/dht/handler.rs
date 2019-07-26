@@ -19,8 +19,8 @@ use futures::{
 use futures_util::stream::StreamExt;
 use krpc_protocol::{
     Addr,
+    Envelope,
     Message,
-    MessageType,
     NodeID,
     Query,
     Response,
@@ -62,7 +62,7 @@ impl Dht {
         Ok(())
     }
 
-    fn handle_request(&self, request: Request, from: SocketAddrV4) -> Message {
+    fn handle_request(&self, request: Request, from: SocketAddrV4) -> Envelope {
         let result = match request.query {
             Query::Ping { id } => self.handle_ping(from, id, request.read_only),
             Query::FindNode { id, target } => {
@@ -90,13 +90,13 @@ impl Dht {
         };
 
         let message_type = match result {
-            Ok(response) => MessageType::Response { response },
-            Err(err) => MessageType::Error {
+            Ok(response) => Message::Response { response },
+            Err(err) => Message::Error {
                 error: err.as_request_error(),
             },
         };
 
-        Message {
+        Envelope {
             ip: None,
             transaction_id: request.transaction_id,
             version: None,

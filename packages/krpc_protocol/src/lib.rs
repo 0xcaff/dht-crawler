@@ -20,9 +20,9 @@ pub use self::{
         Addr,
     },
     messages::{
+        Envelope,
         KRPCError,
         Message,
-        MessageType,
         Query,
         Response,
     },

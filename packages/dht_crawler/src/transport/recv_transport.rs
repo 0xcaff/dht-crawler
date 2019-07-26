@@ -17,7 +17,7 @@ use futures::{
     TryStream,
     TryStreamExt,
 };
-use krpc_protocol::MessageType;
+use krpc_protocol::Message;
 use std::{
     self,
     net::SocketAddr,
@@ -81,12 +81,12 @@ impl RecvTransport {
 
         let query_stream = receive_inbound_messages(self.recv_half)
             .map_ok(move |(envelope, from_addr)| match envelope.message_type {
-                MessageType::Response { .. } | MessageType::Error { .. } => {
+                Message::Response { .. } | Message::Error { .. } => {
                     transactions.handle_response(envelope)?;
 
                     Ok(None)
                 }
-                MessageType::Query { query } => Ok(Some((
+                Message::Query { query } => Ok(Some((
                     Request::new(envelope.transaction_id, query, envelope.read_only),
                     from_addr,
                 ))),
