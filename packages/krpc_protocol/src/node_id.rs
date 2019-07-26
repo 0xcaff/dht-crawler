@@ -16,7 +16,7 @@ use std::{
     ops::Deref,
 };
 
-/// A 20 byte value representing keys in the DHT.
+/// Value representing a key or node ID in the DHT
 #[derive(PartialEq, Eq, Clone, Hash)]
 pub struct NodeID(BigUint);
 

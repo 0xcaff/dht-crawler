@@ -15,6 +15,9 @@ use std::{
     net::SocketAddrV4,
 };
 
+/// Contact information for a node in the DHT network
+///
+/// Implements "Compact node info" serialization and de-serialization.
 #[derive(Debug, PartialEq, Eq)]
 pub struct NodeInfo {
     pub node_id: NodeID,

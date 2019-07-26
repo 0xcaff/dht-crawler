@@ -90,13 +90,13 @@ pub enum ErrorKind {
     #[fail(display = "Failed to encode message for sending")]
     SendEncodingError {
         #[fail(cause)]
-        cause: proto::Error,
+        cause: proto::errors::Error,
     },
 
     #[fail(display = "Failed to parse inbound message")]
     ParseInboundMessageError {
         #[fail(cause)]
-        cause: proto::Error,
+        cause: proto::errors::Error,
     },
 }
 

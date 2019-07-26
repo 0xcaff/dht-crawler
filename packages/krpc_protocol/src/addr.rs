@@ -23,8 +23,10 @@ use std::{
     str::FromStr,
 };
 
-/// Wrapper type handling compact serialization and de-serialization of ip
-/// address and port information. Defined in BEP5.
+/// Contact information for a BitTorrent peer
+///
+/// Implements "Compact IP-address/port info" serialization and
+/// de-serialization.
 #[derive(Eq, PartialEq, Debug)]
 pub struct Addr(SocketAddrV4);
 
@@ -68,6 +70,7 @@ pub fn write_to(addr: &SocketAddrV4, raw: &mut [u8]) {
         .expect("Failed to encode port.");
 }
 
+/// Encode `addr` with the "Compact IP-address/port info" format
 pub fn to_bytes(addr: &SocketAddrV4) -> [u8; 6] {
     let mut raw = [0u8; 6];
     write_to(addr, &mut raw);
