@@ -113,7 +113,7 @@ impl fmt::Display for KRPCError {
 pub enum Query {
     /// Most basic query
     ///
-    /// The appropriate response to a ping is [`Response::OnlyId`] with the node
+    /// The appropriate response to a ping is [`Response::OnlyID`] with the node
     /// ID of the responding node.
     #[serde(rename = "ping")]
     Ping {
@@ -237,10 +237,9 @@ pub enum Response {
     },
 
     /// Response to [`Query::Ping`] and [`Query::AnnouncePeer`]
-    OnlyId {
+    OnlyID {
         /// Identifier of queried node
         id: NodeID,
-        // TODO: Rename Id -> ID
     },
 
     /// Response to [`Query::SampleInfoHashes`]

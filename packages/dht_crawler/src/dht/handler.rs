@@ -109,7 +109,7 @@ impl Dht {
         let mut routing_table = self.routing_table.lock()?;
         record_request(&mut routing_table, id, from, read_only)?;
 
-        Ok(Response::OnlyId {
+        Ok(Response::OnlyID {
             id: self.id.clone(),
         })
     }
@@ -205,7 +205,7 @@ impl Dht {
             .or_insert_with(Vec::new)
             .push(addr);
 
-        Ok(Response::OnlyId {
+        Ok(Response::OnlyID {
             id: self.id.clone(),
         })
     }

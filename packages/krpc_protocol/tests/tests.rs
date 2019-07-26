@@ -69,7 +69,7 @@ fn ping_response() -> Result<(), Error> {
         transaction_id: b"aa".to_vec(),
         version: None,
         message_type: MessageType::Response {
-            response: Response::OnlyId {
+            response: Response::OnlyID {
                 id: b"mnopqrstuvwxyz123456".into(),
             },
         },
@@ -272,7 +272,7 @@ fn with_version() -> Result<(), Error> {
         transaction_id: vec![0, 0, 138, 186],
         version: Some(vec![85, 84, 174, 88].into()),
         message_type: MessageType::Response {
-            response: Response::OnlyId {
+            response: Response::OnlyID {
                 id: b"bd5d3cbbe9ebb3a6db3c870c3e99245e0d1c06f1".into(),
             },
         },

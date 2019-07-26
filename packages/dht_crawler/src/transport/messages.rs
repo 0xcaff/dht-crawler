@@ -82,7 +82,7 @@ impl Response {
     pub fn from(envelope: Message) -> Result<Response> {
         let response = match envelope.message_type {
             MessageType::Error { error } => {
-                return Err(ErrorKind::ProtocolError {
+                return Err(ErrorKind::ReceivedKRPCError {
                     error_message: error,
                 })?;
             }
@@ -165,7 +165,7 @@ pub struct NodeIDResponse;
 impl NodeIDResponse {
     pub fn from_response(resp: Response) -> Result<NodeID> {
         Ok(match resp.response {
-            proto::Response::OnlyId { id } => id,
+            proto::Response::OnlyID { id } => id,
             got => Err(ErrorKind::InvalidResponseType {
                 expected: "NodeIDResponse",
                 got,
