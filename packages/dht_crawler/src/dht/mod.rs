@@ -4,13 +4,11 @@ use crate::{
         Node,
         RoutingTable,
     },
-    transport::{
-        PortType,
-        RecvTransport,
-        SendTransport,
-    },
 };
-use futures::future;
+use futures::{
+    future,
+    TryStreamExt,
+};
 use krpc_encoding::{
     NodeID,
     NodeInfo,
@@ -29,6 +27,11 @@ use std::{
     time::Duration,
 };
 use tokio::prelude::FutureExt;
+use tokio_krpc::{
+    PortType,
+    RecvTransport,
+    SendTransport,
+};
 
 mod handler;
 
@@ -59,7 +62,7 @@ impl Dht {
             routing_table: Arc::new(Mutex::new(routing_table)),
         };
 
-        Ok((dht.clone(), dht.handle_requests(request_stream)))
+        Ok((dht.clone(), dht.handle_requests(request_stream.err_into())))
     }
 
     /// Bootstraps the routing table by finding nodes near our node id and

@@ -1,14 +1,3 @@
-use crate::{
-    addr::IntoSocketAddr,
-    transport::{
-        messages::{
-            Request,
-            Response,
-            TransactionId,
-        },
-        RecvTransport,
-    },
-};
 use byteorder::{
     NetworkEndian,
     WriteBytesExt,
@@ -27,11 +16,20 @@ use krpc_encoding::{
 use std::{
     net::{
         SocketAddr,
+        ToSocketAddrs,
         UdpSocket,
     },
     str::FromStr,
 };
 use tokio::runtime::current_thread::Runtime;
+use tokio_krpc::{
+    messages::{
+        Request,
+        Response,
+        TransactionId,
+    },
+    RecvTransport,
+};
 
 #[test]
 fn test_ping() -> Result<(), Error> {
@@ -71,7 +69,7 @@ fn make_async_request(
     request: Request,
 ) -> Result<Response, Error> {
     let local_addr = SocketAddr::from_str("0.0.0.0:0")?;
-    let bootstrap_node_addr = remote_addr.into_addr();
+    let bootstrap_node_addr = remote_addr.to_socket_addrs().unwrap().nth(0).unwrap();
 
     let mut runtime = Runtime::new()?;
 
@@ -141,7 +139,11 @@ fn test_find_node() -> Result<(), Error> {
 #[test]
 fn simple_ping() -> Result<(), Error> {
     let bind = SocketAddr::from_str("0.0.0.0:0")?;
-    let remote = "router.bittorrent.com:6881".into_addr();
+    let remote = "router.bittorrent.com:6881"
+        .to_socket_addrs()
+        .unwrap()
+        .nth(0)
+        .unwrap();
 
     let id = NodeID::random();
     let mut rt = Runtime::new()?;

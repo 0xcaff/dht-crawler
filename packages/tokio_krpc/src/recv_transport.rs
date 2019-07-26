@@ -1,15 +1,13 @@
 use crate::{
+    active_transactions::ActiveTransactions,
     errors::{
         Error,
         ErrorKind,
         Result,
     },
-    transport::{
-        active_transactions::ActiveTransactions,
-        inbound_message_stream::receive_inbound_messages,
-        messages::Request,
-        SendTransport,
-    },
+    inbound_message_stream::receive_inbound_messages,
+    messages::Request,
+    SendTransport,
 };
 use failure::ResultExt;
 use futures::{

@@ -98,6 +98,12 @@ pub enum ErrorKind {
         #[fail(cause)]
         cause: proto::errors::Error,
     },
+
+    #[fail(display = "Something broke in the transport")]
+    TransportError {
+        #[fail(cause)]
+        cause: tokio_krpc::errors::Error,
+    },
 }
 
 impl Fail for Error {
@@ -154,5 +160,11 @@ impl<Guard> From<PoisonError<Guard>> for Error {
 impl From<timeout::Elapsed> for Error {
     fn from(_err: timeout::Elapsed) -> Self {
         ErrorKind::Timeout.into()
+    }
+}
+
+impl From<tokio_krpc::errors::Error> for Error {
+    fn from(cause: tokio_krpc::errors::Error) -> Self {
+        ErrorKind::TransportError { cause }.into()
     }
 }

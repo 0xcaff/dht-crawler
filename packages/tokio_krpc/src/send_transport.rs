@@ -1,21 +1,19 @@
 use crate::{
+    active_transactions::ActiveTransactions,
     errors::{
         ErrorKind,
         Result,
     },
-    transport::{
-        active_transactions::ActiveTransactions,
-        messages::{
-            FindNodeResponse,
-            GetPeersResponse,
-            NodeIDResponse,
-            PortType,
-            Request,
-            Response,
-            TransactionId,
-        },
-        response_future::ResponseFuture,
+    messages::{
+        FindNodeResponse,
+        GetPeersResponse,
+        NodeIDResponse,
+        PortType,
+        Request,
+        Response,
+        TransactionId,
     },
+    response_future::ResponseFuture,
 };
 use byteorder::NetworkEndian;
 use bytes::ByteOrder;

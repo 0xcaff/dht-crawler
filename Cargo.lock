@@ -165,6 +165,7 @@ dependencies = [
  "rand 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-crypto 0.2.36 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio_krpc 0.1.0",
 ]
 
 [[package]]
@@ -867,6 +868,21 @@ dependencies = [
  "tokio-codec 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
  "tokio-io 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
  "tokio-reactor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+]
+
+[[package]]
+name = "tokio_krpc"
+version = "0.1.0"
+dependencies = [
+ "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures-util-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "krpc_encoding 0.1.0",
+ "rand 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]

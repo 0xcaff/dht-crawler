@@ -1,12 +1,10 @@
 use crate::{
+    active_transactions::ActiveTransactions,
     errors::{
         Error,
         Result,
     },
-    transport::{
-        active_transactions::ActiveTransactions,
-        messages::TransactionId,
-    },
+    messages::TransactionId,
 };
 use futures::{
     TryFuture,

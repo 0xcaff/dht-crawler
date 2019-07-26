@@ -10,7 +10,6 @@ use crate::{
         FindNodeResult,
         RoutingTable,
     },
-    transport::Request,
 };
 use futures::{
     TryStream,
@@ -32,6 +31,7 @@ use std::{
     },
     ops::DerefMut,
 };
+use tokio_krpc::Request;
 
 impl Dht {
     pub(super) async fn handle_requests<S: TryStream<Ok = (Request, SocketAddr), Error = Error>>(

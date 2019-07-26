@@ -3,7 +3,7 @@ use crate::{
         ErrorKind,
         Result,
     },
-    transport::messages::{
+    messages::{
         parse_originating_transaction_id,
         TransactionId,
     },
