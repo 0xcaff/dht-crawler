@@ -1,28 +1,5 @@
-[package]
-name = "dht_crawler"
-version = "0.1.0"
-authors = ["Martin Charles <martincharles07@gmail.com>"]
-edition = "2018"
+[workspace]
 
-[dependencies]
-serde = "1.0.79"
-serde_derive = "1.0.79"
-serde_bencode = { git = "https://github.com/0xcaff/serde-bencode.git", rev = "0c1e6f4672c925c629b84fab2b66b24ec9f3458e" }
-serde_bytes = "0.10.4"
-byteorder = "1.2.6"
-failure_derive = "0.1.2"
-failure = "0.1.2"
-tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
-futures-preview = "0.3.0-alpha.17"
-futures-util-preview = "0.3.0-alpha.17"
-hex = "0.3.2"
-bytes = "0.4.10"
-chrono = "0.4.6"
-rand = "0.5.5"
-num-bigint = "0.2.0"
-num-traits = "0.2.6"
-rust-crypto = "0.2"
-
-[dev-dependencies]
-serde_test = "1.0.79"
-
+members = [
+    "packages/dht_crawler"
+]
