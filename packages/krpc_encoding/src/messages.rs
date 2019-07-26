@@ -1,13 +1,13 @@
-use super::{
+use crate::{
     booleans,
+    errors::{
+        ErrorKind,
+        Result,
+    },
     node_info,
     Addr,
     NodeID,
     NodeInfo,
-};
-use crate::errors::{
-    ErrorKind,
-    Result,
 };
 use serde_bencode;
 use serde_bytes::{
