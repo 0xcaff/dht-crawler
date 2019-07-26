@@ -8,7 +8,6 @@ use std::{
     self,
     fmt,
     net::{
-        SocketAddr,
         SocketAddrV6,
     },
     sync::PoisonError,
@@ -25,47 +24,8 @@ pub struct Error {
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
     //// Originating Errors
-    #[fail(display = "Received an error message from node {}", error_message)]
-    ReceivedKRPCError { error_message: proto::KRPCError },
-
-    #[fail(display = "Failed to parse inbound message from {}", from)]
-    InvalidInboundMessage { from: SocketAddr, message: Vec<u8> },
-
-    #[fail(display = "Invalid transaction id")]
-    InvalidResponseTransactionId,
-
-    #[fail(
-        display = "Transaction state missing for transaction_id={}",
-        transaction_id
-    )]
-    MissingTransactionState { transaction_id: u32 },
-
-    #[fail(
-        display = "Received response for unknown transaction transaction_id={}",
-        transaction_id
-    )]
-    UnknownTransaction { transaction_id: u32 },
-
     #[fail(display = "Received IPv6 Address where an IPv4 address was expected")]
     UnsupportedAddressTypeError { addr: SocketAddrV6 },
-
-    #[fail(display = "Invalid message type, expected {} got {:?}", expected, got)]
-    InvalidMessageType {
-        expected: &'static str,
-        got: proto::Message,
-    },
-
-    #[fail(display = "Invalid response type, expected {} got {:?}", expected, got)]
-    InvalidResponseType {
-        expected: &'static str,
-        got: proto::Response,
-    },
-
-    #[fail(display = "Failed to bind")]
-    BindError,
-
-    #[fail(display = "Failed to send to {}", to)]
-    SendError { to: SocketAddr },
 
     //// Protocol Errors
     #[fail(display = "Unimplemented request type")]
@@ -81,23 +41,8 @@ pub enum ErrorKind {
     #[fail(display = "Lock poisoned")]
     LockPoisoned,
 
-    #[fail(display = "Timer error")]
-    TimerError,
-
     #[fail(display = "Timeout")]
     Timeout,
-
-    #[fail(display = "Failed to encode message for sending")]
-    SendEncodingError {
-        #[fail(cause)]
-        cause: proto::errors::Error,
-    },
-
-    #[fail(display = "Failed to parse inbound message")]
-    ParseInboundMessageError {
-        #[fail(cause)]
-        cause: proto::errors::Error,
-    },
 
     #[fail(display = "Something broke in the transport")]
     TransportError {
