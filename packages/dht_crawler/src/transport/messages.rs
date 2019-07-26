@@ -4,7 +4,7 @@ use crate::errors::{
 };
 use failure::ResultExt;
 
-use krpc_protocol::{
+use krpc_encoding::{
     self as proto,
     Addr,
     Envelope,

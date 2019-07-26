@@ -11,7 +11,7 @@ use crate::{
     },
 };
 use futures::future;
-use krpc_protocol::{
+use krpc_encoding::{
     NodeID,
     NodeInfo,
 };

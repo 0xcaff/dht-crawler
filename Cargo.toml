@@ -2,5 +2,5 @@
 
 members = [
     "packages/dht_crawler",
-    "packages/krpc_protocol"
+    "packages/krpc_encoding"
 ]

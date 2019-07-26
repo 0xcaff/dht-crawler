@@ -21,7 +21,7 @@ use byteorder::NetworkEndian;
 use bytes::ByteOrder;
 use failure::ResultExt;
 use futures::lock::Mutex;
-use krpc_protocol::{
+use krpc_encoding::{
     Envelope,
     NodeID,
     Query,

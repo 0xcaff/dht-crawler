@@ -17,4 +17,4 @@ rand = "0.5.5"
 num-bigint = "0.2.0"
 num-traits = "0.2.6"
 rust-crypto = "0.2"
-krpc_protocol = { path = "../krpc_protocol" }
+krpc_encoding = { path = "../krpc_encoding" }

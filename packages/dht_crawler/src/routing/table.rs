@@ -6,7 +6,7 @@ use crypto::{
     digest::Digest,
     sha1::Sha1,
 };
-use krpc_protocol::{
+use krpc_encoding::{
     self as proto,
     NodeID,
     NodeInfo,

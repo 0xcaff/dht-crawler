@@ -8,7 +8,7 @@ use futures::{
     stream,
     TryStream,
 };
-use krpc_protocol::Envelope;
+use krpc_encoding::Envelope;
 use std::net::SocketAddr;
 use tokio::{
     self,

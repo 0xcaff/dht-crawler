@@ -3,7 +3,7 @@ use failure::{
     Context,
     Fail,
 };
-use krpc_protocol as proto;
+use krpc_encoding as proto;
 use std::{
     self,
     fmt,

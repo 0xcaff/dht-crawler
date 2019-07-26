@@ -8,7 +8,7 @@ use crate::{
         TransactionId,
     },
 };
-use krpc_protocol as proto;
+use krpc_encoding as proto;
 use std::{
     collections::HashMap,
     sync::{

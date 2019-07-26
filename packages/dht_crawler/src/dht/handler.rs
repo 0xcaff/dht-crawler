@@ -17,7 +17,7 @@ use futures::{
     TryStreamExt,
 };
 use futures_util::stream::StreamExt;
-use krpc_protocol::{
+use krpc_encoding::{
     Addr,
     Envelope,
     Message,

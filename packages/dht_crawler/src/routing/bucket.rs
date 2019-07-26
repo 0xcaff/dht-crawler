@@ -2,7 +2,7 @@ use crate::routing::node::{
     Node,
     NodeState,
 };
-use krpc_protocol::NodeID;
+use krpc_encoding::NodeID;
 use num_bigint::BigUint;
 use std::{
     mem,

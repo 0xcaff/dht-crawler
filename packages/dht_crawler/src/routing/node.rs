@@ -2,7 +2,7 @@ use chrono::{
     NaiveDateTime,
     Utc,
 };
-use krpc_protocol::{
+use krpc_encoding::{
     NodeID,
     NodeInfo,
 };

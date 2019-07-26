@@ -17,7 +17,7 @@ use futures::{
     TryStream,
     TryStreamExt,
 };
-use krpc_protocol::Message;
+use krpc_encoding::Message;
 use std::{
     self,
     net::SocketAddr,

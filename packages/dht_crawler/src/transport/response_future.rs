@@ -12,7 +12,7 @@ use futures::{
     TryFuture,
     TryFutureExt,
 };
-use krpc_protocol as proto;
+use krpc_encoding as proto;
 use std::pin::Pin;
 use tokio::prelude::{
     task::Context,

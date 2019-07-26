@@ -19,7 +19,7 @@ use futures::{
     StreamExt,
     TryStreamExt,
 };
-use krpc_protocol::{
+use krpc_encoding::{
     self as proto,
     NodeID,
     Query,

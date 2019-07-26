@@ -1,5 +1,5 @@
 use failure::Error;
-use krpc_protocol::{
+use krpc_encoding::{
     Envelope,
     KRPCError,
     Message,

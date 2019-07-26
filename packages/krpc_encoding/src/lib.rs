@@ -1,4 +1,3 @@
-// TODO: Rename Package to krpc_encoding
 // TODO: Add Code Sample
 // TODO: Include Something About Nodes vs Peers
 
