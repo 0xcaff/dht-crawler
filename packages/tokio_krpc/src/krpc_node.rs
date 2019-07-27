@@ -10,7 +10,7 @@ use crate::{
         InboundResponseEnvelope,
         ResponseType,
     },
-    messages::Request,
+    InboundQuery,
     SendTransport,
 };
 use futures::{
@@ -59,7 +59,7 @@ impl KRPCNode {
         self,
     ) -> (
         SendTransport,
-        impl TryStream<Ok = (Request, SocketAddr), Error = Error>,
+        impl TryStream<Ok = (InboundQuery, SocketAddr), Error = Error>,
     ) {
         let transactions = self.transactions.clone();
 
@@ -82,7 +82,7 @@ impl KRPCNode {
                     Ok(None)
                 }
                 Message::Query { query } => Ok(Some((
-                    Request::new(envelope.transaction_id, query, envelope.read_only),
+                    InboundQuery::new(envelope.transaction_id, query, envelope.read_only),
                     from_addr,
                 ))),
             })

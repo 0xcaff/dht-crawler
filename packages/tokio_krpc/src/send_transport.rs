@@ -4,7 +4,7 @@ use crate::{
         ErrorKind,
         Result,
     },
-    messages::PortType,
+    port_type::PortType,
     response_future::ResponseFuture,
     responses::{
         FindNodeResponse,

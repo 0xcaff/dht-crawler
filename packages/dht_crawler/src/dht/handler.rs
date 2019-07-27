@@ -31,10 +31,12 @@ use std::{
     },
     ops::DerefMut,
 };
-use tokio_krpc::Request;
+use tokio_krpc::InboundQuery;
 
 impl Dht {
-    pub(super) async fn handle_requests<S: TryStream<Ok = (Request, SocketAddr), Error = Error>>(
+    pub(super) async fn handle_requests<
+        S: TryStream<Ok = (InboundQuery, SocketAddr), Error = Error>,
+    >(
         self,
         stream: S,
     ) {
@@ -54,7 +56,7 @@ impl Dht {
         }
     }
 
-    async fn process_request(&self, result: Result<(Request, SocketAddr)>) -> Result<()> {
+    async fn process_request(&self, result: Result<(InboundQuery, SocketAddr)>) -> Result<()> {
         let (request, from) = result?;
         let response = self.handle_request(request, from.into_v4()?);
         self.send_transport.send(from, response).await?;
@@ -62,7 +64,7 @@ impl Dht {
         Ok(())
     }
 
-    fn handle_request(&self, request: Request, from: SocketAddrV4) -> Envelope {
+    fn handle_request(&self, request: InboundQuery, from: SocketAddrV4) -> Envelope {
         let result = match request.query {
             Query::Ping { id } => self.handle_ping(from, id, request.read_only),
             Query::FindNode { id, target } => {
