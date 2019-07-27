@@ -24,7 +24,7 @@ use tokio::prelude::{
 /// A thread-safe container for information about active transactions. Shared
 /// between many [`ResponseFuture`]s and a single [`RecvTransport`].
 #[derive(Clone)]
-pub(crate) struct ActiveTransactions {
+pub struct ActiveTransactions {
     transactions: Arc<Mutex<HashMap<TransactionId, TxState>>>,
 }
 

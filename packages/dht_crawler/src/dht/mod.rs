@@ -28,8 +28,8 @@ use std::{
 };
 use tokio::prelude::FutureExt;
 use tokio_krpc::{
+    KRPCNode,
     PortType,
-    RecvTransport,
     SendTransport,
 };
 
@@ -48,7 +48,7 @@ impl Dht {
     /// Start handling inbound messages from other peers in the network.
     /// Continues to handle while the future is polled.
     pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl future::Future<Output = ()>)> {
-        let transport = RecvTransport::new(bind_addr)?;
+        let transport = KRPCNode::bind(bind_addr)?;
         let (send_transport, request_stream) = transport.serve();
 
         let id = NodeID::random();

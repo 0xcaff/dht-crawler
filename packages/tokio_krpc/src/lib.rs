@@ -3,17 +3,18 @@
 
 mod active_transactions;
 pub mod errors;
+mod inbound;
+mod krpc_node;
 pub mod messages;
-mod recv_transport;
 mod response_future;
 mod send_transport;
 
 pub use self::{
+    krpc_node::KRPCNode,
     messages::{
         PortType,
         Request,
         Response,
     },
-    recv_transport::RecvTransport,
     send_transport::SendTransport,
 };

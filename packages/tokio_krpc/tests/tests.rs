@@ -28,7 +28,7 @@ use tokio_krpc::{
         Response,
         TransactionId,
     },
-    RecvTransport,
+    KRPCNode,
 };
 
 #[test]
@@ -73,7 +73,7 @@ fn make_async_request(
 
     let mut runtime = Runtime::new()?;
 
-    let recv_transport = RecvTransport::new(local_addr)?;
+    let recv_transport = KRPCNode::bind(local_addr)?;
     let (send_transport, request_stream) = recv_transport.serve();
 
     let responses_future = request_stream
@@ -147,7 +147,7 @@ fn simple_ping() -> Result<(), Error> {
 
     let id = NodeID::random();
     let mut rt = Runtime::new()?;
-    let recv_transport = RecvTransport::new(bind)?;
+    let recv_transport = KRPCNode::bind(bind)?;
     let (send_transport, request_stream) = recv_transport.serve();
 
     rt.spawn(

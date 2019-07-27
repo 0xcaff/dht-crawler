@@ -37,7 +37,7 @@ pub struct SendTransport {
 }
 
 impl SendTransport {
-    pub(crate) fn new(
+    pub fn new(
         socket: UdpSocketSendHalf,
         transactions: ActiveTransactions,
     ) -> SendTransport {
