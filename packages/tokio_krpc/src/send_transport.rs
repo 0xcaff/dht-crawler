@@ -6,7 +6,6 @@ use crate::{
     },
     messages::{
         PortType,
-        Request,
         TransactionId,
     },
     response_future::ResponseFuture,
@@ -16,13 +15,12 @@ use crate::{
         NodeIDResponse,
     },
 };
-use byteorder::NetworkEndian;
-use bytes::ByteOrder;
 use failure::ResultExt;
 use futures::lock::Mutex;
 use krpc_encoding::{
     self as proto,
     Envelope,
+    Message,
     NodeID,
     Query,
 };
@@ -38,8 +36,6 @@ pub struct SendTransport {
     transactions: ActiveTransactions,
 }
 
-// TODO: Queries Are Built in a Wierd Way
-
 impl SendTransport {
     pub fn new(socket: UdpSocketSendHalf, transactions: ActiveTransactions) -> SendTransport {
         SendTransport {
@@ -48,67 +44,8 @@ impl SendTransport {
         }
     }
 
-    pub async fn request(
-        &self,
-        address: SocketAddr,
-        transaction_id: TransactionId,
-        request: Request,
-    ) -> Result<proto::Response> {
-        self.send_request(address, transaction_id, request).await?;
-
-        Ok(ResponseFuture::wait_for_tx(transaction_id, self.transactions.clone()).await?)
-    }
-
-    /// Adds `transaction_id` to the request and sends it.
-    async fn send_request(
-        &self,
-        address: SocketAddr,
-        transaction_id: TransactionId,
-        mut request: Request,
-    ) -> Result<()> {
-        let mut buf = [0u8; 4];
-        NetworkEndian::write_u32(&mut buf, transaction_id);
-        request.transaction_id.extend_from_slice(&buf);
-
-        Ok(self.send(address, request.into()).await?)
-    }
-
-    pub async fn send(&self, address: SocketAddr, message: Envelope) -> Result<()> {
-        let encoded = message
-            .encode()
-            .map_err(|cause| ErrorKind::SendEncodingError { cause })?;
-
-        let mut socket = self.socket.lock().await;
-
-        socket
-            .send_to(&encoded, &address)
-            .await
-            .with_context(|_| ErrorKind::SendError { to: address })?;
-
-        Ok(())
-    }
-
-    fn get_transaction_id() -> TransactionId {
-        rand::random::<TransactionId>()
-    }
-
-    fn build_request(&self, query: Query) -> Request {
-        Request {
-            transaction_id: Vec::new(),
-            version: None,
-            query,
-            read_only: false,
-        }
-    }
-
     pub async fn ping(&self, id: NodeID, address: SocketAddr) -> Result<NodeID> {
-        let response = self
-            .request(
-                address,
-                Self::get_transaction_id(),
-                self.build_request(Query::Ping { id }),
-            )
-            .await?;
+        let response = self.request(address, Query::Ping { id }).await?;
 
         Ok(NodeIDResponse::from_response(response)?)
     }
@@ -120,11 +57,7 @@ impl SendTransport {
         target: NodeID,
     ) -> Result<FindNodeResponse> {
         let response = self
-            .request(
-                address,
-                Self::get_transaction_id(),
-                self.build_request(Query::FindNode { id, target }),
-            )
+            .request(address, Query::FindNode { id, target })
             .await?;
 
         Ok(FindNodeResponse::from_response(response)?)
@@ -137,11 +70,7 @@ impl SendTransport {
         info_hash: NodeID,
     ) -> Result<GetPeersResponse> {
         let response = self
-            .request(
-                address,
-                Self::get_transaction_id(),
-                self.build_request(Query::GetPeers { id, info_hash }),
-            )
+            .request(address, Query::GetPeers { id, info_hash })
             .await?;
 
         Ok(GetPeersResponse::from_response(response)?)
@@ -163,17 +92,51 @@ impl SendTransport {
         let response = self
             .request(
                 address,
-                Self::get_transaction_id(),
-                self.build_request(Query::AnnouncePeer {
+                Query::AnnouncePeer {
                     id,
                     token,
                     info_hash,
                     port,
                     implied_port,
-                }),
+                },
             )
             .await?;
 
         Ok(NodeIDResponse::from_response(response)?)
+    }
+
+    pub async fn send(&self, address: SocketAddr, message: Envelope) -> Result<()> {
+        let encoded = message
+            .encode()
+            .map_err(|cause| ErrorKind::SendEncodingError { cause })?;
+
+        let mut socket = self.socket.lock().await;
+
+        socket
+            .send_to(&encoded, &address)
+            .await
+            .with_context(|_| ErrorKind::SendError { to: address })?;
+
+        Ok(())
+    }
+
+    pub async fn request(&self, address: SocketAddr, query: Query) -> Result<proto::Response> {
+        let transaction_id = Self::random_transaction_id();
+
+        let envelope = Envelope {
+            ip: None,
+            transaction_id: transaction_id.to_be_bytes().to_vec(),
+            version: None,
+            message_type: Message::Query { query },
+            read_only: false,
+        };
+
+        self.send(address, envelope).await?;
+
+        Ok(ResponseFuture::wait_for_tx(transaction_id, self.transactions.clone()).await?)
+    }
+
+    fn random_transaction_id() -> TransactionId {
+        rand::random::<TransactionId>()
     }
 }

@@ -9,8 +9,6 @@ use byteorder::{
 use failure::ResultExt;
 use krpc_encoding::{
     self as proto,
-    Envelope,
-    Message,
     Query,
 };
 
@@ -51,16 +49,6 @@ impl Request {
             version: None,
             query,
             read_only,
-        }
-    }
-
-    pub fn into(self) -> Envelope {
-        Envelope {
-            ip: None,
-            transaction_id: self.transaction_id,
-            version: self.version.map(|version| version.into()),
-            message_type: Message::Query { query: self.query },
-            read_only: self.read_only,
         }
     }
 }
