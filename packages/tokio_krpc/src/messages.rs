@@ -2,8 +2,11 @@ use crate::errors::{
     ErrorKind,
     Result,
 };
+use byteorder::{
+    NetworkEndian,
+    ReadBytesExt,
+};
 use failure::ResultExt;
-
 use krpc_encoding::{
     self as proto,
     Addr,
@@ -13,15 +16,10 @@ use krpc_encoding::{
     NodeInfo,
     Query,
 };
-
-use byteorder::{
-    NetworkEndian,
-    ReadBytesExt,
-};
 use std::net::SocketAddrV4;
 
 /// Transaction identifier used for requests originating from this client.
-/// Requests originating from other clients use a [Vec<u8>] to represent the
+/// Requests originating from other clients use a `Vec<u8>` to represent the
 /// transaction id.
 pub type TransactionId = u32;
 

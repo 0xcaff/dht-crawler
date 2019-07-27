@@ -24,7 +24,7 @@ use tokio::prelude::{
 /// A thread-safe container for information about active transactions. Shared
 /// between many [`ResponseFuture`]s and a single [`RecvTransport`].
 #[derive(Clone)]
-pub struct ActiveTransactions {
+pub(crate) struct ActiveTransactions {
     transactions: Arc<Mutex<HashMap<TransactionId, TxState>>>,
 }
 
@@ -47,7 +47,7 @@ impl ActiveTransactions {
     }
 
     /// Adds an un-polled pending transaction to the set of active transactions.
-    pub(super) fn add_transaction(&self, transaction_id: TransactionId) -> Result<()> {
+    pub fn add_transaction(&self, transaction_id: TransactionId) -> Result<()> {
         let mut map = self.transactions.lock()?;
         map.insert(transaction_id, TxState::AwaitingResponse { waker: None });
         Ok(())
@@ -55,7 +55,7 @@ impl ActiveTransactions {
 
     /// Stops tracking a transaction. Subsequent calls to [`handle_response`],
     /// [`poll_response`]  with `transaction_id` will now fail.
-    pub(super) fn drop_transaction(&self, transaction_id: TransactionId) -> Result<()> {
+    pub fn drop_transaction(&self, transaction_id: TransactionId) -> Result<()> {
         let mut map = self.transactions.lock()?;
         map.remove(&transaction_id);
         Ok(())
@@ -63,12 +63,13 @@ impl ActiveTransactions {
 
     /// Updates transaction associated with `message` such that the next call to
     /// [`poll_response`] for the transaction will return [`Async::Ready`].
+    /// Awakens the associated waker if there is one.
     ///
     /// # Errors
     ///
     /// If the transaction id associated with `message` isn't known, returns
     /// failure.
-    pub(super) fn handle_response(&self, message: proto::Envelope) -> Result<()> {
+    pub fn handle_response(&self, message: proto::Envelope) -> Result<()> {
         let transaction_id = parse_originating_transaction_id(&message.transaction_id)?;
         let mut map = self.transactions.lock()?;
 
@@ -90,14 +91,10 @@ impl ActiveTransactions {
         Ok(())
     }
 
-    /// Returns [`NotReady`] until a message with the same `transaction_id` is
-    /// provided to [`handle_response`], then returns that message.
-    ///
-    /// # Panics
-    ///
-    /// This function calls [`Task::current`] which panics when called when a
-    /// task is not currently being executed.
-    pub(super) fn poll_response(
+    /// Associates `waker` with `transaction_id` and returns [`NotReady`] until
+    /// a message with the same `transaction_id` is provided to
+    /// [`handle_response`], then returns that message and awakes the `waker`.
+    pub fn poll_response(
         &self,
         transaction_id: TransactionId,
         waker: &Waker,

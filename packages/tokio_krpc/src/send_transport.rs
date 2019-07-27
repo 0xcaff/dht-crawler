@@ -37,7 +37,10 @@ pub struct SendTransport {
 }
 
 impl SendTransport {
-    pub fn new(socket: UdpSocketSendHalf, transactions: ActiveTransactions) -> SendTransport {
+    pub(crate) fn new(
+        socket: UdpSocketSendHalf,
+        transactions: ActiveTransactions,
+    ) -> SendTransport {
         SendTransport {
             socket: Mutex::new(socket),
             transactions,
