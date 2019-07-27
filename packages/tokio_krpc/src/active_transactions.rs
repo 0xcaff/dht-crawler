@@ -3,11 +3,11 @@ use crate::{
         ErrorKind,
         Result,
     },
-    messages::{
+    inbound_response_envelope::InboundResponseEnvelope,
+    transaction_id::{
         parse_originating_transaction_id,
         TransactionId,
     },
-    response_envelope::ResponseEnvelope,
 };
 
 use std::{
@@ -25,13 +25,13 @@ use tokio::prelude::{
 /// A thread-safe container for information about active transactions. Shared
 /// between many [`ResponseFuture`]s and a single [`RecvTransport`].
 #[derive(Clone)]
-pub struct ActiveTransactions {
+pub(crate) struct ActiveTransactions {
     transactions: Arc<Mutex<HashMap<TransactionId, TxState>>>,
 }
 
 enum TxState {
     GotResponse {
-        response: ResponseEnvelope,
+        response: InboundResponseEnvelope,
     },
     AwaitingResponse {
         /// Waker used when response is received. None if poll hasn't been
@@ -70,7 +70,7 @@ impl ActiveTransactions {
     ///
     /// If the transaction id associated with `message` isn't known, returns
     /// failure.
-    pub fn handle_response(&self, message: ResponseEnvelope) -> Result<()> {
+    pub fn handle_response(&self, message: InboundResponseEnvelope) -> Result<()> {
         let transaction_id = parse_originating_transaction_id(&message.transaction_id)?;
         let mut map = self.transactions.lock()?;
 
@@ -99,7 +99,7 @@ impl ActiveTransactions {
         &self,
         transaction_id: TransactionId,
         waker: &Waker,
-    ) -> Poll<Result<ResponseEnvelope>> {
+    ) -> Poll<Result<InboundResponseEnvelope>> {
         let mut map = self.transactions.lock()?;
 
         let tx_state = map

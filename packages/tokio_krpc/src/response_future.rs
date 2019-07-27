@@ -5,11 +5,11 @@ use crate::{
         ErrorKind,
         Result,
     },
-    messages::TransactionId,
-    response_envelope::{
-        ResponseEnvelope,
+    inbound_response_envelope::{
+        InboundResponseEnvelope,
         ResponseType,
     },
+    transaction_id::TransactionId,
 };
 use futures::{
     TryFuture,
@@ -31,7 +31,7 @@ pub struct ResponseFuture {
 }
 
 impl ResponseFuture {
-    pub async fn wait_for_tx(
+    pub(crate) async fn wait_for_tx(
         transaction_id: TransactionId,
         transactions: ActiveTransactions,
     ) -> Result<proto::Response> {
@@ -55,7 +55,7 @@ impl ResponseFuture {
 }
 
 impl TryFuture for ResponseFuture {
-    type Ok = ResponseEnvelope;
+    type Ok = InboundResponseEnvelope;
     type Error = Error;
 
     fn try_poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Self::Ok>> {

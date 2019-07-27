@@ -1,6 +1,6 @@
 use krpc_encoding as proto;
 
-pub struct ResponseEnvelope {
+pub struct InboundResponseEnvelope {
     pub transaction_id: Vec<u8>,
     pub response: ResponseType,
 }

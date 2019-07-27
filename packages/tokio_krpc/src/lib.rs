@@ -4,12 +4,13 @@
 mod active_transactions;
 pub mod errors;
 mod inbound;
+mod inbound_response_envelope;
 mod krpc_node;
 pub mod messages;
-mod response_envelope;
 mod response_future;
 mod responses;
 mod send_transport;
+mod transaction_id;
 
 pub use self::{
     krpc_node::KRPCNode,

@@ -6,11 +6,11 @@ use crate::{
         Result,
     },
     inbound::receive_inbound_messages,
-    messages::Request,
-    response_envelope::{
-        ResponseEnvelope,
+    inbound_response_envelope::{
+        InboundResponseEnvelope,
         ResponseType,
     },
+    messages::Request,
     SendTransport,
 };
 use futures::{
@@ -66,7 +66,7 @@ impl KRPCNode {
         let query_stream = receive_inbound_messages(self.recv_half)
             .map_ok(move |(envelope, from_addr)| match envelope.message_type {
                 Message::Response { response } => {
-                    transactions.handle_response(ResponseEnvelope {
+                    transactions.handle_response(InboundResponseEnvelope {
                         transaction_id: envelope.transaction_id,
                         response: ResponseType::Response { response },
                     })?;
@@ -74,7 +74,7 @@ impl KRPCNode {
                     Ok(None)
                 }
                 Message::Error { error } => {
-                    transactions.handle_response(ResponseEnvelope {
+                    transactions.handle_response(InboundResponseEnvelope {
                         transaction_id: envelope.transaction_id,
                         response: ResponseType::Error { error },
                     })?;

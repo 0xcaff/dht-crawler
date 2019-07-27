@@ -4,16 +4,14 @@ use crate::{
         ErrorKind,
         Result,
     },
-    messages::{
-        PortType,
-        TransactionId,
-    },
+    messages::PortType,
     response_future::ResponseFuture,
     responses::{
         FindNodeResponse,
         GetPeersResponse,
         NodeIDResponse,
     },
+    transaction_id::TransactionId,
 };
 use failure::ResultExt;
 use futures::lock::Mutex;
@@ -37,7 +35,10 @@ pub struct SendTransport {
 }
 
 impl SendTransport {
-    pub fn new(socket: UdpSocketSendHalf, transactions: ActiveTransactions) -> SendTransport {
+    pub(crate) fn new(
+        socket: UdpSocketSendHalf,
+        transactions: ActiveTransactions,
+    ) -> SendTransport {
         SendTransport {
             socket: Mutex::new(socket),
             transactions,
