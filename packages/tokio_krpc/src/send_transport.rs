@@ -5,21 +5,23 @@ use crate::{
         Result,
     },
     messages::{
-        FindNodeResponse,
-        GetPeersResponse,
-        NodeIDResponse,
         PortType,
         Request,
-        Response,
         TransactionId,
     },
     response_future::ResponseFuture,
+    responses::{
+        FindNodeResponse,
+        GetPeersResponse,
+        NodeIDResponse,
+    },
 };
 use byteorder::NetworkEndian;
 use bytes::ByteOrder;
 use failure::ResultExt;
 use futures::lock::Mutex;
 use krpc_encoding::{
+    self as proto,
     Envelope,
     NodeID,
     Query,
@@ -36,11 +38,10 @@ pub struct SendTransport {
     transactions: ActiveTransactions,
 }
 
+// TODO: Queries Are Built in a Wierd Way
+
 impl SendTransport {
-    pub fn new(
-        socket: UdpSocketSendHalf,
-        transactions: ActiveTransactions,
-    ) -> SendTransport {
+    pub fn new(socket: UdpSocketSendHalf, transactions: ActiveTransactions) -> SendTransport {
         SendTransport {
             socket: Mutex::new(socket),
             transactions,
@@ -52,13 +53,10 @@ impl SendTransport {
         address: SocketAddr,
         transaction_id: TransactionId,
         request: Request,
-    ) -> Result<Response> {
+    ) -> Result<proto::Response> {
         self.send_request(address, transaction_id, request).await?;
 
-        let message =
-            ResponseFuture::wait_for_tx(transaction_id, self.transactions.clone()).await?;
-
-        Ok(Response::from(message)?)
+        Ok(ResponseFuture::wait_for_tx(transaction_id, self.transactions.clone()).await?)
     }
 
     /// Adds `transaction_id` to the request and sends it.

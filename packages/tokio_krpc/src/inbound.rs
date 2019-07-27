@@ -51,12 +51,12 @@ async fn receive_inbound_message(
         .await
         .map_err(|cause| ErrorKind::FailedToReceiveMessage { cause })?;
 
-    let envelope = Envelope::decode(&recv_buffer[..size]).with_context(|_| {
-        ErrorKind::InvalidInboundMessage {
+    let envelope = Envelope::decode(&recv_buffer[..size])
+        .map_err(|cause| ErrorKind::ParseInboundMessageError { cause })
+        .with_context(|_| ErrorKind::InvalidInboundMessage {
             from: from_addr,
             message: recv_buffer[..size].to_vec(),
-        }
-    })?;
+        })?;
 
     Ok((envelope, from_addr))
 }

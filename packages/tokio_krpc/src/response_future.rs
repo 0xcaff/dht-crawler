@@ -2,14 +2,20 @@ use crate::{
     active_transactions::ActiveTransactions,
     errors::{
         Error,
+        ErrorKind,
         Result,
     },
     messages::TransactionId,
+    response_envelope::{
+        ResponseEnvelope,
+        ResponseType,
+    },
 };
 use futures::{
     TryFuture,
     TryFutureExt,
 };
+
 use krpc_encoding as proto;
 use std::pin::Pin;
 use tokio::prelude::{
@@ -28,11 +34,16 @@ impl ResponseFuture {
     pub async fn wait_for_tx(
         transaction_id: TransactionId,
         transactions: ActiveTransactions,
-    ) -> Result<proto::Envelope> {
+    ) -> Result<proto::Response> {
         transactions.add_transaction(transaction_id)?;
-        ResponseFuture::new(transaction_id, transactions)
+        let envelope = ResponseFuture::new(transaction_id, transactions)
             .into_future()
-            .await
+            .await?;
+
+        match envelope.response {
+            ResponseType::Response { response } => Ok(response),
+            ResponseType::Error { error } => Err(ErrorKind::ReceivedKRPCError { error })?,
+        }
     }
 
     fn new(transaction_id: TransactionId, transactions: ActiveTransactions) -> ResponseFuture {
@@ -44,7 +55,7 @@ impl ResponseFuture {
 }
 
 impl TryFuture for ResponseFuture {
-    type Ok = proto::Envelope;
+    type Ok = ResponseEnvelope;
     type Error = Error;
 
     fn try_poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Self::Ok>> {

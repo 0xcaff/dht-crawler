@@ -6,7 +6,9 @@ pub mod errors;
 mod inbound;
 mod krpc_node;
 pub mod messages;
+mod response_envelope;
 mod response_future;
+mod responses;
 mod send_transport;
 
 pub use self::{
@@ -14,7 +16,6 @@ pub use self::{
     messages::{
         PortType,
         Request,
-        Response,
     },
     send_transport::SendTransport,
 };

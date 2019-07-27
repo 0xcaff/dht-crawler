@@ -3,7 +3,7 @@ use failure::{
     Context,
     Fail,
 };
-use krpc_encoding;
+use krpc_encoding as proto;
 use std::{
     fmt,
     io,
@@ -14,10 +14,8 @@ use std::{
 // TODO: Review ErrorKinds
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "Received an error message from node {}", error_message)]
-    ReceivedKRPCError {
-        error_message: krpc_encoding::KRPCError,
-    },
+    #[fail(display = "Received an error message from node {}", error)]
+    ReceivedKRPCError { error: proto::KRPCError },
 
     #[fail(display = "Invalid response type, expected {} got {:?}", expected, got)]
     InvalidResponseType {
@@ -56,12 +54,6 @@ pub enum ErrorKind {
     ParseInboundMessageError {
         #[fail(cause)]
         cause: krpc_encoding::errors::Error,
-    },
-
-    #[fail(display = "Invalid message type, expected {} got {:?}", expected, got)]
-    InvalidMessageType {
-        expected: &'static str,
-        got: krpc_encoding::Message,
     },
 
     #[fail(
