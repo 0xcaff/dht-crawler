@@ -31,7 +31,7 @@ pub struct ResponseFuture {
 }
 
 impl ResponseFuture {
-    pub(crate) async fn wait_for_tx(
+    pub async fn wait_for_tx(
         transaction_id: TransactionId,
         transactions: ActiveTransactions,
     ) -> Result<proto::Response> {

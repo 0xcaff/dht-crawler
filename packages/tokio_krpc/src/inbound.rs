@@ -20,7 +20,7 @@ use tokio::{
     net::udp::split::UdpSocketRecvHalf,
 };
 
-pub(crate) fn receive_inbound_messages(
+pub fn receive_inbound_messages(
     recv_socket: UdpSocketRecvHalf,
 ) -> impl TryStream<Ok = (Envelope, SocketAddr), Error = Error> {
     let recv_buffer = [0 as u8; 1024];

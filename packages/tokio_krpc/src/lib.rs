@@ -6,7 +6,7 @@ pub mod errors;
 mod inbound;
 mod inbound_response_envelope;
 mod krpc_node;
-pub mod messages;
+mod messages;
 mod response_future;
 mod responses;
 mod send_transport;
