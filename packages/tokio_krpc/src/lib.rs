@@ -3,7 +3,6 @@
 
 mod active_transactions;
 pub mod errors;
-mod inbound_message_stream;
 pub mod messages;
 mod recv_transport;
 mod response_future;
