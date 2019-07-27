@@ -74,7 +74,7 @@ impl ActiveTransactions {
 
         let current_tx_state = map
             .remove(&transaction_id)
-            .ok_or_else(|| ErrorKind::UnknownTransaction { transaction_id })?;
+            .ok_or_else(|| ErrorKind::UnknownTransactionReceived { transaction_id })?;
 
         match current_tx_state {
             TxState::GotResponse { .. } => {
@@ -106,7 +106,7 @@ impl ActiveTransactions {
 
         let tx_state = map
             .remove(&transaction_id)
-            .ok_or_else(|| ErrorKind::MissingTransactionState { transaction_id })?;
+            .ok_or_else(|| ErrorKind::UnknownTransactionPolled { transaction_id })?;
 
         match tx_state {
             TxState::GotResponse { response } => Poll::Ready(Ok(response)),

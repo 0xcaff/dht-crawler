@@ -6,6 +6,7 @@ use failure::{
 use krpc_encoding;
 use std::{
     fmt,
+    io,
     net::SocketAddr,
     sync::PoisonError,
 };
@@ -25,7 +26,16 @@ pub enum ErrorKind {
     },
 
     #[fail(display = "Failed to bind")]
-    BindError,
+    BindError {
+        #[fail(cause)]
+        cause: io::Error,
+    },
+
+    #[fail(display = "failed to receive inbound message")]
+    FailedToReceiveMessage {
+        #[fail(cause)]
+        cause: io::Error,
+    },
 
     #[fail(display = "Invalid transaction id")]
     InvalidResponseTransactionId,
@@ -58,13 +68,13 @@ pub enum ErrorKind {
         display = "Transaction state missing for transaction_id={}",
         transaction_id
     )]
-    MissingTransactionState { transaction_id: u32 },
+    UnknownTransactionPolled { transaction_id: u32 },
 
     #[fail(
-        display = "Received response for unknown transaction transaction_id={}",
+        display = "Received response for an unknown transaction transaction_id={}",
         transaction_id
     )]
-    UnknownTransaction { transaction_id: u32 },
+    UnknownTransactionReceived { transaction_id: u32 },
 
     #[fail(display = "Lock poisoned")]
     LockPoisoned,

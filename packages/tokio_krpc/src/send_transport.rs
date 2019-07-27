@@ -72,11 +72,6 @@ impl SendTransport {
         Ok(self.send(address, request.into()).await?)
     }
 
-    /// Synchronously sends a request to `address`.
-    ///
-    /// The sending is done synchronously because doing it asynchronously was
-    /// cumbersome and didn't make anything faster. UDP sending rarely
-    /// blocks.
     pub async fn send(&self, address: SocketAddr, message: Envelope) -> Result<()> {
         let encoded = message
             .encode()

@@ -44,7 +44,7 @@ async fn receive_inbound_message<'a>(
     let (size, from_addr) = recv_socket
         .recv_from(recv_buffer)
         .await
-        .context(ErrorKind::BindError)?;
+        .map_err(|cause| ErrorKind::FailedToReceiveMessage { cause })?;
 
     let envelope = Envelope::decode(&recv_buffer[..size]).with_context(|_| {
         ErrorKind::InvalidInboundMessage {

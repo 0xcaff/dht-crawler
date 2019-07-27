@@ -39,7 +39,9 @@ pub struct RecvTransport {
 
 impl RecvTransport {
     pub fn new(bind_address: SocketAddr) -> Result<RecvTransport> {
-        let socket = UdpSocket::bind(&bind_address).context(ErrorKind::BindError)?;
+        let socket =
+            UdpSocket::bind(&bind_address).map_err(|cause| ErrorKind::BindError { cause })?;
+
         let (recv_half, send_half) = socket.split();
         let transactions = ActiveTransactions::new();
 
