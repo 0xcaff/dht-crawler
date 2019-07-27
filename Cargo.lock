@@ -159,17 +159,13 @@ dependencies = [
  "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-util-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
- "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "krpc_encoding 0.1.0",
  "num-bigint 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-crypto 0.2.36 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_bencode 0.2.0 (git+https://github.com/0xcaff/serde-bencode.git?rev=0c1e6f4672c925c629b84fab2b66b24ec9f3458e)",
- "serde_bytes 0.10.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_test 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+ "tokio_krpc 0.1.0",
 ]
 
 [[package]]
@@ -307,6 +303,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "krpc_encoding"
+version = "0.1.0"
+dependencies = [
+ "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-bigint 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_bencode 0.2.0 (git+https://github.com/0xcaff/serde-bencode.git?rev=0c1e6f4672c925c629b84fab2b66b24ec9f3458e)",
+ "serde_bytes 0.10.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_test 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -854,6 +868,21 @@ dependencies = [
  "tokio-codec 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
  "tokio-io 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
  "tokio-reactor 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
+]
+
+[[package]]
+name = "tokio_krpc"
+version = "0.1.0"
+dependencies = [
+ "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures-util-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "krpc_encoding 0.1.0",
+ "rand 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio 0.2.0 (git+https://github.com/tokio-rs/tokio.git)",
 ]
 
 [[package]]

@@ -1,0 +1,21 @@
+[package]
+name = "dht_crawler"
+version = "0.1.0"
+authors = ["Martin Charles <martincharles07@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+byteorder = "1.2.6"
+failure_derive = "0.1.2"
+failure = "0.1.2"
+tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
+futures-preview = "0.3.0-alpha.17"
+futures-util-preview = "0.3.0-alpha.17"
+bytes = "0.4.10"
+chrono = "0.4.6"
+rand = "0.5.5"
+num-bigint = "0.2.0"
+num-traits = "0.2.6"
+rust-crypto = "0.2"
+krpc_encoding = { path = "../krpc_encoding" }
+tokio_krpc = { path = "../tokio_krpc" }
