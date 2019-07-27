@@ -7,9 +7,7 @@ use krpc_encoding as proto;
 use std::{
     self,
     fmt,
-    net::{
-        SocketAddrV6,
-    },
+    net::SocketAddrV6,
     sync::PoisonError,
 };
 use tokio::timer::timeout;

@@ -34,19 +34,13 @@ use tokio::net::udp::split::UdpSocketSendHalf;
 pub struct SendTransport {
     socket: Mutex<UdpSocketSendHalf>,
     transactions: ActiveTransactions,
-    read_only: bool,
 }
 
 impl SendTransport {
-    pub fn new(
-        socket: UdpSocketSendHalf,
-        transactions: ActiveTransactions,
-        read_only: bool,
-    ) -> SendTransport {
+    pub fn new(socket: UdpSocketSendHalf, transactions: ActiveTransactions) -> SendTransport {
         SendTransport {
             socket: Mutex::new(socket),
             transactions,
-            read_only,
         }
     }
 
@@ -107,7 +101,7 @@ impl SendTransport {
             transaction_id: Vec::new(),
             version: None,
             query,
-            read_only: self.read_only,
+            read_only: false,
         }
     }
 

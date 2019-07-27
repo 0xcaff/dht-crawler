@@ -50,27 +50,8 @@ impl RecvTransport {
         })
     }
 
-    pub fn serve_read_only(
-        self,
-    ) -> (
-        SendTransport,
-        impl TryStream<Ok = (Request, SocketAddr), Error = Error>,
-    ) {
-        self.serve_impl(true)
-    }
-
     pub fn serve(
         self,
-    ) -> (
-        SendTransport,
-        impl TryStream<Ok = (Request, SocketAddr), Error = Error>,
-    ) {
-        self.serve_impl(false)
-    }
-
-    fn serve_impl(
-        self,
-        read_only: bool,
     ) -> (
         SendTransport,
         impl TryStream<Ok = (Request, SocketAddr), Error = Error>,
@@ -92,7 +73,7 @@ impl RecvTransport {
             .try_filter_map(|result| future::ready(result));
 
         (
-            SendTransport::new(self.send_half, self.transactions, read_only),
+            SendTransport::new(self.send_half, self.transactions),
             query_stream,
         )
     }
