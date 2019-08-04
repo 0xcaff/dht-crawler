@@ -1,0 +1,15 @@
+[package]
+name = "routing_table"
+version = "0.1.0"
+authors = ["Martin Charles <martincharles07@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+chrono = "0.4.6"
+futures-preview = "0.3.0-alpha.17"
+futures-util-preview = "0.3.0-alpha.17"
+tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
+num-bigint = "0.2.0"
+failure = "0.1.2"
+tokio_krpc = { path = "../tokio_krpc" }
+krpc_encoding = { path = "../krpc_encoding" }

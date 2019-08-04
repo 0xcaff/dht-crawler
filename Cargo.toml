@@ -3,5 +3,6 @@
 members = [
     "packages/dht_crawler",
     "packages/krpc_encoding",
-    "packages/tokio_krpc"
+    "packages/tokio_krpc",
+    "packages/routing_table"
 ]
