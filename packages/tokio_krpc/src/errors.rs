@@ -8,7 +8,6 @@ use std::{
     fmt,
     io,
     net::SocketAddr,
-    sync::PoisonError,
 };
 
 // TODO: Review ErrorKinds
@@ -67,9 +66,6 @@ pub enum ErrorKind {
         transaction_id
     )]
     UnknownTransactionReceived { transaction_id: u32 },
-
-    #[fail(display = "Lock poisoned")]
-    LockPoisoned,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -106,13 +102,5 @@ impl From<ErrorKind> for Error {
 impl From<Context<ErrorKind>> for Error {
     fn from(inner: Context<ErrorKind>) -> Error {
         Error { inner }
-    }
-}
-
-/// Implementation allowing for converting to a `Fail` compatible error even
-/// when the lock isn't sync.
-impl<Guard> From<PoisonError<Guard>> for Error {
-    fn from(_err: PoisonError<Guard>) -> Error {
-        ErrorKind::LockPoisoned.into()
     }
 }

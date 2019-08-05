@@ -48,18 +48,16 @@ impl ActiveTransactions {
     }
 
     /// Adds an un-polled pending transaction to the set of active transactions.
-    pub fn add_transaction(&self, transaction_id: TransactionId) -> Result<()> {
-        let mut map = self.transactions.lock()?;
+    pub fn add_transaction(&self, transaction_id: TransactionId) {
+        let mut map = self.transactions.lock().unwrap();
         map.insert(transaction_id, TxState::AwaitingResponse { waker: None });
-        Ok(())
     }
 
     /// Stops tracking a transaction. Subsequent calls to [`handle_response`],
     /// [`poll_response`]  with `transaction_id` will now fail.
-    pub fn drop_transaction(&self, transaction_id: TransactionId) -> Result<()> {
-        let mut map = self.transactions.lock()?;
+    pub fn drop_transaction(&self, transaction_id: TransactionId) {
+        let mut map = self.transactions.lock().unwrap();
         map.remove(&transaction_id);
-        Ok(())
     }
 
     /// Updates transaction associated with `message` such that the next call to
@@ -72,7 +70,7 @@ impl ActiveTransactions {
     /// failure.
     pub fn handle_response(&self, message: InboundResponseEnvelope) -> Result<()> {
         let transaction_id = parse_originating_transaction_id(&message.transaction_id)?;
-        let mut map = self.transactions.lock()?;
+        let mut map = self.transactions.lock().unwrap();
 
         let current_tx_state = map
             .remove(&transaction_id)
@@ -100,7 +98,7 @@ impl ActiveTransactions {
         transaction_id: TransactionId,
         waker: &Waker,
     ) -> Poll<Result<InboundResponseEnvelope>> {
-        let mut map = self.transactions.lock()?;
+        let mut map = self.transactions.lock().unwrap();
 
         let tx_state = map
             .remove(&transaction_id)
