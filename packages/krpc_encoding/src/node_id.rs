@@ -1,5 +1,6 @@
 use hex;
 use num_bigint::BigUint;
+use num_traits::One;
 use rand;
 use serde::{
     de::{
@@ -47,6 +48,11 @@ impl NodeID {
         output.copy_from_slice(&bytes[..]);
 
         output
+    }
+
+    pub fn nth_bit(&self, n: usize) -> bool {
+        let one = BigUint::one();
+        return ((self.deref() >> n) & &one) == one;
     }
 }
 
@@ -148,5 +154,27 @@ mod tests {
         expected[0] = 1;
 
         assert_eq!(bytes, expected);
+    }
+
+    #[test]
+    fn first_bit() {
+        ensure_bits_for(
+            b"8b9292b2f75d127720ebcd8afe66bfa50c2adc7f".into(),
+            "10001011 10010010 10010010 10110010 11110111 01011101 00010010 01110111 00100000 11101011 11001101 10001010 11111110 01100110 10111111 10100101 00001100 00101010 11011100 01111111"
+        )
+    }
+
+    fn ensure_bits_for(id: NodeID, expected_bits: &str) {
+        let mut bit_strings = (0..160)
+            .map(|n| id.nth_bit(n))
+            .map(|n| if n { "1" } else { "0" })
+            .map(|s| String::from(s))
+            .collect::<Vec<String>>();
+
+        bit_strings.reverse();
+
+        let actual_bits = bit_strings.join("");
+
+        assert_eq!(actual_bits, expected_bits.replace(" ", ""))
     }
 }

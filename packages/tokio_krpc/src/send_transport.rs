@@ -23,10 +23,7 @@ use krpc_encoding::{
     Query,
 };
 use rand;
-use std::{
-    self,
-    net::SocketAddr,
-};
+use std::net::SocketAddr;
 use tokio::net::udp::split::UdpSocketSendHalf;
 
 pub struct SendTransport {
