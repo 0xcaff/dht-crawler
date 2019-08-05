@@ -1,15 +1,11 @@
 use crate::{
     active_transactions::ActiveTransactions,
-    errors::{
-        Error,
-        ErrorKind,
-        Result,
-    },
     inbound::receive_inbound_messages,
     inbound_response_envelope::{
         InboundResponseEnvelope,
         ResponseType,
     },
+    recv_errors::Error,
     InboundQuery,
     SendTransport,
 };
@@ -41,18 +37,15 @@ pub struct KRPCNode {
 }
 
 impl KRPCNode {
-    pub fn bind(bind_address: SocketAddr) -> Result<KRPCNode> {
-        let socket =
-            UdpSocket::bind(&bind_address).map_err(|cause| ErrorKind::BindError { cause })?;
-
+    pub fn new(socket: UdpSocket) -> KRPCNode {
         let (recv_half, send_half) = socket.split();
         let transactions = ActiveTransactions::new();
 
-        Ok(KRPCNode {
+        KRPCNode {
             send_half,
             recv_half,
             transactions,
-        })
+        }
     }
 
     pub fn serve(

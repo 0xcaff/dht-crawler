@@ -1,4 +1,4 @@
-use crate::errors::{
+use crate::send_errors::{
     ErrorKind,
     Result,
 };

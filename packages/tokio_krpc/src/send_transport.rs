@@ -1,9 +1,5 @@
 use crate::{
     active_transactions::ActiveTransactions,
-    errors::{
-        ErrorKind,
-        Result,
-    },
     port_type::PortType,
     response_future::ResponseFuture,
     responses::{
@@ -11,9 +7,12 @@ use crate::{
         GetPeersResponse,
         NodeIDResponse,
     },
+    send_errors::{
+        ErrorKind,
+        Result,
+    },
     transaction_id::TransactionId,
 };
-use failure::ResultExt;
 use futures::lock::Mutex;
 use krpc_encoding::{
     self as proto,
@@ -113,7 +112,7 @@ impl SendTransport {
         socket
             .send_to(&encoded, &address)
             .await
-            .with_context(|_| ErrorKind::SendError { to: address })?;
+            .map_err(|cause| ErrorKind::SendError { cause })?;
 
         Ok(())
     }

@@ -1,13 +1,13 @@
 use crate::{
     active_transactions::ActiveTransactions,
-    errors::{
-        Error,
-        ErrorKind,
-        Result,
-    },
     inbound_response_envelope::{
         InboundResponseEnvelope,
         ResponseType,
+    },
+    send_errors::{
+        Error,
+        ErrorKind,
+        Result,
     },
     transaction_id::TransactionId,
 };
@@ -35,7 +35,7 @@ impl ResponseFuture {
         transaction_id: TransactionId,
         transactions: ActiveTransactions,
     ) -> Result<proto::Response> {
-        transactions.add_transaction(transaction_id)?;
+        transactions.add_transaction(transaction_id);
         let envelope = ResponseFuture::new(transaction_id, transactions)
             .into_future()
             .await?;
@@ -66,8 +66,6 @@ impl TryFuture for ResponseFuture {
 
 impl Drop for ResponseFuture {
     fn drop(&mut self) {
-        self.transactions
-            .drop_transaction(self.transaction_id)
-            .unwrap();
+        self.transactions.drop_transaction(self.transaction_id);
     }
 }

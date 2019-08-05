@@ -7,8 +7,6 @@ use krpc_encoding as proto;
 use std::{
     fmt,
     io,
-    net::SocketAddr,
-    sync::PoisonError,
 };
 
 // TODO: Review ErrorKinds
@@ -23,35 +21,14 @@ pub enum ErrorKind {
         got: krpc_encoding::Response,
     },
 
-    #[fail(display = "Failed to bind")]
-    BindError {
+    #[fail(display = "Failed to send")]
+    SendError {
         #[fail(cause)]
         cause: io::Error,
     },
-
-    #[fail(display = "failed to receive inbound message")]
-    FailedToReceiveMessage {
-        #[fail(cause)]
-        cause: io::Error,
-    },
-
-    #[fail(display = "Invalid transaction id")]
-    InvalidResponseTransactionId,
-
-    #[fail(display = "Failed to parse inbound message from {}", from)]
-    InvalidInboundMessage { from: SocketAddr, message: Vec<u8> },
-
-    #[fail(display = "Failed to send to {}", to)]
-    SendError { to: SocketAddr },
 
     #[fail(display = "Failed to encode message for sending")]
     SendEncodingError {
-        #[fail(cause)]
-        cause: krpc_encoding::errors::Error,
-    },
-
-    #[fail(display = "Failed to parse inbound message")]
-    ParseInboundMessageError {
         #[fail(cause)]
         cause: krpc_encoding::errors::Error,
     },
@@ -61,15 +38,6 @@ pub enum ErrorKind {
         transaction_id
     )]
     UnknownTransactionPolled { transaction_id: u32 },
-
-    #[fail(
-        display = "Received response for an unknown transaction transaction_id={}",
-        transaction_id
-    )]
-    UnknownTransactionReceived { transaction_id: u32 },
-
-    #[fail(display = "Lock poisoned")]
-    LockPoisoned,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -106,13 +74,5 @@ impl From<ErrorKind> for Error {
 impl From<Context<ErrorKind>> for Error {
     fn from(inner: Context<ErrorKind>) -> Error {
         Error { inner }
-    }
-}
-
-/// Implementation allowing for converting to a `Fail` compatible error even
-/// when the lock isn't sync.
-impl<Guard> From<PoisonError<Guard>> for Error {
-    fn from(_err: PoisonError<Guard>) -> Error {
-        ErrorKind::LockPoisoned.into()
     }
 }
