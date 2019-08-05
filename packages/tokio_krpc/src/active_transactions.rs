@@ -1,9 +1,7 @@
 use crate::{
-    errors::{
-        ErrorKind,
-        Result,
-    },
     inbound_response_envelope::InboundResponseEnvelope,
+    recv_errors,
+    send_errors,
     transaction_id::{
         parse_originating_transaction_id,
         TransactionId,
@@ -68,13 +66,13 @@ impl ActiveTransactions {
     ///
     /// If the transaction id associated with `message` isn't known, returns
     /// failure.
-    pub fn handle_response(&self, message: InboundResponseEnvelope) -> Result<()> {
+    pub fn handle_response(&self, message: InboundResponseEnvelope) -> recv_errors::Result<()> {
         let transaction_id = parse_originating_transaction_id(&message.transaction_id)?;
         let mut map = self.transactions.lock().unwrap();
 
         let current_tx_state = map
             .remove(&transaction_id)
-            .ok_or_else(|| ErrorKind::UnknownTransactionReceived { transaction_id })?;
+            .ok_or_else(|| recv_errors::ErrorKind::UnknownTransactionReceived { transaction_id })?;
 
         match current_tx_state {
             TxState::GotResponse { .. } => {
@@ -97,12 +95,12 @@ impl ActiveTransactions {
         &self,
         transaction_id: TransactionId,
         waker: &Waker,
-    ) -> Poll<Result<InboundResponseEnvelope>> {
+    ) -> Poll<send_errors::Result<InboundResponseEnvelope>> {
         let mut map = self.transactions.lock().unwrap();
 
         let tx_state = map
             .remove(&transaction_id)
-            .ok_or_else(|| ErrorKind::UnknownTransactionPolled { transaction_id })?;
+            .ok_or_else(|| send_errors::ErrorKind::UnknownTransactionPolled { transaction_id })?;
 
         match tx_state {
             TxState::GotResponse { response } => Poll::Ready(Ok(response)),

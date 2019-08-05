@@ -1,11 +1,11 @@
 use crate::{
     active_transactions::ActiveTransactions,
-    errors::Error,
     inbound::receive_inbound_messages,
     inbound_response_envelope::{
         InboundResponseEnvelope,
         ResponseType,
     },
+    recv_errors::Error,
     InboundQuery,
     SendTransport,
 };

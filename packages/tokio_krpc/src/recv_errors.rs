@@ -3,7 +3,6 @@ use failure::{
     Context,
     Fail,
 };
-use krpc_encoding as proto;
 use std::{
     fmt,
     io,
@@ -13,15 +12,6 @@ use std::{
 // TODO: Review ErrorKinds
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "Received an error message from node {}", error)]
-    ReceivedKRPCError { error: proto::KRPCError },
-
-    #[fail(display = "Invalid response type, expected {} got {:?}", expected, got)]
-    InvalidResponseType {
-        expected: &'static str,
-        got: krpc_encoding::Response,
-    },
-
     #[fail(display = "failed to receive inbound message")]
     FailedToReceiveMessage {
         #[fail(cause)]
@@ -34,26 +24,11 @@ pub enum ErrorKind {
     #[fail(display = "Failed to parse inbound message from {}", from)]
     InvalidInboundMessage { from: SocketAddr, message: Vec<u8> },
 
-    #[fail(display = "Failed to send to {}", to)]
-    SendError { to: SocketAddr },
-
-    #[fail(display = "Failed to encode message for sending")]
-    SendEncodingError {
-        #[fail(cause)]
-        cause: krpc_encoding::errors::Error,
-    },
-
     #[fail(display = "Failed to parse inbound message")]
     ParseInboundMessageError {
         #[fail(cause)]
         cause: krpc_encoding::errors::Error,
     },
-
-    #[fail(
-        display = "Transaction state missing for transaction_id={}",
-        transaction_id
-    )]
-    UnknownTransactionPolled { transaction_id: u32 },
 
     #[fail(
         display = "Received response for an unknown transaction transaction_id={}",

@@ -1,15 +1,15 @@
 use crate::{
     active_transactions::ActiveTransactions,
-    errors::{
-        ErrorKind,
-        Result,
-    },
     port_type::PortType,
     response_future::ResponseFuture,
     responses::{
         FindNodeResponse,
         GetPeersResponse,
         NodeIDResponse,
+    },
+    send_errors::{
+        ErrorKind,
+        Result,
     },
     transaction_id::TransactionId,
 };

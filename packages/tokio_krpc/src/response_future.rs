@@ -1,13 +1,13 @@
 use crate::{
     active_transactions::ActiveTransactions,
-    errors::{
-        Error,
-        ErrorKind,
-        Result,
-    },
     inbound_response_envelope::{
         InboundResponseEnvelope,
         ResponseType,
+    },
+    send_errors::{
+        Error,
+        ErrorKind,
+        Result,
     },
     transaction_id::TransactionId,
 };

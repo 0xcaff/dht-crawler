@@ -1,6 +1,6 @@
 //! Handle incoming responses and queries from other nodes.
 
-use crate::errors::{
+use crate::recv_errors::{
     Error,
     ErrorKind,
     Result,

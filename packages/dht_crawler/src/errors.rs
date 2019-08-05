@@ -44,9 +44,15 @@ pub enum ErrorKind {
     Timeout,
 
     #[fail(display = "Something broke in the transport")]
-    TransportError {
+    RecvTransportError {
         #[fail(cause)]
-        cause: tokio_krpc::errors::Error,
+        cause: tokio_krpc::recv_errors::Error,
+    },
+
+    #[fail(display = "Something broke in the transport")]
+    SendTransportError {
+        #[fail(cause)]
+        cause: tokio_krpc::send_errors::Error,
     },
 
     #[fail(display = "Failed to bind")]
@@ -113,8 +119,14 @@ impl From<timeout::Elapsed> for Error {
     }
 }
 
-impl From<tokio_krpc::errors::Error> for Error {
-    fn from(cause: tokio_krpc::errors::Error) -> Self {
-        ErrorKind::TransportError { cause }.into()
+impl From<tokio_krpc::recv_errors::Error> for Error {
+    fn from(cause: tokio_krpc::recv_errors::Error) -> Self {
+        ErrorKind::RecvTransportError { cause }.into()
+    }
+}
+
+impl From<tokio_krpc::send_errors::Error> for Error {
+    fn from(cause: tokio_krpc::send_errors::Error) -> Self {
+        ErrorKind::SendTransportError { cause }.into()
     }
 }

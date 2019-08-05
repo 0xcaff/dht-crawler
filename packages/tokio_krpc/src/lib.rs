@@ -46,14 +46,15 @@
 // TODO: Write Docs for responses module
 
 mod active_transactions;
-pub mod errors;
 mod inbound;
 mod inbound_query;
 mod inbound_response_envelope;
 mod krpc_node;
 mod port_type;
+pub mod recv_errors;
 mod response_future;
 pub mod responses;
+pub mod send_errors;
 mod send_transport;
 mod transaction_id;
 
