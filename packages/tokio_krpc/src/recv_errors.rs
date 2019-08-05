@@ -6,7 +6,6 @@ use failure::{
 use std::{
     fmt,
     io,
-    net::SocketAddr,
 };
 
 // TODO: Review ErrorKinds
@@ -20,9 +19,6 @@ pub enum ErrorKind {
 
     #[fail(display = "Invalid transaction id")]
     InvalidResponseTransactionId,
-
-    #[fail(display = "Failed to parse inbound message from {}", from)]
-    InvalidInboundMessage { from: SocketAddr, message: Vec<u8> },
 
     #[fail(display = "Failed to parse inbound message")]
     ParseInboundMessageError {

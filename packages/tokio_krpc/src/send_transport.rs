@@ -13,7 +13,6 @@ use crate::{
     },
     transaction_id::TransactionId,
 };
-use failure::ResultExt;
 use futures::lock::Mutex;
 use krpc_encoding::{
     self as proto,
@@ -116,7 +115,7 @@ impl SendTransport {
         socket
             .send_to(&encoded, &address)
             .await
-            .with_context(|_| ErrorKind::SendError { to: address })?;
+            .map_err(|cause| ErrorKind::SendError { cause })?;
 
         Ok(())
     }

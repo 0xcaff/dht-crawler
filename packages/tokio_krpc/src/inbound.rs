@@ -5,7 +5,6 @@ use crate::recv_errors::{
     ErrorKind,
     Result,
 };
-use failure::ResultExt;
 use futures::{
     stream,
     TryStream,
@@ -52,11 +51,7 @@ async fn receive_inbound_message(
         .map_err(|cause| ErrorKind::FailedToReceiveMessage { cause })?;
 
     let envelope = Envelope::decode(&recv_buffer[..size])
-        .map_err(|cause| ErrorKind::ParseInboundMessageError { cause })
-        .with_context(|_| ErrorKind::InvalidInboundMessage {
-            from: from_addr,
-            message: recv_buffer[..size].to_vec(),
-        })?;
+        .map_err(|cause| ErrorKind::ParseInboundMessageError { cause })?;
 
     Ok((envelope, from_addr))
 }

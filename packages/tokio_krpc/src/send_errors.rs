@@ -6,7 +6,7 @@ use failure::{
 use krpc_encoding as proto;
 use std::{
     fmt,
-    net::SocketAddr,
+    io,
 };
 
 // TODO: Review ErrorKinds
@@ -21,8 +21,11 @@ pub enum ErrorKind {
         got: krpc_encoding::Response,
     },
 
-    #[fail(display = "Failed to send to {}", to)]
-    SendError { to: SocketAddr },
+    #[fail(display = "Failed to send")]
+    SendError {
+        #[fail(cause)]
+        cause: io::Error,
+    },
 
     #[fail(display = "Failed to encode message for sending")]
     SendEncodingError {
