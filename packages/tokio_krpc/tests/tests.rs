@@ -12,7 +12,10 @@ use std::{
     },
     str::FromStr,
 };
-use tokio::runtime::current_thread::Runtime;
+use tokio::{
+    net::UdpSocket,
+    runtime::current_thread::Runtime,
+};
 use tokio_krpc::KRPCNode;
 
 #[test]
@@ -26,7 +29,8 @@ fn ping() -> Result<(), Error> {
 
     let id = NodeID::random();
     let mut rt = Runtime::new()?;
-    let recv_transport = KRPCNode::bind(bind)?;
+    let socket = UdpSocket::bind(&bind)?;
+    let recv_transport = KRPCNode::new(socket);
     let (send_transport, request_stream) = recv_transport.serve();
 
     rt.spawn(

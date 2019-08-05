@@ -1,5 +1,8 @@
 use crate::{
-    errors::Result,
+    errors::{
+        ErrorKind,
+        Result,
+    },
     routing::{
         Node,
         RoutingTable,
@@ -26,7 +29,10 @@ use std::{
     },
     time::Duration,
 };
-use tokio::prelude::FutureExt;
+use tokio::{
+    net::UdpSocket,
+    prelude::FutureExt,
+};
 use tokio_krpc::{
     KRPCNode,
     PortType,
@@ -48,7 +54,8 @@ impl Dht {
     /// Start handling inbound messages from other peers in the network.
     /// Continues to handle while the future is polled.
     pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl future::Future<Output = ()>)> {
-        let transport = KRPCNode::bind(bind_addr)?;
+        let socket = UdpSocket::bind(&bind_addr).map_err(|cause| ErrorKind::BindError { cause })?;
+        let transport = KRPCNode::new(socket);
         let (send_transport, request_stream) = transport.serve();
 
         let id = NodeID::random();

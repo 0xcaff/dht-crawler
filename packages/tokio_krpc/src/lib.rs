@@ -7,7 +7,7 @@
 //! ```
 //! use std::{net::SocketAddr, str::FromStr};
 //! use futures::{future, StreamExt, TryStreamExt};
-//! use tokio::runtime::current_thread::Runtime;
+//! use tokio::{net::UdpSocket, runtime::current_thread::Runtime};
 //! # use failure::Error;
 //!
 //! use tokio_krpc::KRPCNode;
@@ -15,7 +15,8 @@
 //!
 //! # fn main() -> Result<(), Error> {
 //! let bind_addr = SocketAddr::from_str("0.0.0.0:0")?;
-//! let node = KRPCNode::bind(bind_addr)?;
+//! let socket = UdpSocket::bind(&bind_addr)?;
+//! let node = KRPCNode::new(socket);
 //! let (send_transport, inbound_requests) = node.serve();
 //!
 //! let mut runtime = Runtime::new()?;

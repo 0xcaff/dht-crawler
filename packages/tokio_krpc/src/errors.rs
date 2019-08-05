@@ -22,12 +22,6 @@ pub enum ErrorKind {
         got: krpc_encoding::Response,
     },
 
-    #[fail(display = "Failed to bind")]
-    BindError {
-        #[fail(cause)]
-        cause: io::Error,
-    },
-
     #[fail(display = "failed to receive inbound message")]
     FailedToReceiveMessage {
         #[fail(cause)]

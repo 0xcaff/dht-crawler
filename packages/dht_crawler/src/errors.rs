@@ -7,6 +7,7 @@ use krpc_encoding as proto;
 use std::{
     self,
     fmt,
+    io,
     net::SocketAddrV6,
     sync::PoisonError,
 };
@@ -46,6 +47,12 @@ pub enum ErrorKind {
     TransportError {
         #[fail(cause)]
         cause: tokio_krpc::errors::Error,
+    },
+
+    #[fail(display = "Failed to bind")]
+    BindError {
+        #[fail(cause)]
+        cause: io::Error,
     },
 }
 
