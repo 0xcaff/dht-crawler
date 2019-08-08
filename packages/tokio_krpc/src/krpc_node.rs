@@ -50,6 +50,8 @@ impl KRPCNode {
         }
     }
 
+    // TODO: Separate the returned stream
+
     /// Starts listening for inbound queries and responses. The stream **MUST**
     /// be polled to process responses to outbound requests.
     ///

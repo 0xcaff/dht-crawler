@@ -5,18 +5,17 @@ use crate::{
 };
 use failure::_core::time::Duration;
 use krpc_encoding::NodeID;
-use std::net::SocketAddr;
 use tokio::prelude::FutureExt;
-use tokio_krpc::SendTransport;
+use tokio_krpc::RequestTransport;
 
 /// A send transport used for checking liveliness of nodes in the routing table.
 pub struct WrappedSendTransport {
-    send_transport: SendTransport,
+    request_transport: RequestTransport,
 }
 
 impl WrappedSendTransport {
-    pub fn new(send_transport: SendTransport) -> WrappedSendTransport {
-        WrappedSendTransport { send_transport }
+    pub fn new(request_transport: RequestTransport) -> WrappedSendTransport {
+        WrappedSendTransport { request_transport }
     }
 
     pub async fn ping(&self, node: &mut NodeContactState) -> Result<NodeID> {
@@ -32,8 +31,8 @@ impl WrappedSendTransport {
 
     async fn ping_inner(&self, node: &mut NodeContactState) -> Result<NodeID> {
         Ok(self
-            .send_transport
-            .ping(node.id.clone(), SocketAddr::V4(node.address))
+            .request_transport
+            .ping(node.id.clone(), node.address)
             .timeout(Duration::from_secs(3))
             .await?
             .map_err(|cause| ErrorKind::SendError { cause })?)

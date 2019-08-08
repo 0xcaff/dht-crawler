@@ -1,12 +1,6 @@
 use crate::{
     active_transactions::ActiveTransactions,
-    port_type::PortType,
     response_future::ResponseFuture,
-    responses::{
-        FindNodeResponse,
-        GetPeersResponse,
-        NodeIDResponse,
-    },
     send_errors::{
         ErrorKind,
         Result,
@@ -18,13 +12,13 @@ use krpc_encoding::{
     self as proto,
     Envelope,
     Message,
-    NodeID,
     Query,
 };
-use rand;
 use std::net::SocketAddr;
 use tokio::net::udp::split::UdpSocketSendHalf;
 
+/// Low-level wrapper around a UDP socket for sending KRPC queries and
+/// responses.
 pub struct SendTransport {
     socket: Mutex<UdpSocketSendHalf>,
     transactions: ActiveTransactions,
@@ -41,67 +35,7 @@ impl SendTransport {
         }
     }
 
-    pub async fn ping(&self, id: NodeID, address: SocketAddr) -> Result<NodeID> {
-        let response = self.request(address, Query::Ping { id }).await?;
-
-        Ok(NodeIDResponse::from_response(response)?)
-    }
-
-    pub async fn find_node(
-        &self,
-        id: NodeID,
-        address: SocketAddr,
-        target: NodeID,
-    ) -> Result<FindNodeResponse> {
-        let response = self
-            .request(address, Query::FindNode { id, target })
-            .await?;
-
-        Ok(FindNodeResponse::from_response(response)?)
-    }
-
-    pub async fn get_peers(
-        &self,
-        id: NodeID,
-        address: SocketAddr,
-        info_hash: NodeID,
-    ) -> Result<GetPeersResponse> {
-        let response = self
-            .request(address, Query::GetPeers { id, info_hash })
-            .await?;
-
-        Ok(GetPeersResponse::from_response(response)?)
-    }
-
-    pub async fn announce_peer(
-        &self,
-        id: NodeID,
-        token: Vec<u8>,
-        address: SocketAddr,
-        info_hash: NodeID,
-        port_type: PortType,
-    ) -> Result<NodeID> {
-        let (port, implied_port) = match port_type {
-            PortType::Implied => (None, true),
-            PortType::Port(port) => (Some(port), false),
-        };
-
-        let response = self
-            .request(
-                address,
-                Query::AnnouncePeer {
-                    id,
-                    token,
-                    info_hash,
-                    port,
-                    implied_port,
-                },
-            )
-            .await?;
-
-        Ok(NodeIDResponse::from_response(response)?)
-    }
-
+    /// Encodes and sends `message` to `address` without waiting for a response.
     pub async fn send(&self, address: SocketAddr, message: Envelope) -> Result<()> {
         let encoded = message
             .encode()

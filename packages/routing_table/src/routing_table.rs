@@ -8,7 +8,10 @@ use krpc_encoding::{
     NodeID,
     NodeInfo,
 };
-use tokio_krpc::SendTransport;
+use tokio_krpc::{
+    RequestTransport,
+    SendTransport,
+};
 
 /// A routing table which holds information about nodes in the network.
 pub struct RoutingTable {
@@ -18,11 +21,11 @@ pub struct RoutingTable {
 }
 
 impl RoutingTable {
-    pub fn new(id: NodeID, send_transport: SendTransport) -> RoutingTable {
+    pub fn new(id: NodeID, request_transport: RequestTransport) -> RoutingTable {
         RoutingTable {
             id,
             root: FullBTreeNode::Leaf(KBucket::initial()),
-            send_transport: WrappedSendTransport::new(send_transport),
+            send_transport: WrappedSendTransport::new(request_transport),
         }
     }
 

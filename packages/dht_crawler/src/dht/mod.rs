@@ -36,7 +36,7 @@ use tokio::{
 use tokio_krpc::{
     KRPCNode,
     PortType,
-    SendTransport,
+    RequestTransport,
 };
 
 mod handler;
@@ -46,7 +46,7 @@ mod handler;
 pub struct Dht {
     id: NodeID,
     torrents: Arc<Mutex<HashMap<NodeID, Vec<SocketAddrV4>>>>,
-    send_transport: Arc<SendTransport>,
+    request_transport: Arc<RequestTransport>,
     routing_table: Arc<Mutex<RoutingTable>>,
 }
 
@@ -65,7 +65,7 @@ impl Dht {
         let dht = Dht {
             id,
             torrents: Arc::new(Mutex::new(torrents)),
-            send_transport: Arc::new(send_transport),
+            request_transport: Arc::new(RequestTransport::new(send_transport)),
             routing_table: Arc::new(Mutex::new(routing_table)),
         };
 
@@ -75,7 +75,7 @@ impl Dht {
     /// Bootstraps the routing table by finding nodes near our node id and
     /// adding them to the routing table.
     pub async fn bootstrap_routing_table(&self, addrs: Vec<SocketAddrV4>) -> Result<()> {
-        let send_transport = self.send_transport.clone();
+        let send_transport = self.request_transport.clone();
         let routing_table_arc = self.routing_table.clone();
         let id = self.id.clone();
 
@@ -95,10 +95,10 @@ impl Dht {
     async fn discover_nodes_of(
         addr: SocketAddrV4,
         self_id: NodeID,
-        send_transport: Arc<SendTransport>,
+        request_transport: Arc<RequestTransport>,
         routing_table_arc: Arc<Mutex<RoutingTable>>,
     ) -> Result<()> {
-        let response = send_transport
+        let response = request_transport
             .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
             .timeout(Duration::from_secs(3))
             .await??;
@@ -116,7 +116,7 @@ impl Dht {
                 Self::discover_neighbors_of(
                     node,
                     self_id.clone(),
-                    send_transport.clone(),
+                    request_transport.clone(),
                     routing_table_arc.clone(),
                 )
             })));
@@ -129,10 +129,10 @@ impl Dht {
     async fn discover_neighbors_of(
         node: NodeInfo,
         self_id: NodeID,
-        send_transport: Arc<SendTransport>,
+        request_transport: Arc<RequestTransport>,
         routing_table_arc: Arc<Mutex<RoutingTable>>,
     ) {
-        Self::discover_nodes_of(node.address, self_id, send_transport, routing_table_arc)
+        Self::discover_nodes_of(node.address, self_id, request_transport, routing_table_arc)
             .await
             .unwrap_or_else(|e| eprintln!("Error While Bootstrapping {}", e));
     }
