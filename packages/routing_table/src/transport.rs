@@ -9,11 +9,16 @@ use std::net::SocketAddr;
 use tokio::prelude::FutureExt;
 use tokio_krpc::SendTransport;
 
+/// A send transport used for checking liveliness of nodes in the routing table.
 pub struct WrappedSendTransport {
     send_transport: SendTransport,
 }
 
 impl WrappedSendTransport {
+    pub fn new(send_transport: SendTransport) -> WrappedSendTransport {
+        WrappedSendTransport { send_transport }
+    }
+
     pub async fn ping(&self, node: &mut NodeContactState) -> Result<NodeID> {
         let result: Result<NodeID> = self.ping_inner(node).await;
 

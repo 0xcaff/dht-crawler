@@ -50,6 +50,8 @@ impl NodeID {
         output
     }
 
+    /// Returns true if the value of the nth bit is 1. The 0th bit is the most
+    /// significant bit.
     pub fn nth_bit(&self, n: usize) -> bool {
         let one = BigUint::one();
         return ((self.deref() >> n) & &one) == one;

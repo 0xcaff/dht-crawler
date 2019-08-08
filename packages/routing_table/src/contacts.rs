@@ -7,7 +7,7 @@ use krpc_encoding::{
     NodeInfo,
 };
 
-pub const K_BUCKET_SIZE: usize = 8;
+const K_BUCKET_SIZE: usize = 8;
 
 /// A container of recently contacted nodes sorted from most recently accessed
 /// to least recently accessed.
@@ -16,6 +16,16 @@ pub struct Contacts {
 }
 
 impl Contacts {
+    pub fn new() -> Contacts {
+        Contacts {
+            contacts: Vec::new(),
+        }
+    }
+
+    pub(crate) fn from_existing(contacts: Vec<NodeContactState>) -> Contacts {
+        Contacts { contacts }
+    }
+
     /// Gets a node by id. Returns [`None`] if the node_id isn't found.
     pub fn update_node_id(&mut self, node_id: &NodeID) -> Option<usize> {
         let index = self
@@ -78,12 +88,24 @@ impl Contacts {
         self.contacts.insert(0, node)
     }
 
-    pub fn add_new(&mut self, node_info: &NodeInfo) -> &mut NodeContactState {
+    pub fn add_new(&mut self, node_info: &NodeInfo) -> usize {
         let node_contact_state =
             NodeContactState::new(node_info.node_id.clone(), node_info.address);
 
         self.insert_front(node_contact_state);
 
-        &mut self.contacts[0]
+        0
+    }
+
+    pub fn split(&mut self, depth: usize) -> (Contacts, Contacts) {
+        let (zero_bit_nodes, one_bit_nodes) = self
+            .contacts
+            .drain(..)
+            .partition(|node| !node.id.nth_bit(depth));
+
+        (
+            Contacts::from_existing(zero_bit_nodes),
+            Contacts::from_existing(one_bit_nodes),
+        )
     }
 }
