@@ -30,6 +30,8 @@ use tokio::{
     },
 };
 
+/// Handles making queries to other nodes, receiving responses and processing
+/// queries from other nodes
 pub struct KRPCNode {
     send_half: UdpSocketSendHalf,
     recv_half: UdpSocketRecvHalf,
@@ -48,6 +50,13 @@ impl KRPCNode {
         }
     }
 
+    /// Starts listening for inbound queries and responses. The stream **MUST**
+    /// be polled to process responses to outbound requests.
+    ///
+    /// # Returns
+    /// A handle to send messages to other nodes and a stream of inbound
+    /// requests. Errors occur on the stream whenever an error occurs while
+    /// processing an inbound message.
     pub fn serve(
         self,
     ) -> (

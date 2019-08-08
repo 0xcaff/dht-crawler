@@ -39,7 +39,7 @@ impl KBucket {
         }
     }
 
-    pub async fn try_add<'a>(
+    pub async fn try_add(
         &mut self,
         node_info: &NodeInfo,
         send_transport: &WrappedSendTransport,
