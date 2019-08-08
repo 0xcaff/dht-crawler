@@ -1,17 +1,12 @@
 use crate::routing::{
     bucket::Bucket,
     node::Node,
-};
-use crypto::{
-    digest::Digest,
-    sha1::Sha1,
+    token_validator::TokenValidator,
 };
 use krpc_encoding::{
-    self as proto,
     NodeID,
     NodeInfo,
 };
-use rand;
 use std::{
     cmp,
     net::SocketAddrV4,
@@ -22,7 +17,6 @@ pub enum FindNodeResult {
     Nodes(Vec<NodeInfo>),
 }
 
-#[derive(Debug)]
 pub struct RoutingTable {
     /// Node identifier of the node which the table is based around. There will
     /// be more buckets closer to this identifier.
@@ -32,11 +26,7 @@ pub struct RoutingTable {
     /// at key 0 and the last bucket ends at key 2^160.
     buckets: Vec<Bucket>,
 
-    /// Secret used when generating tokens for `get_peers` and `announce_peer`.
-    token_secret: [u8; 4],
-
-    /// Last secret. Tokens generated with this secret are also valid.
-    last_token_secret: [u8; 4],
+    token_validator: TokenValidator,
 }
 
 impl RoutingTable {
@@ -47,8 +37,7 @@ impl RoutingTable {
         RoutingTable {
             id,
             buckets,
-            token_secret: rand::random(),
-            last_token_secret: rand::random(),
+            token_validator: TokenValidator::new(),
         }
     }
 
@@ -131,20 +120,15 @@ impl RoutingTable {
     }
 
     pub fn verify_token(&self, token: &[u8], addr: &SocketAddrV4) -> bool {
-        verify_token(addr, &self.token_secret, token)
-            || verify_token(addr, &self.last_token_secret, token)
+        self.token_validator.verify_token(addr, token)
     }
 
     pub fn generate_token(&self, addr: &SocketAddrV4) -> [u8; 20] {
-        generate_token(addr, &self.token_secret)
+        self.token_validator.generate_token(addr)
     }
 
-    /// Updates `last_token` and `token` moving `token` to `last_token` and
-    /// creating a new `token`. Returns the new token.
-    pub fn update_token(&mut self) -> [u8; 4] {
-        self.last_token_secret = self.token_secret;
-        self.token_secret = rand::random();
-        self.token_secret
+    pub fn update_token(&mut self) {
+        self.token_validator.rotate_tokens();
     }
 
     pub fn get_or_add(&mut self, id: NodeID, address: SocketAddrV4) -> Option<&mut Node> {
@@ -161,25 +145,4 @@ impl RoutingTable {
     pub fn len(&self) -> usize {
         self.buckets.iter().map(|bucket| bucket.nodes.len()).sum()
     }
-}
-
-/// Generates a token given an address and secret.
-fn generate_token(addr: &SocketAddrV4, secret: &[u8; 4]) -> [u8; 20] {
-    let mut hasher = Sha1::new();
-
-    let addr_bytes = proto::addr_to_bytes(addr);
-
-    hasher.input(&addr_bytes);
-    hasher.input(secret);
-
-    let mut output = [0u8; 20];
-    hasher.result(&mut output);
-
-    output
-}
-
-fn verify_token(addr: &SocketAddrV4, secret: &[u8; 4], token: &[u8]) -> bool {
-    let expected = generate_token(addr, secret);
-
-    token == expected
 }

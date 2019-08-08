@@ -1,6 +1,7 @@
 mod bucket;
 mod node;
 mod table;
+mod token_validator;
 
 pub use self::{
     node::Node,
@@ -8,4 +9,5 @@ pub use self::{
         FindNodeResult,
         RoutingTable,
     },
+    token_validator::TokenValidator,
 };
