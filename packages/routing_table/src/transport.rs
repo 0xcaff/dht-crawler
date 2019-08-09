@@ -32,7 +32,7 @@ impl WrappedSendTransport {
     async fn ping_inner(&self, node: &mut NodeContactState) -> Result<NodeID> {
         Ok(self
             .request_transport
-            .ping(node.id.clone(), node.address)
+            .ping(node.address)
             .timeout(Duration::from_secs(3))
             .await?
             .map_err(|cause| ErrorKind::SendError { cause })?)

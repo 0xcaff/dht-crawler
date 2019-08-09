@@ -12,26 +12,38 @@ use krpc_encoding::{
     NodeID,
     Query,
 };
-use std::net::SocketAddrV4;
-use std::borrow::Borrow;
+use std::{
+    borrow::Borrow,
+    net::SocketAddrV4,
+};
 
 /// High level wrapper around a UDP socket for sending typed queries and
 /// receiving typed responses.
 pub struct RequestTransport {
+    id: NodeID,
     send_transport: Box<dyn Borrow<SendTransport>>,
 }
 
 impl RequestTransport {
-    pub fn new<T: Borrow<SendTransport> + 'static>(send_transport: T) -> RequestTransport {
+    pub fn new<T: Borrow<SendTransport> + 'static>(
+        id: NodeID,
+        send_transport: T,
+    ) -> RequestTransport {
         RequestTransport {
+            id,
             send_transport: Box::new(send_transport),
         }
     }
 
-    pub async fn ping(&self, id: NodeID, address: SocketAddrV4) -> Result<NodeID> {
+    pub async fn ping(&self, address: SocketAddrV4) -> Result<NodeID> {
         let response = (*self.send_transport)
             .borrow()
-            .request(address.into(), Query::Ping { id })
+            .request(
+                address.into(),
+                Query::Ping {
+                    id: self.id.clone(),
+                },
+            )
             .await?;
 
         Ok(NodeIDResponse::from_response(response)?)
@@ -39,13 +51,18 @@ impl RequestTransport {
 
     pub async fn find_node(
         &self,
-        id: NodeID,
         address: SocketAddrV4,
         target: NodeID,
     ) -> Result<FindNodeResponse> {
         let response = (*self.send_transport)
             .borrow()
-            .request(address.into(), Query::FindNode { id, target })
+            .request(
+                address.into(),
+                Query::FindNode {
+                    id: self.id.clone(),
+                    target,
+                },
+            )
             .await?;
 
         Ok(FindNodeResponse::from_response(response)?)
@@ -53,13 +70,18 @@ impl RequestTransport {
 
     pub async fn get_peers(
         &self,
-        id: NodeID,
         address: SocketAddrV4,
         info_hash: NodeID,
     ) -> Result<GetPeersResponse> {
         let response = (*self.send_transport)
             .borrow()
-            .request(address.into(), Query::GetPeers { id, info_hash })
+            .request(
+                address.into(),
+                Query::GetPeers {
+                    id: self.id.clone(),
+                    info_hash,
+                },
+            )
             .await?;
 
         Ok(GetPeersResponse::from_response(response)?)
@@ -67,7 +89,6 @@ impl RequestTransport {
 
     pub async fn announce_peer(
         &self,
-        id: NodeID,
         token: Vec<u8>,
         address: SocketAddrV4,
         info_hash: NodeID,
@@ -83,7 +104,7 @@ impl RequestTransport {
             .request(
                 address.into(),
                 Query::AnnouncePeer {
-                    id,
+                    id: self.id.clone(),
                     token,
                     info_hash,
                     port,

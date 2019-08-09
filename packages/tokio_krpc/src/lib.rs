@@ -17,8 +17,9 @@
 //! let bind_addr: SocketAddrV4 = "0.0.0.0:0".parse()?;
 //! let socket = UdpSocket::bind(&bind_addr.into())?;
 //! let node = KRPCNode::new(socket);
+//! let node_id = NodeID::random();
 //! let (send_transport, inbound_requests) = node.serve();
-//! let request_transport = RequestTransport::new(send_transport);
+//! let request_transport = RequestTransport::new(node_id, send_transport);
 //!
 //! let mut runtime = Runtime::new()?;
 //! runtime.spawn(
@@ -28,8 +29,7 @@
 //! );
 //!
 //! let bootstrap_node_addr: SocketAddrV4 = "67.215.246.10:6881".parse()?;
-//! let node_id = NodeID::random();
-//! let response = runtime.block_on(request_transport.ping(node_id, bootstrap_node_addr))?;
+//! let response = runtime.block_on(request_transport.ping(bootstrap_node_addr))?;
 //!
 //! println!("{:?}", response);
 //!

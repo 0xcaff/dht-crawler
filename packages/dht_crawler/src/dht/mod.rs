@@ -66,9 +66,9 @@ impl Dht {
         let send_transport_arc = Arc::new(send_transport);
 
         let dht = Dht {
-            id,
+            id: id.clone(),
             torrents: Arc::new(Mutex::new(torrents)),
-            request_transport: Arc::new(RequestTransport::new(send_transport_arc.clone())),
+            request_transport: Arc::new(RequestTransport::new(id, send_transport_arc.clone())),
             send_transport: send_transport_arc,
             routing_table: Arc::new(Mutex::new(routing_table)),
         };
@@ -103,7 +103,7 @@ impl Dht {
         routing_table_arc: Arc<Mutex<RoutingTable>>,
     ) -> Result<()> {
         let response = request_transport
-            .find_node(self_id.clone(), addr.clone().into(), self_id.clone())
+            .find_node(addr.clone().into(), self_id.clone())
             .timeout(Duration::from_secs(3))
             .await??;
 

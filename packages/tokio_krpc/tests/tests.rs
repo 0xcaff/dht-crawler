@@ -40,7 +40,7 @@ fn ping() -> Result<(), Error> {
     let socket = UdpSocket::bind(&bind)?;
     let recv_transport = KRPCNode::new(socket);
     let (send_transport, request_stream) = recv_transport.serve();
-    let request_transport = RequestTransport::new(send_transport);
+    let request_transport = RequestTransport::new(id, send_transport);
 
     rt.spawn(
         request_stream
@@ -48,7 +48,7 @@ fn ping() -> Result<(), Error> {
             .for_each(|_| future::ready(())),
     );
 
-    let response = rt.block_on(request_transport.ping(id, remote_v4))?;
+    let response = rt.block_on(request_transport.ping(remote_v4))?;
 
     assert_ne!(response, b"0000000000000000000000000000000000000000".into());
 
