@@ -59,10 +59,7 @@ impl Dht {
     async fn process_request(&self, result: Result<(InboundQuery, SocketAddr)>) -> Result<()> {
         let (request, from) = result?;
         let response = self.handle_request(request, from.into_v4()?);
-        self.request_transport
-            .send_transport()
-            .send(from, response)
-            .await?;
+        self.send_transport.send(from, response).await?;
 
         Ok(())
     }

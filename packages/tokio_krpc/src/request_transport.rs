@@ -13,21 +13,24 @@ use krpc_encoding::{
     Query,
 };
 use std::net::SocketAddrV4;
+use std::borrow::Borrow;
 
 /// High level wrapper around a UDP socket for sending typed queries and
 /// receiving typed responses.
 pub struct RequestTransport {
-    send_transport: SendTransport,
+    send_transport: Box<dyn Borrow<SendTransport>>,
 }
 
 impl RequestTransport {
-    pub fn new(send_transport: SendTransport) -> RequestTransport {
-        RequestTransport { send_transport }
+    pub fn new<T: Borrow<SendTransport> + 'static>(send_transport: T) -> RequestTransport {
+        RequestTransport {
+            send_transport: Box::new(send_transport),
+        }
     }
 
     pub async fn ping(&self, id: NodeID, address: SocketAddrV4) -> Result<NodeID> {
-        let response = self
-            .send_transport
+        let response = (*self.send_transport)
+            .borrow()
             .request(address.into(), Query::Ping { id })
             .await?;
 
@@ -40,8 +43,8 @@ impl RequestTransport {
         address: SocketAddrV4,
         target: NodeID,
     ) -> Result<FindNodeResponse> {
-        let response = self
-            .send_transport
+        let response = (*self.send_transport)
+            .borrow()
             .request(address.into(), Query::FindNode { id, target })
             .await?;
 
@@ -54,8 +57,8 @@ impl RequestTransport {
         address: SocketAddrV4,
         info_hash: NodeID,
     ) -> Result<GetPeersResponse> {
-        let response = self
-            .send_transport
+        let response = (*self.send_transport)
+            .borrow()
             .request(address.into(), Query::GetPeers { id, info_hash })
             .await?;
 
@@ -75,8 +78,8 @@ impl RequestTransport {
             PortType::Port(port) => (Some(port), false),
         };
 
-        let response = self
-            .send_transport
+        let response = (*self.send_transport)
+            .borrow()
             .request(
                 address.into(),
                 Query::AnnouncePeer {
@@ -90,9 +93,5 @@ impl RequestTransport {
             .await?;
 
         Ok(NodeIDResponse::from_response(response)?)
-    }
-
-    pub fn send_transport(&self) -> &SendTransport {
-        &self.send_transport
     }
 }

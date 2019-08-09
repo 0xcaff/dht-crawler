@@ -37,6 +37,7 @@ use tokio_krpc::{
     KRPCNode,
     PortType,
     RequestTransport,
+    SendTransport,
 };
 
 mod handler;
@@ -47,6 +48,7 @@ pub struct Dht {
     id: NodeID,
     torrents: Arc<Mutex<HashMap<NodeID, Vec<SocketAddrV4>>>>,
     request_transport: Arc<RequestTransport>,
+    send_transport: Arc<SendTransport>,
     routing_table: Arc<Mutex<RoutingTable>>,
 }
 
@@ -61,11 +63,13 @@ impl Dht {
         let id = NodeID::random();
         let torrents = HashMap::new();
         let routing_table = RoutingTable::new(id.clone());
+        let send_transport_arc = Arc::new(send_transport);
 
         let dht = Dht {
             id,
             torrents: Arc::new(Mutex::new(torrents)),
-            request_transport: Arc::new(RequestTransport::new(send_transport)),
+            request_transport: Arc::new(RequestTransport::new(send_transport_arc.clone())),
+            send_transport: send_transport_arc,
             routing_table: Arc::new(Mutex::new(routing_table)),
         };
 
