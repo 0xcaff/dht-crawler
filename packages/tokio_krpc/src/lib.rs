@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 //! KRPC protocol built on top of `tokio`.
 //!
 //! # Send Only KRPC Node
