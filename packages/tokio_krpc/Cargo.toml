@@ -11,6 +11,6 @@ rand = "0.5.5"
 failure = "0.1.2"
 failure_derive = "0.1.2"
 tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
-futures-preview = "0.3.0-alpha.17"
-futures-util-preview = "0.3.0-alpha.17"
+futures = "0.3.4"
+futures-util = "0.3.4"
 krpc_encoding = { path = "../krpc_encoding" }

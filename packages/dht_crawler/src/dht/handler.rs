@@ -35,7 +35,7 @@ use tokio_krpc::InboundQuery;
 
 impl Dht {
     pub(super) async fn handle_requests<
-        S: TryStream<Ok = (InboundQuery, SocketAddr), Error = Error>,
+        S: TryStream<Ok = (InboundQuery, SocketAddr), Error = Error> + Send,
     >(
         self,
         stream: S,
