@@ -104,12 +104,7 @@ impl ActiveTransactions {
 
         match tx_state {
             TxState::GotResponse { response } => Poll::Ready(Ok(response)),
-            TxState::AwaitingResponse { waker: Some(..) } => {
-                map.insert(transaction_id, tx_state);
-
-                Poll::Pending
-            }
-            TxState::AwaitingResponse { waker: None } => {
+            TxState::AwaitingResponse { .. } => {
                 map.insert(
                     transaction_id,
                     TxState::AwaitingResponse {
