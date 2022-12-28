@@ -2,7 +2,6 @@ use crate::{
     addr::AsV4Address,
     dht::Dht,
     errors::{
-        Error,
         ErrorKind,
         Result,
     },
@@ -11,10 +10,7 @@ use crate::{
         RoutingTable,
     },
 };
-use futures::{
-    TryStream,
-    TryStreamExt,
-};
+use futures::Stream;
 use futures_util::stream::StreamExt;
 use krpc_encoding::{
     Addr,
@@ -34,13 +30,11 @@ use std::{
 use tokio_krpc::InboundQuery;
 
 impl Dht {
-    pub(super) async fn handle_requests<
-        S: TryStream<Ok = (InboundQuery, SocketAddr), Error = Error>,
-    >(
+    pub(super) async fn handle_requests<S: Stream<Item = Result<(InboundQuery, SocketAddr)>>>(
         self,
         stream: S,
     ) {
-        let mut stream = stream.into_stream().boxed();
+        let mut stream = stream.boxed_local();
 
         loop {
             let (head, tail) = stream.into_future().await;

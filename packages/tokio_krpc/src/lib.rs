@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 //! KRPC protocol built on top of `tokio`.
 //!
 //! # Send Only KRPC Node
@@ -7,34 +5,35 @@
 //! ```
 //! use std::net::{SocketAddrV4, SocketAddr};
 //! use futures::{future, StreamExt, TryStreamExt};
-//! use tokio::{net::UdpSocket, runtime::current_thread::Runtime};
-//! # use failure::Error;
+//! use tokio::{net::UdpSocket};
+//! use failure::Error;
 //!
 //! use tokio_krpc::{KRPCNode, RequestTransport};
 //! use krpc_encoding::NodeID;
+//! use tokio::spawn;
 //!
-//! # fn main() -> Result<(), Error> {
-//! let bind_addr: SocketAddrV4 = "0.0.0.0:0".parse()?;
-//! let socket = UdpSocket::bind(&bind_addr.into())?;
-//! let node = KRPCNode::new(socket);
-//! let node_id = NodeID::random();
-//! let (send_transport, inbound_requests) = node.serve();
-//! let request_transport = RequestTransport::new(node_id, send_transport);
+//! #[tokio::main(flavor = "current_thread")]
+//! async fn main() -> Result<(), Error> {
+//!     let bind_addr: SocketAddrV4 = "0.0.0.0:0".parse()?;
+//!     let socket = UdpSocket::bind::<SocketAddrV4>(bind_addr).await?;
+//!     let node = KRPCNode::new(socket);
+//!     let node_id = NodeID::random();
+//!     let (send_transport, inbound_requests) = node.serve();
+//!     let request_transport = RequestTransport::new(node_id, send_transport);
 //!
-//! let mut runtime = Runtime::new()?;
-//! runtime.spawn(
-//!     inbound_requests
-//!         .map_err(|err| println!("Error in Inbound Requests: {}", err))
-//!         .for_each(|_| future::ready(())),
-//! );
+//!     spawn(
+//!         inbound_requests
+//!             .map_err(|err| println!("Error in Inbound Requests: {}", err))
+//!             .for_each(|_| future::ready(())),
+//!     );
 //!
-//! let bootstrap_node_addr: SocketAddrV4 = "67.215.246.10:6881".parse()?;
-//! let response = runtime.block_on(request_transport.ping(bootstrap_node_addr))?;
+//!     let bootstrap_node_addr: SocketAddrV4 = "67.215.246.10:6881".parse()?;
+//!     let response = request_transport.ping(bootstrap_node_addr).await?;
 //!
-//! println!("{:?}", response);
+//!     println!("{:?}", response);
 //!
-//! # Ok(())
-//! # }
+//!     Ok(())
+//! }
 //! ```
 
 // TODO: Not Sold on SendTransport Name

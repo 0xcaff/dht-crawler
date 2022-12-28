@@ -3,9 +3,7 @@ use crate::{
     node_contact_state::NodeContactState,
     transport::errors::ErrorKind,
 };
-use failure::_core::time::Duration;
 use krpc_encoding::NodeID;
-use tokio::prelude::FutureExt;
 use tokio_krpc::RequestTransport;
 
 /// A send transport used for checking liveliness of nodes in the routing table.
@@ -33,8 +31,7 @@ impl WrappedSendTransport {
         Ok(self
             .request_transport
             .ping(node.address)
-            .timeout(Duration::from_secs(3))
-            .await?
+            .await
             .map_err(|cause| ErrorKind::SendError { cause })?)
     }
 }
@@ -94,12 +91,6 @@ mod errors {
     impl From<Context<ErrorKind>> for Error {
         fn from(inner: Context<ErrorKind>) -> Error {
             Error { inner }
-        }
-    }
-
-    impl From<tokio::timer::timeout::Elapsed> for Error {
-        fn from(_: tokio::timer::timeout::Elapsed) -> Self {
-            ErrorKind::Timeout.into()
         }
     }
 }

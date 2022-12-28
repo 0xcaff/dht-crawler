@@ -11,41 +11,33 @@ use crate::{
 };
 use futures::{
     future,
-    TryStream,
+    Stream,
     TryStreamExt,
 };
 use krpc_encoding::Message;
 use std::{
     self,
     net::SocketAddr,
+    sync::Arc,
 };
 use tokio::{
     self,
-    net::udp::{
-        split::{
-            UdpSocketRecvHalf,
-            UdpSocketSendHalf,
-        },
-        UdpSocket,
-    },
+    net::UdpSocket,
 };
 
 /// Handles making queries to other nodes, receiving responses and processing
 /// queries from other nodes
 pub struct KRPCNode {
-    send_half: UdpSocketSendHalf,
-    recv_half: UdpSocketRecvHalf,
+    socket: Arc<UdpSocket>,
     transactions: ActiveTransactions,
 }
 
 impl KRPCNode {
     pub fn new(socket: UdpSocket) -> KRPCNode {
-        let (recv_half, send_half) = socket.split();
         let transactions = ActiveTransactions::new();
 
         KRPCNode {
-            send_half,
-            recv_half,
+            socket: Arc::new(socket),
             transactions,
         }
     }
@@ -63,11 +55,14 @@ impl KRPCNode {
         self,
     ) -> (
         SendTransport,
-        impl TryStream<Ok = (InboundQuery, SocketAddr), Error = Error>,
+        impl Stream<Item = Result<(InboundQuery, SocketAddr), Error>>,
     ) {
         let transactions = self.transactions.clone();
 
-        let query_stream = receive_inbound_messages(self.recv_half)
+        let recv_half = self.socket.clone();
+        let send_half = self.socket;
+
+        let query_stream = receive_inbound_messages(recv_half)
             .map_ok(move |(envelope, from_addr)| match envelope.message_type {
                 Message::Response { response } => {
                     transactions.handle_response(InboundResponseEnvelope {
@@ -93,7 +88,7 @@ impl KRPCNode {
             .try_filter_map(|result| future::ready(result));
 
         (
-            SendTransport::new(self.send_half, self.transactions),
+            SendTransport::new(send_half, self.transactions),
             query_stream,
         )
     }

@@ -13,14 +13,15 @@ use krpc_encoding::Envelope;
 use std::{
     self,
     net::SocketAddr,
+    sync::Arc,
 };
 use tokio::{
     self,
-    net::udp::split::UdpSocketRecvHalf,
+    net::UdpSocket,
 };
 
 pub fn receive_inbound_messages(
-    recv_socket: UdpSocketRecvHalf,
+    recv_socket: Arc<UdpSocket>,
 ) -> impl TryStream<Ok = (Envelope, SocketAddr), Error = Error> {
     let recv_buffer = [0 as u8; 1024];
 
@@ -30,19 +31,16 @@ pub fn receive_inbound_messages(
 }
 
 async fn receive_inbound_message_wrapper(
-    mut recv_socket: UdpSocketRecvHalf,
+    recv_socket: Arc<UdpSocket>,
     mut recv_buffer: [u8; 1024],
-) -> Option<(
-    Result<(Envelope, SocketAddr)>,
-    (UdpSocketRecvHalf, [u8; 1024]),
-)> {
-    let result = receive_inbound_message(&mut recv_socket, &mut recv_buffer).await;
+) -> Option<(Result<(Envelope, SocketAddr)>, (Arc<UdpSocket>, [u8; 1024]))> {
+    let result = receive_inbound_message(recv_socket.clone(), &mut recv_buffer).await;
 
     Some((result, (recv_socket, recv_buffer)))
 }
 
 async fn receive_inbound_message(
-    recv_socket: &mut UdpSocketRecvHalf,
+    recv_socket: Arc<UdpSocket>,
     recv_buffer: &mut [u8; 1024],
 ) -> Result<(Envelope, SocketAddr)> {
     let (size, from_addr) = recv_socket

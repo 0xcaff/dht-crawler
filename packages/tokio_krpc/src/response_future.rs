@@ -5,22 +5,21 @@ use crate::{
         ResponseType,
     },
     send_errors::{
-        Error,
         ErrorKind,
         Result,
     },
     transaction_id::TransactionId,
 };
-use futures::{
-    TryFuture,
-    TryFutureExt,
-};
+use futures::TryFutureExt;
+use std::future::Future;
 
 use krpc_encoding as proto;
-use std::pin::Pin;
-use tokio::prelude::{
-    task::Context,
-    *,
+use std::{
+    pin::Pin,
+    task::{
+        Context,
+        Poll,
+    },
 };
 
 /// A future which resolves when the response for a transaction appears in a
@@ -54,11 +53,10 @@ impl ResponseFuture {
     }
 }
 
-impl TryFuture for ResponseFuture {
-    type Ok = InboundResponseEnvelope;
-    type Error = Error;
+impl Future for ResponseFuture {
+    type Output = Result<InboundResponseEnvelope>;
 
-    fn try_poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<Self::Ok>> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         self.transactions
             .poll_response(self.transaction_id, cx.waker())
     }

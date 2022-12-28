@@ -11,7 +11,6 @@ use std::{
     net::SocketAddrV6,
     sync::PoisonError,
 };
-use tokio::timer::timeout;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -110,12 +109,6 @@ impl From<Context<ErrorKind>> for Error {
 impl<Guard> From<PoisonError<Guard>> for Error {
     fn from(_err: PoisonError<Guard>) -> Error {
         ErrorKind::LockPoisoned.into()
-    }
-}
-
-impl From<timeout::Elapsed> for Error {
-    fn from(_err: timeout::Elapsed) -> Self {
-        ErrorKind::Timeout.into()
     }
 }
 

@@ -14,21 +14,21 @@ use krpc_encoding::{
     Message,
     Query,
 };
-use std::net::SocketAddr;
-use tokio::net::udp::split::UdpSocketSendHalf;
+use std::{
+    net::SocketAddr,
+    sync::Arc,
+};
+use tokio::net::UdpSocket;
 
 /// Low-level wrapper around a UDP socket for sending KRPC queries and
 /// responses.
 pub struct SendTransport {
-    socket: Mutex<UdpSocketSendHalf>,
+    socket: Mutex<Arc<UdpSocket>>,
     transactions: ActiveTransactions,
 }
 
 impl SendTransport {
-    pub(crate) fn new(
-        socket: UdpSocketSendHalf,
-        transactions: ActiveTransactions,
-    ) -> SendTransport {
+    pub(crate) fn new(socket: Arc<UdpSocket>, transactions: ActiveTransactions) -> SendTransport {
         SendTransport {
             socket: Mutex::new(socket),
             transactions,
@@ -41,7 +41,7 @@ impl SendTransport {
             .encode()
             .map_err(|cause| ErrorKind::SendEncodingError { cause })?;
 
-        let mut socket = self.socket.lock().await;
+        let socket = self.socket.lock().await;
 
         socket
             .send_to(&encoded, &address)

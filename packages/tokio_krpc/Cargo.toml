@@ -10,7 +10,10 @@ bytes = "0.4.10"
 rand = "0.5.5"
 failure = "0.1.2"
 failure_derive = "0.1.2"
-tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
-futures-preview = "0.3.0-alpha.17"
-futures-util-preview = "0.3.0-alpha.17"
+tokio = { version = "1.23.0", features = ["net"] }
+futures = "0.3.25"
+futures-util = "0.3.25"
 krpc_encoding = { path = "../krpc_encoding" }
+
+[dev-dependencies]
+tokio = { version = "1.23.0", features = ["net", "macros", "rt"] }

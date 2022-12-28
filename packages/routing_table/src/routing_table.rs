@@ -8,10 +8,7 @@ use krpc_encoding::{
     NodeID,
     NodeInfo,
 };
-use tokio_krpc::{
-    RequestTransport,
-    SendTransport,
-};
+use tokio_krpc::RequestTransport;
 
 /// A routing table which holds information about nodes in the network.
 pub struct RoutingTable {

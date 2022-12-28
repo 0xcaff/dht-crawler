@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 // TODO: Tests
 // TODO: Docs
 

@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 //! Please note the terminology used in this library to avoid confusion. A
 //! "peer" is a client/server listening on a TCP port that implements the
 //! BitTorrent protocol. A "node" is a client/server listening on a UDP port

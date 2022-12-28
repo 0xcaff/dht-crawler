@@ -8,10 +8,8 @@ use crate::{
         RoutingTable,
     },
 };
-use futures::{
-    future,
-    TryStreamExt,
-};
+use futures::future;
+use futures_util::TryStreamExt;
 use krpc_encoding::{
     NodeID,
     NodeInfo,
@@ -27,12 +25,8 @@ use std::{
         Arc,
         Mutex,
     },
-    time::Duration,
 };
-use tokio::{
-    net::UdpSocket,
-    prelude::FutureExt,
-};
+use tokio::net::UdpSocket;
 use tokio_krpc::{
     KRPCNode,
     PortType,
@@ -57,8 +51,10 @@ impl Dht {
 
     /// Start handling inbound messages from other peers in the network.
     /// Continues to handle while the future is polled.
-    pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl future::Future<Output = ()>)> {
-        let socket = UdpSocket::bind(&bind_addr).map_err(|cause| ErrorKind::BindError { cause })?;
+    pub async fn start(bind_addr: SocketAddr) -> Result<(Dht, impl future::Future<Output = ()>)> {
+        let socket = UdpSocket::bind(&bind_addr)
+            .await
+            .map_err(|cause| ErrorKind::BindError { cause })?;
         let transport = KRPCNode::new(socket);
         let (send_transport, request_stream) = transport.serve();
 
@@ -110,8 +106,7 @@ impl Dht {
         let response = request_transport
             .find_node(addr.clone().into(), self_id.clone())
             // todo: standardize timeout
-            .timeout(Duration::from_secs(3))
-            .await??;
+            .await?;
 
         let mut node = Node::new(response.id, addr.into());
         node.mark_successful_request();
@@ -174,22 +169,24 @@ mod tests {
         Dht,
     };
     use failure::Error;
-    use tokio::runtime::current_thread::Runtime;
+    use tokio::{
+        spawn,
+        task::spawn_local,
+    };
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn test_bootstrap() -> Result<(), Error> {
+    async fn test_bootstrap() -> Result<(), Error> {
         let addr = "0.0.0.0:23170".into_addr();
-        let (dht, dht_future) = Dht::start(addr)?;
+        let (dht, dht_future) = Dht::start(addr).await?;
 
         let bootstrap_future = dht.bootstrap_routing_table(vec![
             "router.utorrent.com:6881".into_addr().into_v4()?,
             "router.bittorrent.com:6881".into_addr().into_v4()?,
         ]);
 
-        let mut runtime = Runtime::new()?;
-        runtime.spawn(dht_future);
-        runtime.block_on(bootstrap_future)?;
+        spawn_local(dht_future);
+        bootstrap_future.await?;
 
         let routing_table = dht.routing_table.lock().map_err(DhtError::from)?;
 

@@ -14,10 +14,10 @@ use std::{
         Arc,
         Mutex,
     },
-};
-use tokio::prelude::{
-    task::Waker,
-    Poll,
+    task::{
+        Poll,
+        Waker,
+    },
 };
 
 /// A thread-safe container for information about active transactions. Shared

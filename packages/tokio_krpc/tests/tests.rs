@@ -14,15 +14,15 @@ use std::{
 };
 use tokio::{
     net::UdpSocket,
-    runtime::current_thread::Runtime,
+    spawn,
 };
 use tokio_krpc::{
     KRPCNode,
     RequestTransport,
 };
 
-#[test]
-fn ping() -> Result<(), Error> {
+#[tokio::test]
+async fn ping() -> Result<(), Error> {
     let bind = SocketAddr::from_str("0.0.0.0:0")?;
     let remote = "router.bittorrent.com:6881"
         .to_socket_addrs()
@@ -36,19 +36,18 @@ fn ping() -> Result<(), Error> {
     };
 
     let id = NodeID::random();
-    let mut rt = Runtime::new()?;
-    let socket = UdpSocket::bind(&bind)?;
+    let socket = UdpSocket::bind(&bind).await?;
     let recv_transport = KRPCNode::new(socket);
     let (send_transport, request_stream) = recv_transport.serve();
     let request_transport = RequestTransport::new(id, send_transport);
 
-    rt.spawn(
+    spawn(
         request_stream
             .map_err(|err| println!("Error in Request Stream: {}", err))
             .for_each(|_| future::ready(())),
     );
 
-    let response = rt.block_on(request_transport.ping(remote_v4))?;
+    let response = request_transport.ping(remote_v4).await?;
 
     assert_ne!(response, b"0000000000000000000000000000000000000000".into());
 
