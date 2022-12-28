@@ -44,6 +44,7 @@ impl KBucket {
         node_info: &NodeInfo,
         send_transport: &WrappedSendTransport,
     ) -> Option<usize> {
+        // todo: should we have the send transport live with the bucket
         if let Some(idx) = self.contacts.update_node_id(&node_info.node_id) {
             return Some(idx);
         }
@@ -64,6 +65,7 @@ impl KBucket {
                 None => return None,
             };
 
+            // todo: move this pinging nodes thing somewhere else
             let _ = send_transport.ping(&mut questionable_node).await;
 
             if let Some(idx) = self.contacts.update_node_id(&node_info.node_id) {

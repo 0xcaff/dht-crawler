@@ -43,6 +43,9 @@ impl RoutingTable {
         node_info: &NodeInfo,
     ) -> Option<&'a mut NodeContactState> {
         let (depth, bucket) = Self::find_bucket_from(&mut self.root, &node_info.node_id, 0);
+        // todo: why will this always return a left bucket
+        // todo: fix compilation
+
         let leaf_bucket = bucket.unwrap_as_leaf();
         if let Some(idx) = leaf_bucket.try_add(node_info, &self.send_transport).await {
             unsafe {
@@ -70,6 +73,7 @@ impl RoutingTable {
     }
 
     pub fn find_node(&self, _id: &NodeID) -> FindNodeResult {
+        // todo: implement
         unimplemented!()
     }
 
@@ -79,6 +83,8 @@ impl RoutingTable {
         mut depth: usize,
     ) -> (usize, &'a mut FullBTreeNode<KBucket>) {
         let mut b_tree_node = root;
+
+        // todo: types
 
         loop {
             match b_tree_node {

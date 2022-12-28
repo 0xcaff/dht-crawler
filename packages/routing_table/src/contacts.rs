@@ -12,7 +12,10 @@ const K_BUCKET_SIZE: usize = 8;
 /// A container of recently contacted nodes sorted from most recently accessed
 /// to least recently accessed.
 pub struct Contacts {
+    // todo: say something about how this is sorted
     contacts: Vec<NodeContactState>,
+
+    // todo: maybe sort at read time instead of write time
 }
 
 impl Contacts {

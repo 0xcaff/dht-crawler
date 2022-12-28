@@ -53,6 +53,8 @@ pub struct Dht {
 }
 
 impl Dht {
+    // todo: why the mutex and arc everwhere?
+
     /// Start handling inbound messages from other peers in the network.
     /// Continues to handle while the future is polled.
     pub fn start(bind_addr: SocketAddr) -> Result<(Dht, impl future::Future<Output = ()>)> {
@@ -102,8 +104,12 @@ impl Dht {
         request_transport: Arc<RequestTransport>,
         routing_table_arc: Arc<Mutex<RoutingTable>>,
     ) -> Result<()> {
+        // todo: weird recursive thing
+        // todo: populate routing table
+
         let response = request_transport
             .find_node(addr.clone().into(), self_id.clone())
+            // todo: standardize timeout
             .timeout(Duration::from_secs(3))
             .await??;
 
