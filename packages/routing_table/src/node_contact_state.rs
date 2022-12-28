@@ -69,6 +69,17 @@ impl NodeContactState {
             _ => NodeState::Questionable,
         }
     }
+
+    pub fn last_contacted(&self) -> Option<NaiveDateTime> {
+        match (self.last_request_from, self.last_successful_query_to) {
+            (Some(last_request_from), Some(last_request_to)) => {
+                Some(last_request_from.max(last_request_to))
+            }
+            (Some(last_request_from), None) => Some(last_request_from),
+            (None, Some(last_request_to)) => Some(last_request_to),
+            (None, None) => None,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -160,6 +171,73 @@ mod tests {
         };
 
         assert_eq!(node.state(), NodeState::Good);
+
+        Ok(())
+    }
+
+    #[test]
+    fn last_contacted_none() -> Result<(), Error> {
+        let node = NodeContactState {
+            id: b"0000000000000000000000000000000000000000".into(),
+            address: "127.0.0.1:3000".parse()?,
+            last_successful_query_to: None,
+            last_request_from: None,
+            failed_queries: 0,
+        };
+
+        assert_eq!(node.last_contacted(), None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn last_contacted_query() -> Result<(), Error> {
+        let epoch = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 980);
+
+        let node = NodeContactState {
+            id: b"0000000000000000000000000000000000000000".into(),
+            address: "127.0.0.1:3000".parse()?,
+            last_successful_query_to: Some(epoch),
+            last_request_from: None,
+            failed_queries: 0,
+        };
+
+        assert_eq!(node.last_contacted(), Some(epoch));
+
+        Ok(())
+    }
+
+    #[test]
+    fn last_contacted_request() -> Result<(), Error> {
+        let epoch = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 980);
+
+        let node = NodeContactState {
+            id: b"0000000000000000000000000000000000000000".into(),
+            address: "127.0.0.1:3000".parse()?,
+            last_successful_query_to: None,
+            last_request_from: Some(epoch),
+            failed_queries: 0,
+        };
+
+        assert_eq!(node.last_contacted(), Some(epoch));
+
+        Ok(())
+    }
+
+    #[test]
+    fn last_contacted_both() -> Result<(), Error> {
+        let earlier = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 980);
+        let later = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 10, 980);
+
+        let node = NodeContactState {
+            id: b"0000000000000000000000000000000000000000".into(),
+            address: "127.0.0.1:3000".parse()?,
+            last_successful_query_to: Some(earlier),
+            last_request_from: Some(later),
+            failed_queries: 0,
+        };
+
+        assert_eq!(node.last_contacted(), Some(later));
 
         Ok(())
     }

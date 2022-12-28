@@ -6,16 +6,13 @@ use krpc_encoding::{
     NodeID,
     NodeInfo,
 };
+use std::cmp::Ordering;
 
 const K_BUCKET_SIZE: usize = 8;
 
-/// A container of recently contacted nodes sorted from most recently accessed
-/// to least recently accessed.
+/// A container of recently contacted nodes.
 pub struct Contacts {
-    // todo: say something about how this is sorted
     contacts: Vec<NodeContactState>,
-
-    // todo: maybe sort at read time instead of write time
 }
 
 impl Contacts {
@@ -25,57 +22,48 @@ impl Contacts {
         }
     }
 
-    pub(crate) fn from_existing(contacts: Vec<NodeContactState>) -> Contacts {
+    fn from_existing(contacts: Vec<NodeContactState>) -> Contacts {
         Contacts { contacts }
     }
 
-    /// Gets a node by id. Returns [`None`] if the node_id isn't found.
-    pub fn update_node_id(&mut self, node_id: &NodeID) -> Option<usize> {
-        let index = self
-            .contacts
-            .iter()
-            .enumerate()
-            .find(|(_index, node)| &node.id == node_id)
-            .map(|(index, _node)| index)?;
-
-        let node = self.contacts.remove(index);
-        self.contacts.insert(0, node);
-
-        Some(0)
+    pub fn get_node_mut(&mut self, node_id: &NodeID) -> Option<&mut NodeContactState> {
+        self.contacts
+            .iter_mut()
+            .find(|node| &node.id == node_id)
     }
 
-    /// Tries to removes the least recently seen bad node. Returns whether or
-    /// not a node was removed.
-    pub fn try_remove_bad_node(&mut self) -> bool {
-        let bad_node_index = self
-            .contacts
+    fn get_least_recently_contacted(&self, state: NodeState) -> Option<usize> {
+        self.contacts
             .iter()
-            .rev()
             .enumerate()
-            .find(|(_index, node)| node.state() == NodeState::Bad)
-            .map(|(index, _node)| index);
+            .filter(|(idx, it)| it.state() == state)
+            .min_by(
+                |(_, lhs), (_, rhs)| match (lhs.last_contacted(), rhs.last_contacted()) {
+                    (None, None) => Ordering::Equal,
+                    (Some(lhs_last_contacted), Some(rhs_last_contacted)) => {
+                        lhs_last_contacted.cmp(&rhs_last_contacted)
+                    }
+                    (Some(_), None) => Ordering::Greater,
+                    (None, Some(_)) => Ordering::Less,
+                },
+            )
+            .map(|(idx, _ )| idx)
+    }
 
-        bad_node_index
-            .map(|bad_node_index| self.contacts.remove(bad_node_index))
-            .is_some()
+    /// Removes the least recently seen bad node if there is one.
+    pub fn take_bad_node(&mut self) -> Option<NodeContactState> {
+        self.get_least_recently_contacted(NodeState::Bad)
+            .map(|idx| self.contacts.remove(idx))
     }
 
     /// Returns the least recently seen questionable node.
-    pub fn questionable_node(&mut self) -> Option<(usize, NodeContactState)> {
-        let (index, _) = self
-            .contacts
-            .iter()
-            .rev()
-            .enumerate()
-            .find(|(_index, node)| node.state() == NodeState::Questionable)?;
-
-        let node = self.contacts.remove(index);
-
-        Some((index, node))
+    pub fn take_questionable_node(&mut self) -> Option<NodeContactState> {
+        self.get_least_recently_contacted(NodeState::Questionable)
+            .map(|idx| self.contacts.remove(idx))
     }
 
     /// Returns true if there definitely is space in the bucket.
-    pub fn has_remaining_space(&self) -> bool {
+    pub fn definitely_has_remaining_space(&self) -> bool {
         self.contacts.len() < K_BUCKET_SIZE
     }
 
@@ -83,19 +71,12 @@ impl Contacts {
         &mut self.contacts[index]
     }
 
-    pub fn insert_back(&mut self, index: usize, node: NodeContactState) {
-        self.contacts.insert(index, node)
-    }
-
-    pub fn insert_front(&mut self, node: NodeContactState) {
-        self.contacts.insert(0, node)
-    }
-
     pub fn add_new(&mut self, node_info: &NodeInfo) -> usize {
+        // todo: initialization condition
         let node_contact_state =
             NodeContactState::new(node_info.node_id.clone(), node_info.address);
 
-        self.insert_front(node_contact_state);
+        self.contacts.push(node_contact_state);
 
         0
     }
@@ -110,5 +91,44 @@ impl Contacts {
             Contacts::from_existing(zero_bit_nodes),
             Contacts::from_existing(one_bit_nodes),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        contacts::Contacts,
+        node_contact_state::NodeContactState,
+    };
+    use krpc_encoding::{
+        NodeID,
+    };
+    use failure::Error;
+
+    fn make_node() -> Result<NodeContactState, Error> {
+        Ok(NodeContactState::new(
+            NodeID::random(),
+            "127.0.0.1:3000".parse()?,
+        ))
+    }
+
+    #[test]
+    fn test_take_bad_node() -> Result<(), Error> {
+        let questionable_node = make_node()?;
+
+        let mut bad_node = make_node()?;
+        bad_node.mark_failed_query();
+        bad_node.mark_failed_query();
+
+        let bad_node_id = bad_node.id.clone();
+
+        let mut contacts = Contacts::from_existing(vec![questionable_node, bad_node]);
+
+        assert_eq!(
+            contacts.take_bad_node().map(|node| node.id),
+            Some(bad_node_id)
+        );
+
+        Ok(())
     }
 }
