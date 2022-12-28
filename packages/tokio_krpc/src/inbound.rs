@@ -25,18 +25,14 @@ pub fn receive_inbound_messages(
 ) -> impl TryStream<Ok = (Envelope, SocketAddr), Error = Error> {
     let recv_buffer = [0 as u8; 1024];
 
-    stream::unfold((recv_socket, recv_buffer), |(recv_socket, recv_buffer)| {
-        receive_inbound_message_wrapper(recv_socket, recv_buffer)
-    })
-}
+    stream::unfold(
+        (recv_socket, recv_buffer),
+        |(recv_socket, mut recv_buffer)| async move {
+            let result = receive_inbound_message(recv_socket.clone(), &mut recv_buffer).await;
 
-async fn receive_inbound_message_wrapper(
-    recv_socket: Arc<UdpSocket>,
-    mut recv_buffer: [u8; 1024],
-) -> Option<(Result<(Envelope, SocketAddr)>, (Arc<UdpSocket>, [u8; 1024]))> {
-    let result = receive_inbound_message(recv_socket.clone(), &mut recv_buffer).await;
-
-    Some((result, (recv_socket, recv_buffer)))
+            Some((result, (recv_socket, recv_buffer)))
+        },
+    )
 }
 
 async fn receive_inbound_message(
