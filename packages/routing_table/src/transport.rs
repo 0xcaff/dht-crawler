@@ -1,38 +1,41 @@
 use self::errors::Result;
 use crate::{
     node_contact_state::NodeContactState,
-    transport::errors::ErrorKind,
+    transport::errors::{
+        Error,
+        ErrorKind,
+    },
 };
-use krpc_encoding::NodeID;
 use tokio_krpc::RequestTransport;
 
-/// A send transport used for checking liveliness of nodes in the routing table.
-pub struct WrappedSendTransport {
+/// A transport used for communicating with other nodes which keeps liveness
+/// information up to date.
+pub struct LivenessTransport {
     request_transport: RequestTransport,
 }
 
-impl WrappedSendTransport {
-    pub fn new(request_transport: RequestTransport) -> WrappedSendTransport {
-        WrappedSendTransport { request_transport }
+impl LivenessTransport {
+    pub fn new(request_transport: RequestTransport) -> LivenessTransport {
+        LivenessTransport { request_transport }
     }
 
-    pub async fn ping(&self, node: &mut NodeContactState) -> Result<NodeID> {
-        let result: Result<NodeID> = self.ping_inner(node).await;
-
-        match result {
-            Ok(_) => node.mark_successful_query(),
-            Err(_) => node.mark_failed_query(),
-        };
-
-        result
-    }
-
-    async fn ping_inner(&self, node: &mut NodeContactState) -> Result<NodeID> {
-        Ok(self
-            .request_transport
-            .ping(node.address)
-            .await
-            .map_err(|cause| ErrorKind::SendError { cause })?)
+    pub async fn ping(&self, node: &mut NodeContactState) -> Result<()> {
+        Ok(node.update_from_result(
+            self.request_transport
+                .ping(node.address)
+                .await
+                .map_err(|err| err.into())
+                .and_then(|node_id| {
+                    if node_id != node.id {
+                        Err(Error::from(ErrorKind::PingIdMismatch {
+                            got: node_id,
+                            expected: node.id.clone(),
+                        }))
+                    } else {
+                        Ok(())
+                    }
+                }),
+        )?)
     }
 }
 
@@ -42,6 +45,7 @@ mod errors {
         Context,
         Fail,
     };
+    use krpc_encoding::NodeID;
     use std::fmt;
     use tokio_krpc::send_errors;
 
@@ -52,6 +56,9 @@ mod errors {
             #[fail(cause)]
             cause: send_errors::Error,
         },
+
+        #[fail(display = "node responded with unexpected id")]
+        PingIdMismatch { got: NodeID, expected: NodeID },
 
         #[fail(display = "request timed out")]
         Timeout,
@@ -91,6 +98,12 @@ mod errors {
     impl From<Context<ErrorKind>> for Error {
         fn from(inner: Context<ErrorKind>) -> Error {
             Error { inner }
+        }
+    }
+
+    impl From<send_errors::Error> for Error {
+        fn from(cause: send_errors::Error) -> Self {
+            ErrorKind::SendError { cause }.into()
         }
     }
 }

@@ -33,7 +33,6 @@ impl GetPeersResponse {
                 message_type: GetPeersResponseType::NextHop(nodes),
             },
             got => Err(ErrorKind::InvalidResponseType {
-                // TODO: Pass In Expected
                 expected: "GetPeersResponse (GetPeers or NextHop)",
                 got,
             })?,

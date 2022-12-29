@@ -2,11 +2,12 @@ use crate::{
     full_b_tree::FullBTreeNode,
     k_bucket::KBucket,
     node_contact_state::NodeContactState,
-    transport::WrappedSendTransport,
+    transport::LivenessTransport,
 };
 use krpc_encoding::{
     NodeID,
     NodeInfo,
+    NODE_ID_SIZE_BITS,
 };
 use tokio_krpc::RequestTransport;
 
@@ -14,7 +15,7 @@ use tokio_krpc::RequestTransport;
 pub struct RoutingTable {
     id: NodeID,
     root: FullBTreeNode<KBucket>,
-    send_transport: WrappedSendTransport,
+    transport: LivenessTransport,
 }
 
 impl RoutingTable {
@@ -22,51 +23,16 @@ impl RoutingTable {
         RoutingTable {
             id,
             root: FullBTreeNode::Leaf(KBucket::initial()),
-            send_transport: WrappedSendTransport::new(request_transport),
+            transport: LivenessTransport::new(request_transport),
         }
     }
 
-    /// Tries to add a node to the routing table.
+    /// Tries to add a node to the routing table, evicting nodes which have
+    /// gone offline and growing the routing table as needed.
     ///
-    /// If a bucket is full:
-    /// * and the bucket is a near bucket, it is split.
-    /// * and is a far bucket or can no-longer be split, first bad nodes are
-    ///   evicted, then and questionable nodes are queried. If any questionable
-    ///   nodes turn out to be bad they are evicted.
-    ///
-    /// If there's no where to put a node, it is not added to the routing table.
-    pub async fn add_node<'a>(
-        &'a mut self,
-        node_info: &NodeInfo,
-    ) -> Option<&'a mut NodeContactState> {
-        let (depth, bucket) = Self::find_bucket_from(&mut self.root, &node_info.node_id, 0);
-        // todo: why will this always return a left bucket
-        // todo: fix compilation
-
-        let leaf_bucket = bucket.unwrap_as_leaf();
-        if let Some(idx) = leaf_bucket.try_add(node_info, &self.send_transport).await {
-            unsafe {
-                return Some((*(leaf_bucket as *mut KBucket)).get_mut(idx));
-            }
-        }
-
-        if leaf_bucket.can_split() {
-            bucket.split(&self.id, depth);
-
-            let (_next_depth, next_bucket) =
-                Self::find_bucket_from(bucket, &node_info.node_id, depth);
-            let next_leaf_bucket = next_bucket.unwrap_as_leaf();
-            if let Some(idx) = next_leaf_bucket
-                .try_add(node_info, &self.send_transport)
-                .await
-            {
-                unsafe {
-                    return Some((*(next_leaf_bucket as *mut KBucket)).get_mut(idx));
-                }
-            }
-        }
-
-        None
+    /// If the routing table is full, returns None.
+    pub async fn add_node(&mut self, node_info: &NodeInfo) -> Option<&mut NodeContactState> {
+        self.add_node_rec(&mut self.root, node_info, 0).await
     }
 
     pub fn find_node(&self, _id: &NodeID) -> FindNodeResult {
@@ -74,30 +40,51 @@ impl RoutingTable {
         unimplemented!()
     }
 
-    fn find_bucket_from<'a>(
+    fn find_bucket_mut_recursive<'a>(
         root: &'a mut FullBTreeNode<KBucket>,
         node_id: &NodeID,
-        mut depth: usize,
-    ) -> (usize, &'a mut FullBTreeNode<KBucket>) {
-        let mut b_tree_node = root;
+        depth: usize,
+    ) -> (&'a mut FullBTreeNode<KBucket>, usize) {
+        match root {
+            FullBTreeNode::Inner(mut inner) => {
+                let bit = node_id.nth_bit(depth);
 
-        // todo: types
-
-        loop {
-            match b_tree_node {
-                FullBTreeNode::Leaf(_) => return (depth, b_tree_node),
-                FullBTreeNode::Inner(inner) => {
-                    let bit = node_id.nth_bit(depth);
-                    depth += 1;
-
-                    b_tree_node = if bit {
-                        &mut inner.left
-                    } else {
-                        &mut inner.right
-                    }
-                }
+                return Self::find_bucket_mut_recursive(
+                    &mut (if bit { inner.left } else { inner.right }),
+                    node_id,
+                    depth + 1,
+                );
             }
+            FullBTreeNode::Leaf(_) => (root, depth),
         }
+    }
+
+    async fn add_node_rec<'a>(
+        &'a mut self,
+        root_node: &'a mut FullBTreeNode<KBucket>,
+        node_info: &NodeInfo,
+        starting_depth: usize,
+    ) -> Option<&'a mut NodeContactState> {
+        let (leaf_bucket, depth) =
+            Self::find_bucket_mut_recursive(root_node, &node_info.node_id, starting_depth);
+
+        let leaf_k_bucket = leaf_bucket.unwrap_as_leaf();
+        if let Some(node) = leaf_k_bucket.try_add(node_info, &self.transport).await {
+            return Some(node);
+        }
+
+        if !leaf_k_bucket.can_split() {
+            return None;
+        }
+
+        // don't allow a tree with more than 160 levels
+        if depth >= NODE_ID_SIZE_BITS - 1 {
+            return None;
+        }
+
+        leaf_bucket.split(&self.id, depth);
+
+        self.add_node_rec(leaf_bucket, node_info, depth).await
     }
 }
 

@@ -31,6 +31,10 @@ impl NodeContactState {
         }
     }
 
+    pub fn failed_queries(&self) -> u8 {
+        self.failed_queries
+    }
+
     /// Update internal state to reflect a successful query happened.
     pub fn mark_successful_query(&mut self) {
         self.failed_queries = 0;
@@ -79,6 +83,15 @@ impl NodeContactState {
             (None, Some(last_request_to)) => Some(last_request_to),
             (None, None) => None,
         }
+    }
+
+    pub fn update_from_result<T, E>(&mut self, result: Result<T, E>) -> Result<T, E> {
+        match result {
+            Ok(_) => self.mark_successful_query(),
+            Err(_) => self.mark_failed_query(),
+        };
+
+        result
     }
 }
 

@@ -21,6 +21,8 @@ use std::{
 #[derive(PartialEq, Eq, Clone, Hash)]
 pub struct NodeID(BigUint);
 
+pub const NODE_ID_SIZE_BITS: usize = 20 * 8;
+
 impl NodeID {
     pub fn new(id: BigUint) -> NodeID {
         NodeID(id)

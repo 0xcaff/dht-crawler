@@ -77,6 +77,9 @@ pub use self::{
         Query,
         Response,
     },
-    node_id::NodeID,
+    node_id::{
+        NodeID,
+        NODE_ID_SIZE_BITS,
+    },
     node_info::NodeInfo,
 };
