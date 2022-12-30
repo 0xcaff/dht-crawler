@@ -31,12 +31,16 @@ impl KBucket {
         }
     }
 
-    pub fn get_node_mut(&mut self, node_id: &NodeID) -> Option<&mut NodeContactState> {
-        self.contacts.iter_mut().find(|node| &node.id == node_id)
+    pub fn get_node_index(&self, node_id: &NodeID) -> Option<usize> {
+        self.contacts
+            .iter()
+            .enumerate()
+            .find(|(_, node)| &node.id == node_id)
+            .map(|(idx, node)| idx)
     }
 
-    pub fn get_node(&self, node_id: &NodeID) -> Option<&NodeContactState> {
-        self.contacts.iter().find(|node| &node.id == node_id)
+    pub fn get_node_mut(&mut self, index: usize) -> &mut NodeContactState {
+        &mut self.contacts[index]
     }
 
     /// Removes a bad node if there is one.
@@ -84,12 +88,13 @@ impl KBucket {
         self.contacts.len() < K_BUCKET_SIZE
     }
 
-    fn add_node(&mut self, node_info: &NodeInfo) -> &mut NodeContactState {
+    fn add_node(&mut self, node_info: &NodeInfo) -> usize {
         let node_contact_state =
             NodeContactState::new(node_info.node_id.clone(), node_info.address);
 
         self.contacts.push(node_contact_state);
-        &mut self.contacts[self.contacts.len() - 1]
+        let len = self.contacts.len();
+        len - 1
     }
 
     /// Try to add node to this bucket. If the bucket is full, first tries to
@@ -99,14 +104,13 @@ impl KBucket {
         &mut self,
         node_info: &NodeInfo,
         transport: &LivenessTransport,
-    ) -> Option<&mut NodeContactState> {
-        // node already exists, do not add it again
-        {
-            let self_ref = self;
-            let retried_node =  self_ref.get_node_mut(&node_info.node_id);
-            if let Some(node) = retried_node {
-                return Some(node);
-            }
+    ) -> Option<usize> {
+        // It is necessary to split this into a check and then a separate get
+        // which does not borrow self because of limitations in the borrow
+        // checker.
+        // https://blog.rust-lang.org/2022/08/05/nll-by-default.html
+        if let Some(node_index) = self.get_node_index(&node_info.node_id) {
+            return Some(node_index);
         }
 
         // if there's space, add without worrying about evictions
@@ -121,7 +125,8 @@ impl KBucket {
         }
 
         loop {
-            // try to evict questionable nodes until there are no more questionable nodes
+            // try to evict questionable nodes until there are no more
+            // questionable nodes
             match self.evict_questionable_node(transport).await {
                 None => {
                     break;
@@ -138,7 +143,7 @@ impl KBucket {
         None
     }
 
-    pub fn split(mut self, owner_id: &NodeID, depth: usize) -> (KBucket, KBucket) {
+    pub fn split(&mut self, owner_id: &NodeID, depth: usize) -> (KBucket, KBucket) {
         let (zero_bit_nodes, one_bit_nodes) = self
             .contacts
             .drain(..)

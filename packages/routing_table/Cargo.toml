@@ -10,6 +10,7 @@ futures = "0.3.25"
 futures-util = "0.3.25"
 tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
 num-bigint = "0.2.0"
+async-recursion = "1.0.0"
 failure = "0.1.2"
 tokio_krpc = { path = "../tokio_krpc" }
 krpc_encoding = { path = "../krpc_encoding" }
