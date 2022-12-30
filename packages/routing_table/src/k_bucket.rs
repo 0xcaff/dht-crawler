@@ -13,8 +13,15 @@ use krpc_encoding::{
     NodeID,
     NodeInfo,
 };
-use std::cmp::Ordering;
-use log::{debug, as_error};
+use log::{
+    as_error,
+    debug,
+};
+use std::{
+    cmp::Ordering,
+    iter::Filter,
+    slice::Iter,
+};
 
 const K_BUCKET_SIZE: usize = 8;
 
@@ -42,6 +49,13 @@ impl KBucket {
 
     pub fn get_node_mut(&mut self, index: usize) -> &mut NodeContactState {
         &mut self.contacts[index]
+    }
+
+    pub fn good_nodes(&self) -> impl Iterator<Item = NodeInfo> + '_ {
+        self.contacts
+            .iter()
+            .filter(|it| it.state() == NodeState::Good)
+            .map(|it| NodeInfo::new(it.id.clone(), it.address.clone()))
     }
 
     /// Removes a bad node if there is one.
@@ -191,9 +205,9 @@ impl KBucket {
         let result = request_transport.ping(&mut questionable_node).await;
 
         match result {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(err) => {
-                debug!(err = as_error!(err); "ping failed")
+                // debug!(err = as_error!(err); "ping failed")
             }
         };
 
@@ -287,3 +301,5 @@ mod tests {
         Ok(())
     }
 }
+
+// todo: write tests (run coverage and see what's missing)

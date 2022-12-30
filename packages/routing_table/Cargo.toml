@@ -14,5 +14,7 @@ async-recursion = "1.0.0"
 failure = "0.1.2"
 tokio_krpc = { path = "../tokio_krpc" }
 krpc_encoding = { path = "../krpc_encoding" }
-log = { version = "0.4.17", features = ["kv_unstable"] }
+log = { version = "0.4.17", features = ["kv_unstable_serde"] }
 tracing = "0.1.37"
+genawaiter = "0.99.1"
+serde = "1.0.152"

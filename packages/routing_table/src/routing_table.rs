@@ -1,3 +1,5 @@
+#![feature(generators, generator_trait)]
+
 use crate::{
     full_b_tree::FullBTreeNode,
     k_bucket::KBucket,
@@ -5,6 +7,13 @@ use crate::{
     transport::LivenessTransport,
 };
 use async_recursion::async_recursion;
+use genawaiter::{
+    sync::{
+        Gen,
+        GenBoxed,
+    },
+    Generator,
+};
 use krpc_encoding::{
     NodeID,
     NodeInfo,
@@ -36,9 +45,62 @@ impl RoutingTable {
         Self::add_node_rec(&self.id, &self.transport, &mut self.root, node_info, 0).await
     }
 
-    pub fn find_node(&self, _id: &NodeID) -> FindNodeResult {
-        // todo: implement
-        unimplemented!()
+    fn find_nodes_generator_rec(
+        root: &FullBTreeNode<KBucket>,
+        node_id: NodeID,
+        depth: usize,
+    ) -> GenBoxed<NodeInfo> {
+        Gen::new_boxed(|mut co| async move {
+            match root {
+                FullBTreeNode::Inner(ref inner) => {
+                    let bit = node_id.nth_bit(depth);
+                    let (matching_branch, other_branch) = if bit {
+                        (&inner.left, &inner.right)
+                    } else {
+                        (&inner.right, &inner.left)
+                    };
+
+                    for value in Self::find_nodes_generator_rec(matching_branch, node_id.clone(), depth + 1)
+                        .into_iter()
+                    {
+                        co.yield_(value).await;
+                    }
+
+                    for value in
+                        Self::find_nodes_generator_rec(other_branch, node_id.clone(), depth + 1).into_iter()
+                    {
+                        co.yield_(value).await;
+                    }
+                }
+                FullBTreeNode::Leaf(values) => {
+                    for node in values.good_nodes() {
+                        co.yield_(node);
+                    }
+                }
+            }
+        })
+    }
+
+    fn find_nodes_generator(&self) -> GenBoxed<NodeInfo> {
+        Self::find_nodes_generator_rec(&self.root, self.id.clone(), 0)
+    }
+
+    pub fn find_node(&self, id: &NodeID) -> FindNodeResult {
+        let closest_nodes = self
+            .find_nodes_generator()
+            .into_iter()
+            .take(8)
+            .collect::<Vec<NodeInfo>>();
+
+        match closest_nodes
+            .iter()
+            .enumerate()
+            .find(|(_, node)| &node.node_id == id)
+            .map(|(idx, _)| idx)
+        {
+            Some(node) => FindNodeResult::Node(closest_nodes[node].clone()),
+            None => FindNodeResult::Nodes(closest_nodes),
+        }
     }
 
     fn find_bucket_mut_recursive<'a>(
