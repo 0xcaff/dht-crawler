@@ -1,24 +1,20 @@
-#![feature(generators, generator_trait)]
-
 use crate::{
     full_b_tree::FullBTreeNode,
+    generator::{
+        GeneratorExt,
+        GeneratorToIterator,
+    },
     k_bucket::KBucket,
     node_contact_state::NodeContactState,
     transport::LivenessTransport,
 };
 use async_recursion::async_recursion;
-use genawaiter::{
-    sync::{
-        Gen,
-        GenBoxed,
-    },
-    Generator,
-};
 use krpc_encoding::{
     NodeID,
     NodeInfo,
     NODE_ID_SIZE_BITS,
 };
+use std::ops::Generator;
 use tokio_krpc::RequestTransport;
 
 /// A routing table which holds information about nodes in the network.
@@ -49,9 +45,9 @@ impl RoutingTable {
         root: &FullBTreeNode<KBucket>,
         node_id: NodeID,
         depth: usize,
-    ) -> GenBoxed<NodeInfo> {
-        Gen::new_boxed(|mut co| async move {
-            match root {
+    ) -> Box<dyn Iterator<Item = NodeInfo> + '_> {
+        Box::new(
+            (move || match root {
                 FullBTreeNode::Inner(ref inner) => {
                     let bit = node_id.nth_bit(depth);
                     let (matching_branch, other_branch) = if bit {
@@ -60,28 +56,29 @@ impl RoutingTable {
                         (&inner.right, &inner.left)
                     };
 
-                    for value in Self::find_nodes_generator_rec(matching_branch, node_id.clone(), depth + 1)
-                        .into_iter()
+                    for value in
+                        Self::find_nodes_generator_rec(matching_branch, node_id.clone(), depth + 1)
                     {
-                        co.yield_(value).await;
+                        yield value;
                     }
 
                     for value in
-                        Self::find_nodes_generator_rec(other_branch, node_id.clone(), depth + 1).into_iter()
+                        Self::find_nodes_generator_rec(other_branch, node_id.clone(), depth + 1)
                     {
-                        co.yield_(value).await;
+                        yield value;
                     }
                 }
                 FullBTreeNode::Leaf(values) => {
                     for node in values.good_nodes() {
-                        co.yield_(node);
+                        yield node;
                     }
                 }
-            }
-        })
+            })
+            .iter(),
+        )
     }
 
-    fn find_nodes_generator(&self) -> GenBoxed<NodeInfo> {
+    fn find_nodes_generator(&self) -> impl Iterator<Item = NodeInfo> + '_ {
         Self::find_nodes_generator_rec(&self.root, self.id.clone(), 0)
     }
 
