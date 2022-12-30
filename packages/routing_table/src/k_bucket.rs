@@ -14,6 +14,7 @@ use krpc_encoding::{
     NodeInfo,
 };
 use std::cmp::Ordering;
+use log::{debug, as_error};
 
 const K_BUCKET_SIZE: usize = 8;
 
@@ -187,9 +188,14 @@ impl KBucket {
     ) -> Option<bool> {
         let mut questionable_node = self.take_questionable_node()?;
 
-        // todo: report the error somewhere
+        let result = request_transport.ping(&mut questionable_node).await;
 
-        let _ = request_transport.ping(&mut questionable_node).await;
+        match result {
+            Ok(_) => {},
+            Err(err) => {
+                debug!(err = as_error!(err); "ping failed")
+            }
+        };
 
         match questionable_node.state() {
             NodeState::Questionable | NodeState::Good => {
