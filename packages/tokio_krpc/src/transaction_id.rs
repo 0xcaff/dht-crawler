@@ -6,7 +6,6 @@ use byteorder::{
     NetworkEndian,
     ReadBytesExt,
 };
-use failure::ResultExt;
 
 /// Transaction identifier used for requests originating from this client.
 /// Requests originating from other clients use a `Vec<u8>` to represent the
@@ -22,5 +21,5 @@ pub fn parse_originating_transaction_id(mut bytes: &[u8]) -> Result<TransactionI
 
     Ok(bytes
         .read_u32::<NetworkEndian>()
-        .context(ErrorKind::InvalidResponseTransactionId)?)
+        .map_err(|_cause| ErrorKind::InvalidResponseTransactionId)?)
 }

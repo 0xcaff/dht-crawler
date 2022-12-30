@@ -17,11 +17,7 @@ use log::{
     as_error,
     debug,
 };
-use std::{
-    cmp::Ordering,
-    iter::Filter,
-    slice::Iter,
-};
+use std::cmp::Ordering;
 
 const K_BUCKET_SIZE: usize = 8;
 
@@ -44,7 +40,7 @@ impl KBucket {
             .iter()
             .enumerate()
             .find(|(_, node)| &node.id == node_id)
-            .map(|(idx, node)| idx)
+            .map(|(idx, _node)| idx)
     }
 
     pub fn get_node_mut(&mut self, index: usize) -> &mut NodeContactState {
@@ -64,7 +60,7 @@ impl KBucket {
             .contacts
             .iter()
             .enumerate()
-            .filter(|(idx, it)| it.state() == NodeState::Bad)
+            .filter(|(_idx, it)| it.state() == NodeState::Bad)
             .map(|(idx, _)| idx)
             .next()?;
 
@@ -77,7 +73,7 @@ impl KBucket {
             .contacts
             .iter()
             .enumerate()
-            .filter(|(idx, it)| it.state() == NodeState::Questionable)
+            .filter(|(_idx, it)| it.state() == NodeState::Questionable)
             .min_by(|(_, lhs), (_, rhs)| {
                 let failed_queries_cmp = lhs.failed_queries().cmp(&rhs.failed_queries());
                 if let Ordering::Greater | Ordering::Less = failed_queries_cmp {
@@ -207,7 +203,7 @@ impl KBucket {
         match result {
             Ok(_) => {}
             Err(err) => {
-                // debug!(err = as_error!(err); "ping failed")
+                debug!(err = as_error!(err); "ping failed")
             }
         };
 
@@ -268,8 +264,8 @@ mod tests {
         },
         node_contact_state::NodeContactState,
     };
-    use failure::Error;
     use krpc_encoding::NodeID;
+    type Error = Box<dyn std::error::Error>;
 
     fn make_node() -> Result<NodeContactState, Error> {
         Ok(NodeContactState::new(

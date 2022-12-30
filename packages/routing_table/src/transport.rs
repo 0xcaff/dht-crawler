@@ -24,7 +24,7 @@ impl LivenessTransport {
             self.request_transport
                 .ping(node.address)
                 .await
-                .map_err(|err| err.into())
+                .map_err(|err| ErrorKind::from(err).into())
                 .and_then(|node_id| {
                     if node_id != node.id {
                         Err(Error::from(ErrorKind::PingIdMismatch {
@@ -40,70 +40,36 @@ impl LivenessTransport {
 }
 
 mod errors {
-    use failure::{
-        Backtrace,
-        Context,
-        Fail,
-    };
     use krpc_encoding::NodeID;
-    use std::fmt;
+    use std::{
+        backtrace::Backtrace,
+    };
+    use thiserror::Error;
     use tokio_krpc::send_errors;
 
-    #[derive(Debug, Fail)]
+    #[derive(Debug, Error)]
     pub enum ErrorKind {
-        #[fail(display = "failed to send query")]
+        #[error("failed to send query")]
         SendError {
-            #[fail(cause)]
+            #[from]
             cause: send_errors::Error,
         },
 
-        #[fail(display = "node responded with unexpected id")]
+        #[error("node responded with unexpected id")]
         PingIdMismatch { got: NodeID, expected: NodeID },
 
-        #[fail(display = "request timed out")]
+        #[error("request timed out")]
         Timeout,
     }
 
     pub type Result<T> = std::result::Result<T, Error>;
 
-    #[derive(Debug)]
+    #[derive(Error, Debug)]
+    #[error("{}", inner)]
     pub struct Error {
-        inner: Context<ErrorKind>,
-    }
+        #[from]
+        inner: ErrorKind,
 
-    impl Fail for Error {
-        fn cause(&self) -> Option<&dyn Fail> {
-            self.inner.cause()
-        }
-
-        fn backtrace(&self) -> Option<&Backtrace> {
-            self.inner.backtrace()
-        }
-    }
-
-    impl fmt::Display for Error {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            fmt::Display::fmt(&self.inner, f)
-        }
-    }
-
-    impl From<ErrorKind> for Error {
-        fn from(kind: ErrorKind) -> Error {
-            Error {
-                inner: Context::new(kind),
-            }
-        }
-    }
-
-    impl From<Context<ErrorKind>> for Error {
-        fn from(inner: Context<ErrorKind>) -> Error {
-            Error { inner }
-        }
-    }
-
-    impl From<send_errors::Error> for Error {
-        fn from(cause: send_errors::Error) -> Self {
-            ErrorKind::SendError { cause }.into()
-        }
+        backtrace: Backtrace,
     }
 }

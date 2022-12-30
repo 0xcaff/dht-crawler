@@ -121,7 +121,7 @@ mod tests {
         prelude::*,
         Duration,
     };
-    use failure::Error;
+    type Error = Box<dyn std::error::Error>;
 
     fn make_node() -> Result<NodeContactState, Error> {
         Ok(NodeContactState::new(

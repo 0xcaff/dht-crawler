@@ -106,7 +106,7 @@ impl<'de> Visitor<'de> for NodeInfoVecVisitor {
 #[cfg(test)]
 mod tests {
     use super::NodeInfo;
-    use failure::Error;
+    type Error = Box<dyn std::error::Error>;
     use std::{
         net::SocketAddrV4,
         str::FromStr,

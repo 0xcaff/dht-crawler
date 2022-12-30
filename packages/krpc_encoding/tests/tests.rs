@@ -1,4 +1,3 @@
-use failure::Error;
 use krpc_encoding::{
     Envelope,
     KRPCError,
@@ -11,6 +10,7 @@ use std::{
     net::SocketAddrV4,
     str::FromStr,
 };
+type Error = Box<dyn std::error::Error>;
 
 fn test_serialize_deserialize(parsed: Envelope, raw: &[u8]) -> Result<(), Error> {
     let parsed_encoded = parsed.encode()?;

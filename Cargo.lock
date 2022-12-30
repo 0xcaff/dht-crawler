@@ -437,8 +437,6 @@ name = "krpc_encoding"
 version = "0.1.0"
 dependencies = [
  "byteorder",
- "failure",
- "failure_derive",
  "hex",
  "num-bigint",
  "num-traits",
@@ -448,6 +446,7 @@ dependencies = [
  "serde_bytes",
  "serde_derive",
  "serde_test",
+ "thiserror",
 ]
 
 [[package]]
@@ -612,13 +611,13 @@ version = "0.1.0"
 dependencies = [
  "async-recursion",
  "chrono",
- "failure",
  "futures",
  "futures-util",
  "krpc_encoding",
  "log",
  "num-bigint",
  "serde",
+ "thiserror",
  "tokio 1.23.0 (git+https://github.com/tokio-rs/tokio.git?branch=master)",
  "tokio_krpc",
  "tracing",
@@ -772,6 +771,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "thiserror"
+version = "1.0.38"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a9cd18aa97d5c45c6603caea1da6628790b37f7a34b6ca89522331c5180fed0"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.38"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fb327af4685e4d03fa8cbcf1716380da910eeb2bb8be417e7f9fd3fb164f36f"
+dependencies = [
+ "proc-macro2 1.0.49",
+ "quote 1.0.23",
+ "syn 1.0.107",
+]
+
+[[package]]
 name = "time"
 version = "0.1.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -824,12 +843,11 @@ version = "0.1.0"
 dependencies = [
  "byteorder",
  "bytes",
- "failure",
- "failure_derive",
  "futures",
  "futures-util",
  "krpc_encoding",
  "rand",
+ "thiserror",
  "tokio 1.23.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]

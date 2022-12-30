@@ -1,33 +1,29 @@
-use failure::{
-    Backtrace,
-    Context,
-    Fail,
-};
 use std::{
-    fmt,
+    backtrace::Backtrace,
     io,
 };
+use thiserror::Error;
 
 // TODO: Review ErrorKinds
-#[derive(Debug, Fail)]
+#[derive(Error, Debug)]
 pub enum ErrorKind {
-    #[fail(display = "failed to receive inbound message")]
+    #[error("failed to receive inbound message")]
     FailedToReceiveMessage {
-        #[fail(cause)]
+        #[source]
         cause: io::Error,
     },
 
-    #[fail(display = "Invalid transaction id")]
+    #[error("invalid transaction id")]
     InvalidResponseTransactionId,
 
-    #[fail(display = "Failed to parse inbound message")]
+    #[error("failed to parse inbound message")]
     ParseInboundMessageError {
-        #[fail(cause)]
+        #[source]
         cause: krpc_encoding::errors::Error,
     },
 
-    #[fail(
-        display = "Received response for an unknown transaction transaction_id={}",
+    #[error(
+        "received response for an unknown transaction transaction_id={}",
         transaction_id
     )]
     UnknownTransactionReceived { transaction_id: u32 },
@@ -35,37 +31,10 @@ pub enum ErrorKind {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
+#[error("{}", inner)]
 pub struct Error {
-    inner: Context<ErrorKind>,
-}
-
-impl Fail for Error {
-    fn cause(&self) -> Option<&dyn Fail> {
-        self.inner.cause()
-    }
-
-    fn backtrace(&self) -> Option<&Backtrace> {
-        self.inner.backtrace()
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.inner, f)
-    }
-}
-
-impl From<ErrorKind> for Error {
-    fn from(kind: ErrorKind) -> Error {
-        Error {
-            inner: Context::new(kind),
-        }
-    }
-}
-
-impl From<Context<ErrorKind>> for Error {
-    fn from(inner: Context<ErrorKind>) -> Error {
-        Error { inner }
-    }
+    #[from]
+    inner: ErrorKind,
+    backtrace: Backtrace,
 }

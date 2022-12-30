@@ -1,12 +1,14 @@
 use krpc_encoding as proto;
 use rand;
 use sha1::{
+    digest::FixedOutput,
     Digest,
-    Sha1
+    Sha1,
 };
-use std::net::SocketAddrV4;
-use std::ptr::hash;
-use sha1::digest::FixedOutput;
+use std::{
+    net::SocketAddrV4,
+    ptr::hash,
+};
 
 /// Generates and validates tokens. A token generated with
 /// [`TokenValidator::generate_token`] is valid until

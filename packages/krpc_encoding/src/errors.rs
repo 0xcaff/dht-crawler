@@ -1,53 +1,29 @@
-use failure::{
-    Backtrace,
-    Context,
-    Fail,
-};
 use serde_bencode::Error as BencodeError;
-use std::fmt;
+use std::backtrace::Backtrace;
+use thiserror::Error;
 
-#[derive(Debug, Fail)]
+#[derive(Error, Debug)]
 pub enum ErrorKind {
-    #[fail(display = "Error while encoding message")]
+    #[error("error while encoding message")]
     EncodeError {
-        #[fail(cause)]
+        #[source]
         cause: BencodeError,
     },
 
-    #[fail(display = "Error while decoding message")]
+    #[error("error while decoding message")]
     DecodeError {
-        #[fail(cause)]
+        #[source]
         cause: BencodeError,
     },
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
+#[error("{}", inner)]
 pub struct Error {
-    inner: Context<ErrorKind>,
-}
+    #[from]
+    inner: ErrorKind,
 
-impl Fail for Error {
-    fn cause(&self) -> Option<&dyn Fail> {
-        self.inner.cause()
-    }
-
-    fn backtrace(&self) -> Option<&Backtrace> {
-        self.inner.backtrace()
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.inner, f)
-    }
-}
-
-impl From<ErrorKind> for Error {
-    fn from(kind: ErrorKind) -> Error {
-        Error {
-            inner: Context::new(kind),
-        }
-    }
+    backtrace: Backtrace,
 }

@@ -1,19 +1,21 @@
+#![feature(error_generic_member_access, provide_any)]
+
 //! KRPC protocol built on top of `tokio`.
 //!
 //! # Send Only KRPC Node
 //!
 //! ```
 //! use std::net::{SocketAddrV4, SocketAddr};
+//! use std::error::Error;
 //! use futures::{future, StreamExt, TryStreamExt};
 //! use tokio::{net::UdpSocket};
-//! use failure::Error;
 //!
 //! use tokio_krpc::{KRPCNode, RequestTransport};
 //! use krpc_encoding::NodeID;
 //! use tokio::spawn;
 //!
 //! #[tokio::main(flavor = "current_thread")]
-//! async fn main() -> Result<(), Error> {
+//! async fn main() -> Result<(), Box<dyn Error>> {
 //!     let bind_addr: SocketAddrV4 = "0.0.0.0:0".parse()?;
 //!     let socket = UdpSocket::bind::<SocketAddrV4>(bind_addr).await?;
 //!     let node = KRPCNode::new(socket);

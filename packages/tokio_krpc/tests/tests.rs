@@ -1,4 +1,3 @@
-use failure::Error;
 use futures::{
     future,
     StreamExt,
@@ -20,6 +19,8 @@ use tokio_krpc::{
     KRPCNode,
     RequestTransport,
 };
+
+type Error = Box<dyn std::error::Error>;
 
 #[tokio::test]
 async fn ping() -> Result<(), Error> {

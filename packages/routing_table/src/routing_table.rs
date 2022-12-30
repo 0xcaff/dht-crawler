@@ -1,9 +1,6 @@
 use crate::{
     full_b_tree::FullBTreeNode,
-    generator::{
-        GeneratorExt,
-        GeneratorToIterator,
-    },
+    generator::GeneratorExt,
     k_bucket::KBucket,
     node_contact_state::NodeContactState,
     transport::LivenessTransport,
@@ -14,7 +11,6 @@ use krpc_encoding::{
     NodeInfo,
     NODE_ID_SIZE_BITS,
 };
-use std::ops::Generator;
 use tokio_krpc::RequestTransport;
 
 /// A routing table which holds information about nodes in the network.
@@ -136,7 +132,7 @@ impl RoutingTable {
         let result = leaf_k_bucket.try_add(node_info, transport).await;
 
         if let Some(node_index) = result {
-            let mut raw = leaf_k_bucket as *mut KBucket;
+            let raw = leaf_k_bucket as *mut KBucket;
 
             // Ignore the borrow checker, it is incorrect here. We can safely
             // return a reference here because the branches of the if statement
