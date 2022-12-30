@@ -1,10 +1,12 @@
-use crypto::{
-    digest::Digest,
-    sha1::Sha1,
-};
 use krpc_encoding as proto;
 use rand;
+use sha1::{
+    Digest,
+    Sha1
+};
 use std::net::SocketAddrV4;
+use std::ptr::hash;
+use sha1::digest::FixedOutput;
 
 /// Generates and validates tokens. A token generated with
 /// [`TokenValidator::generate_token`] is valid until
@@ -65,11 +67,8 @@ fn generate_token(addr: &SocketAddrV4, secret: &[u8; 4]) -> [u8; 20] {
 
     let addr_bytes = proto::addr_to_bytes(addr);
 
-    hasher.input(&addr_bytes);
-    hasher.input(secret);
+    hasher.update(&addr_bytes);
+    hasher.update(secret);
 
-    let mut output = [0u8; 20];
-    hasher.result(&mut output);
-
-    output
+    hasher.finalize_fixed().into()
 }

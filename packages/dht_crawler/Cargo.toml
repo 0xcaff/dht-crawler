@@ -16,7 +16,7 @@ chrono = "0.4.6"
 rand = "0.5.5"
 num-bigint = "0.2.0"
 num-traits = "0.2.6"
-rust-crypto = "0.2"
+sha1 = "0.10.5"
 krpc_encoding = { path = "../krpc_encoding" }
 tokio_krpc = { path = "../tokio_krpc" }
 
