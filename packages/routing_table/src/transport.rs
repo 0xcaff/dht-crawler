@@ -8,10 +8,7 @@ use crate::{
     },
 };
 use krpc_encoding::NodeID;
-use std::{
-    net::SocketAddrV4,
-    time::Duration,
-};
+use std::net::SocketAddrV4;
 use tokio_krpc::{
     responses::FindNodeResponse,
     RequestTransport,

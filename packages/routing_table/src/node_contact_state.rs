@@ -173,7 +173,10 @@ mod tests {
 
     #[test]
     fn request_response_good() -> Result<(), Error> {
-        let epoch = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 980);
+        let epoch = NaiveDate::from_ymd_opt(1970, 1, 1)
+            .unwrap()
+            .and_hms_milli_opt(0, 0, 1, 980)
+            .unwrap();
 
         let node = NodeContactState {
             id: b"0000000000000000000000000000000000000000".into(),
@@ -205,7 +208,10 @@ mod tests {
 
     #[test]
     fn last_contacted_query() -> Result<(), Error> {
-        let epoch = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 980);
+        let epoch = NaiveDate::from_ymd_opt(1970, 1, 1)
+            .unwrap()
+            .and_hms_milli_opt(0, 0, 1, 980)
+            .unwrap();
 
         let node = NodeContactState {
             id: b"0000000000000000000000000000000000000000".into(),
@@ -222,7 +228,10 @@ mod tests {
 
     #[test]
     fn last_contacted_request() -> Result<(), Error> {
-        let epoch = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 980);
+        let epoch = NaiveDate::from_ymd_opt(1970, 1, 1)
+            .unwrap()
+            .and_hms_milli_opt(0, 0, 1, 980)
+            .unwrap();
 
         let node = NodeContactState {
             id: b"0000000000000000000000000000000000000000".into(),
@@ -239,8 +248,14 @@ mod tests {
 
     #[test]
     fn last_contacted_both() -> Result<(), Error> {
-        let earlier = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 980);
-        let later = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 10, 980);
+        let earlier = NaiveDate::from_ymd_opt(1970, 1, 1)
+            .unwrap()
+            .and_hms_milli_opt(0, 0, 1, 980)
+            .unwrap();
+        let later = NaiveDate::from_ymd_opt(1970, 1, 1)
+            .unwrap()
+            .and_hms_milli_opt(0, 0, 10, 980)
+            .unwrap();
 
         let node = NodeContactState {
             id: b"0000000000000000000000000000000000000000".into(),
