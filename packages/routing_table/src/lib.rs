@@ -11,4 +11,4 @@ mod node_contact_state;
 mod routing_table;
 mod transport;
 
-pub use routing_table::RoutingTable;
+pub use crate::routing_table::RoutingTable;

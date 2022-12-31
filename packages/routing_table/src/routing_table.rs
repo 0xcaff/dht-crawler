@@ -46,7 +46,7 @@ impl RoutingTable {
         visited.insert(address);
 
         while let Some(next_node) = nodes.pop_front() {
-            let result = self.transport.find_node(next_node, self.id.clone()).await;
+            let result = self.transport.find_node(next_node.clone(), self.id.clone()).await;
 
             match result {
                 Err(err) => {
@@ -61,9 +61,9 @@ impl RoutingTable {
                         })
                         .await
                     {
-                        Some(it) => it.mark_successful_request(),
+                        Some(it) => it.mark_successful_query(),
                         None => {
-                            // routing table full, stop discovering new nodes
+                            // todo: how to know when to stop
                             return;
                         }
                     }

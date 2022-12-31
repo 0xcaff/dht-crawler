@@ -101,7 +101,7 @@ mod errors {
         fn timeout(self) -> WithTimeoutFuture<T, Self>;
     }
 
-    const TIMEOUT_SECONDS: u64 = 5;
+    const TIMEOUT_SECONDS: u64 = 1;
 
     impl<T, F> TimeoutExt<T> for F
     where
