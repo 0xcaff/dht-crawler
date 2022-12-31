@@ -1,12 +1,18 @@
 use self::errors::Result;
 use crate::{
     node_contact_state::NodeContactState,
+    routing_table::FindNodeResult,
     transport::errors::{
         Error,
         ErrorKind,
     },
 };
-use tokio_krpc::RequestTransport;
+use krpc_encoding::NodeID;
+use std::net::SocketAddrV4;
+use tokio_krpc::{
+    responses::FindNodeResponse,
+    RequestTransport,
+};
 
 /// A transport used for communicating with other nodes which keeps liveness
 /// information up to date.
@@ -17,6 +23,18 @@ pub struct LivenessTransport {
 impl LivenessTransport {
     pub fn new(request_transport: RequestTransport) -> LivenessTransport {
         LivenessTransport { request_transport }
+    }
+
+    pub async fn find_node(
+        &self,
+        address: SocketAddrV4,
+        target: NodeID,
+    ) -> Result<FindNodeResponse> {
+        Ok(self
+            .request_transport
+            .find_node(address, target)
+            .await
+            .map_err(|err| Error::from(ErrorKind::from(err)))?)
     }
 
     pub async fn ping(&self, node: &mut NodeContactState) -> Result<()> {
@@ -41,9 +59,7 @@ impl LivenessTransport {
 
 mod errors {
     use krpc_encoding::NodeID;
-    use std::{
-        backtrace::Backtrace,
-    };
+    use std::backtrace::Backtrace;
     use thiserror::Error;
     use tokio_krpc::send_errors;
 

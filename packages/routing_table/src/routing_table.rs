@@ -11,6 +11,17 @@ use krpc_encoding::{
     NodeInfo,
     NODE_ID_SIZE_BITS,
 };
+use log::{
+    as_error,
+    debug,
+};
+use std::{
+    collections::{
+        HashSet,
+        VecDeque,
+    },
+    net::SocketAddrV4,
+};
 use tokio_krpc::RequestTransport;
 
 /// A routing table which holds information about nodes in the network.
@@ -26,6 +37,48 @@ impl RoutingTable {
             id,
             root: FullBTreeNode::Leaf(KBucket::initial()),
             transport: LivenessTransport::new(request_transport),
+        }
+    }
+
+    async fn bootstrap(&mut self, address: SocketAddrV4) {
+        let mut nodes = VecDeque::from([address]);
+        let mut visited = HashSet::new();
+        visited.insert(address);
+
+        while let Some(next_node) = nodes.pop_front() {
+            let result = self
+                .transport
+                .find_node(address.clone(), self.id.clone())
+                .await;
+
+            match result {
+                Err(err) => {
+                    debug!(err = as_error!(err); "find_node failed during bootstrap");
+                }
+                Ok(response) => {
+                    // add to routing table
+                    match self
+                        .add_node(&NodeInfo {
+                            address,
+                            node_id: response.id.clone(),
+                        })
+                        .await
+                    {
+                        Some(it) => it.mark_successful_request(),
+                        None => {
+                            // routing table full, stop discovering new nodes
+                            return;
+                        }
+                    }
+
+                    for node in response.nodes {
+                        if !visited.contains(&node.address) {
+                            visited.insert(node.address.clone());
+                            nodes.push_back(node.address);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -74,13 +127,13 @@ impl RoutingTable {
         )
     }
 
-    fn find_nodes_generator(&self) -> impl Iterator<Item = NodeInfo> + '_ {
-        Self::find_nodes_generator_rec(&self.root, self.id.clone(), 0)
+    fn find_nodes_generator(&self, id: NodeID) -> impl Iterator<Item = NodeInfo> + '_ {
+        Self::find_nodes_generator_rec(&self.root, id, 0)
     }
 
-    pub fn find_node(&self, id: &NodeID) -> FindNodeResult {
+    pub fn find_node(&self, id: NodeID) -> FindNodeResult {
         let closest_nodes = self
-            .find_nodes_generator()
+            .find_nodes_generator(id.clone())
             .into_iter()
             .take(8)
             .collect::<Vec<NodeInfo>>();
@@ -88,7 +141,7 @@ impl RoutingTable {
         match closest_nodes
             .iter()
             .enumerate()
-            .find(|(_, node)| &node.node_id == id)
+            .find(|(_, node)| &node.node_id == &id)
             .map(|(idx, _)| idx)
         {
             Some(node) => FindNodeResult::Node(closest_nodes[node].clone()),

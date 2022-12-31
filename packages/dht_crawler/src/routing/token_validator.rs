@@ -5,10 +5,7 @@ use sha1::{
     Digest,
     Sha1,
 };
-use std::{
-    net::SocketAddrV4,
-    ptr::hash,
-};
+use std::net::SocketAddrV4;
 
 /// Generates and validates tokens. A token generated with
 /// [`TokenValidator::generate_token`] is valid until
