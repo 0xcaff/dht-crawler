@@ -234,7 +234,7 @@ dependencies = [
  "num-traits",
  "rand",
  "sha1",
- "tokio 1.23.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio",
  "tokio_krpc",
 ]
 
@@ -618,7 +618,7 @@ dependencies = [
  "num-bigint",
  "serde",
  "thiserror",
- "tokio 1.23.0 (git+https://github.com/tokio-rs/tokio.git?branch=master)",
+ "tokio",
  "tokio_krpc",
  "tracing",
 ]
@@ -817,16 +817,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tokio"
-version = "1.23.0"
-source = "git+https://github.com/tokio-rs/tokio.git?branch=master#9af2f5ee5931a79684d4afd8897e54aafa39c156"
-dependencies = [
- "autocfg",
- "pin-project-lite",
- "windows-sys",
-]
-
-[[package]]
 name = "tokio-macros"
 version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -848,7 +838,7 @@ dependencies = [
  "krpc_encoding",
  "rand",
  "thiserror",
- "tokio 1.23.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio",
  "tracing",
 ]
 

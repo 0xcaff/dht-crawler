@@ -40,16 +40,13 @@ impl RoutingTable {
         }
     }
 
-    async fn bootstrap(&mut self, address: SocketAddrV4) {
+    pub async fn bootstrap(&mut self, address: SocketAddrV4) {
         let mut nodes = VecDeque::from([address]);
         let mut visited = HashSet::new();
         visited.insert(address);
 
         while let Some(next_node) = nodes.pop_front() {
-            let result = self
-                .transport
-                .find_node(address.clone(), self.id.clone())
-                .await;
+            let result = self.transport.find_node(next_node, self.id.clone()).await;
 
             match result {
                 Err(err) => {

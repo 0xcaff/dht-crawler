@@ -8,7 +8,7 @@ edition = "2018"
 chrono = "0.4.6"
 futures = "0.3.25"
 futures-util = "0.3.25"
-tokio = { git = "https://github.com/tokio-rs/tokio.git", branch = "master" }
+tokio = { version = "1.23.0", features = ["net", "time"] }
 num-bigint = "0.2.0"
 async-recursion = "1.0.0"
 tokio_krpc = { path = "../tokio_krpc" }
