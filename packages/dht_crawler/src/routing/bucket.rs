@@ -94,7 +94,7 @@ impl Bucket {
             .find(|node| node.state() == NodeState::Bad);
 
         if let Some(bad_node) = bad_node_opt {
-            mem::replace(bad_node, node);
+            *bad_node = node;
         }
     }
 

@@ -5,8 +5,8 @@ authors = ["Martin Charles <martincharles07@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-serde = "1.0.152"
-serde_derive = "1.0.152"
+serde = "=1.0.152"
+serde_derive = "=1.0.152"
 serde_bencode = { git = "https://github.com/0xcaff/serde-bencode.git", rev = "0c1e6f4672c925c629b84fab2b66b24ec9f3458e" }
 serde_bytes = "0.10.4"
 thiserror = "1.0.38"

@@ -1,4 +1,4 @@
-#![feature(error_generic_member_access, provide_any)]
+#![feature(error_generic_member_access)]
 
 //! Library for serializing and de-serializing krpc messages defined in
 //! [BEP-0005].
