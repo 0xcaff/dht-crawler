@@ -1,7 +1,7 @@
 use futures_util::{
     future,
-    TryStreamExt,
     StreamExt,
+    TryStreamExt,
 };
 use krpc_encoding::NodeID;
 use routing_table::RoutingTable;

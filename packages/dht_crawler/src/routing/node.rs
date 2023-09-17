@@ -157,7 +157,10 @@ mod tests {
 
     #[test]
     fn request_response_good() -> Result<(), Error> {
-        let epoch = NaiveDate::from_ymd(1970, 1, 1).and_hms_milli(0, 0, 1, 980);
+        let epoch = NaiveDate::from_ymd_opt(1970, 1, 1)
+            .unwrap()
+            .and_hms_milli_opt(0, 0, 1, 980)
+            .unwrap();
 
         let node = Node {
             id: NodeID::new(BigUint::from(10u8)),

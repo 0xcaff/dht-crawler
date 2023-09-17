@@ -2,7 +2,7 @@
 // TODO: Docs
 
 #![feature(generators, generator_trait)]
-#![feature(error_generic_member_access, provide_any)]
+#![feature(error_generic_member_access)]
 
 mod full_b_tree;
 mod generator;

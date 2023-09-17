@@ -20,6 +20,7 @@ pub enum FindNodeResult {
 pub struct RoutingTable {
     /// Node identifier of the node which the table is based around. There will
     /// be more buckets closer to this identifier.
+    #[allow(unused)]
     id: NodeID,
 
     /// Ordered list of buckets covering the key space. The first bucket starts
@@ -61,7 +62,7 @@ impl RoutingTable {
             bucket_idx
         };
 
-        &mut self.buckets[bucket_to_add_to_idx].add_node(node);
+        self.buckets[bucket_to_add_to_idx].add_node(node);
     }
 
     /// Finds the node with `id`, or about the `k` nearest good nodes to the

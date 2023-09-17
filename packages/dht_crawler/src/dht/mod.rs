@@ -169,10 +169,7 @@ mod tests {
         Dht,
     };
     use failure::Error;
-    use tokio::{
-        spawn,
-        task::spawn_local,
-    };
+    use tokio::task::spawn_local;
 
     #[tokio::test]
     #[ignore]
